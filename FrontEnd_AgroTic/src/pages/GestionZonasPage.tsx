@@ -127,7 +127,7 @@ const GestionZonasPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full bg-gray-50">
-      <div className="max-w-7xl" style={{ height: 'calc(0px + 93vh)', overflowY: 'auto' }}>
+      <div style={{ height: 'calc(0px + 93vh)', overflowY: 'auto' }}>
 
         {/* Filtros usando el componente genérico */}
         <GenericFiltersPanel
