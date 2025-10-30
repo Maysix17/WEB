@@ -133,7 +133,7 @@ export class ReservasXActividadService {
       console.log('🔍 SERVICE: Processing reservation:', reservaDto);
       const reserva = await this.reservasXActividadRepo.findOne({
         where: { id: reservaDto.reservaId },
-        relations: ['actividad'],
+        relations: ['actividad', 'lote', 'lote.producto', 'lote.producto.categoria'],
       });
 
       if (!reserva) {
@@ -152,9 +152,20 @@ export class ReservasXActividadService {
       // Set cantidad_devuelta
       reserva.cantidadDevuelta = reservaDto.cantidadDevuelta || 0;
 
-      // Calculate cantidad_usada = cantidad_reservada - cantidad_devuelta
-      reserva.cantidadUsada =
-        reserva.cantidadReservada - reserva.cantidadDevuelta;
+      // Determine if the product is consumable or non-consumable
+      const esConsumible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+
+      if (esConsumible) {
+        // For consumables: cantidad_usada = cantidad_reservada - cantidad_devuelta
+        reserva.cantidadUsada = reserva.cantidadReservada - reserva.cantidadDevuelta;
+      } else {
+        // For non-consumables: cantidad_usada = difference if not all returned
+        if (reserva.cantidadDevuelta < reserva.cantidadReservada) {
+          reserva.cantidadUsada = reserva.cantidadReservada - reserva.cantidadDevuelta;
+        } else {
+          reserva.cantidadUsada = 0; // All returned, no usage
+        }
+      }
 
       // Change estado to confirmed
       reserva.fkEstadoId = estadoConfirmada.id;
@@ -170,13 +181,17 @@ export class ReservasXActividadService {
         await this.createMovementRecord(reserva.fkLoteId, reserva.id, 'Devolución', reserva.cantidadDevuelta, observacion);
       }
 
-      // Update inventory proportionally
-      await this.updateLoteInventoryProportionally(reserva.fkLoteId, reserva.cantidadUsada);
+      // Update inventory proportionally only for consumables or when there's actual usage
+      if (esConsumible || reserva.cantidadUsada > 0) {
+        await this.updateLoteInventoryProportionally(reserva.fkLoteId, reserva.cantidadUsada);
+      }
 
-      // Create movement record for the usage with activity category
-      const categoriaNombre = actividad.categoriaActividad?.nombre || 'Sin categoría';
-      const observacion = `Salida por finalización de actividad agrícola: ${categoriaNombre}`;
-      await this.createMovementRecord(reserva.fkLoteId, reserva.id, 'Salida', reserva.cantidadUsada, observacion);
+      // Create movement record for the usage with activity category (only if there's usage)
+      if (reserva.cantidadUsada > 0) {
+        const categoriaNombre = actividad.categoriaActividad?.nombre || 'Sin categoría';
+        const observacion = `Salida por finalización de actividad agrícola: ${categoriaNombre}`;
+        await this.createMovementRecord(reserva.fkLoteId, reserva.id, 'Salida', reserva.cantidadUsada, observacion);
+      }
     }
 
     // Update activity with finalization data

@@ -310,6 +310,7 @@ export class ActividadesService {
         'reservas.lote',
         'reservas.lote.producto',
         'reservas.lote.producto.unidadMedida',
+        'reservas.lote.producto.categoria',
         'reservas.estado',
       ],
       order: { fechaAsignacion: 'DESC' },

@@ -124,7 +124,12 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
   const getInventoryUsed = (activity: ExtendedActividad) => {
     if (!activity.reservas || activity.reservas.length === 0) return 'Sin inventario';
     return activity.reservas
-      .map((r: any) => `${r.lote?.producto?.nombre} (${r.cantidadUsada || 0} ${r.lote?.producto?.unidadMedida?.abreviatura})`)
+      .map((r: any) => {
+        // Check if product is non-consumable (esDivisible = false)
+        const esConsumible = r.lote?.producto?.categoria?.esDivisible ?? true;
+        const cantidad = esConsumible ? (r.cantidadUsada || 0) : (r.cantidadDevuelta || 0);
+        return `${r.lote?.producto?.nombre} (${cantidad} ${r.lote?.producto?.unidadMedida?.abreviatura})`;
+      })
       .join(', ');
   };
 
