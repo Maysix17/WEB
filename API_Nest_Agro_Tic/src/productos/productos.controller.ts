@@ -6,7 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { ProductosService } from './productos.service';
 import { CreateProductosDto } from './dto/create-productos.dto';
 import { UpdateProductosDto } from './dto/update-productos.dto';
@@ -47,5 +52,22 @@ export class ProductosController {
   @Post('with-lote')
   createWithLote(@Body() createProductoWithLoteDto: CreateProductoWithLoteDto) {
     return this.productosService.createWithLote(createProductoWithLoteDto);
+  }
+
+  @Post('upload-image')
+  @UseInterceptors(
+    FileInterceptor('imgUrl', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `imgUrl-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
+    return { url: `/uploads/${file.filename}` };
   }
 }

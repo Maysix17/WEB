@@ -204,23 +204,25 @@ export class ReservasXActividadService {
 
     // Handle file upload if provided
     if (file) {
-      console.log('🔍 SERVICE: Handling file upload');
+      console.log(`[${new Date().toISOString()}] 🔍 SERVICE: Handling file upload for activity ${finalizeDto.actividadId} - File: ${file.originalname}, Size: ${file.size} bytes`);
       const uploadDir = path.join(process.cwd(), 'uploads');
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
+        console.log(`[${new Date().toISOString()}] 📁 SERVICE: Created uploads directory: ${uploadDir}`);
       }
       const fileName = `imgUrl-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${file.originalname.split('.').pop()}`;
       const filePath = path.join(uploadDir, fileName);
+      console.log(`[${new Date().toISOString()}] 💾 SERVICE: Saving image to: ${filePath}`);
       fs.writeFileSync(filePath, file.buffer);
-      actividad.imgUrl = fileName;
-      console.log('🔍 SERVICE: File saved as:', fileName);
+      actividad.imgUrl = `/uploads/${fileName}`;
+      console.log(`[${new Date().toISOString()}] ✅ SERVICE: Image saved successfully for activity ${finalizeDto.actividadId} - File: ${fileName}, Full URL: /uploads/${fileName}`);
     } else {
-      console.log('🔍 SERVICE: No file provided');
+      console.log(`[${new Date().toISOString()}] 🔍 SERVICE: No image file provided for activity ${finalizeDto.actividadId}`);
     }
 
-    console.log('🔍 SERVICE: Saving updated activity:', actividad);
+    console.log(`[${new Date().toISOString()}] 💾 SERVICE: Saving updated activity ${finalizeDto.actividadId} with image URL: ${actividad.imgUrl || 'No image'}`);
     await this.actividadRepo.save(actividad);
-    console.log('🔍 SERVICE: Activity finalized successfully');
+    console.log(`[${new Date().toISOString()}] ✅ SERVICE: Activity ${finalizeDto.actividadId} finalized successfully with image evidence saved`);
   }
 
   private async updateLoteInventoryProportionally(loteId: string, cantidadUsada: number): Promise<void> {

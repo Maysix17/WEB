@@ -110,6 +110,8 @@ export class ActividadesController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     const imgUrl = file ? `/uploads/evidencias/${file.filename}` : undefined;
+    console.log(`[${new Date().toISOString()}] 📡 CONTROLLER: Finalizing activity ${id} - Generated image URL: ${imgUrl || 'No image'}`);
+    console.log(`[${new Date().toISOString()}] 📡 CONTROLLER: File details:`, file ? { filename: file.filename, originalname: file.originalname, size: file.size } : 'No file');
     return this.actividadesService.finalizar(
       id,
       body.observacion,

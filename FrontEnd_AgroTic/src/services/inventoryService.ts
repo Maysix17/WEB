@@ -213,6 +213,17 @@ export const inventoryService = {
     return response.data;
   },
 
+  uploadProductImage: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('imgUrl', file);
+    const response = await apiClient.post('/productos/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   updateInventoryItem: async (id: string, data: any): Promise<any> => {
     console.log('DEBUG: updateInventoryItem called with ID:', id);
     console.log('DEBUG: updateInventoryItem data:', data);

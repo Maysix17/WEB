@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { MulterModule } from '@nestjs/platform-express';
+import * as express from 'express';
 
 import { ActividadesModule } from './actividades/actividades.module';
 import { BodegaModule } from './bodega/bodega.module';
@@ -54,8 +56,15 @@ import { MqttModule } from './mqtt/mqtt.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
+      serveStaticOptions: {
+        index: false,
+        fallthrough: true,
+      },
+    }),
+    MulterModule.register({
+      dest: './uploads',
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -201,4 +210,11 @@ import { MqttModule } from './mqtt/mqtt.module';
   // puedan acceder a los servicios que estos exportan.
   exports: [PermisosModule, UsuariosModule, BodegaModule, CategoriaModule],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Serve static files from uploads directory
+    consumer
+      .apply(express.static(join(__dirname, '..', 'uploads')))
+      .forRoutes('/uploads');
+  }
+}

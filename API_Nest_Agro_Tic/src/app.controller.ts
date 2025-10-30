@@ -37,4 +37,17 @@ export class AppController {
       message: 'Esta es información pública, no se requieren permisos.',
     };
   }
+
+  @Get('uploads-test')
+  getUploadsTest() {
+    return 'Uploads endpoint working';
+  }
+
+  @Get('test-image')
+  getTestImage() {
+    return {
+      message: 'Test image endpoint',
+      imageUrl: '/uploads/imgUrl-1761829728566-kaz7l8kcxe.jpg'
+    };
+  }
 }

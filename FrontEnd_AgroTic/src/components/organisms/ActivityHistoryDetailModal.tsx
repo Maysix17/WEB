@@ -75,12 +75,12 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
   if (!activity) return null;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="4xl">
+    <Modal isOpen={isOpen} onOpenChange={onClose} size="4xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader>
           <h2 className="text-2xl font-semibold">Detalles de Actividad Finalizada</h2>
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className="max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Usuarios */}
             <div className="border rounded-lg p-4">
@@ -157,12 +157,20 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
               <h3 className="font-semibold mb-2">Imagen de Evidencia</h3>
               <div className="flex justify-center">
                 <img
-                  src={activity.imgUrl}
+                  src={`http://localhost:3000${activity.imgUrl}`}
                   alt="Evidencia de actividad"
                   className="max-w-full max-h-96 rounded-lg shadow-md"
+                  onLoad={() => {
+                    console.log(`[${new Date().toISOString()}] ✅ FRONTEND: Image rendered successfully for activity ${activity.id} - Full URL: http://localhost:3000${activity.imgUrl}`);
+                  }}
                   onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    console.error(`[${new Date().toISOString()}] ❌ FRONTEND: Error rendering image for activity ${activity.id} - Attempted URL: http://localhost:3000${activity.imgUrl} - Original stored URL: ${activity.imgUrl}`);
+                    // Try alternative URL construction
+                    if (activity.imgUrl) {
+                      const alternativeUrl = `http://localhost:3000/uploads/${activity.imgUrl.split('/').pop()}`;
+                      console.log(`[${new Date().toISOString()}] 🔄 FRONTEND: Trying alternative URL: ${alternativeUrl}`);
+                      e.currentTarget.src = alternativeUrl;
+                    }
                   }}
                 />
                 <div className="hidden text-center text-gray-500 p-4">

@@ -100,6 +100,12 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
   };
 
   const handleViewDetails = (activity: ExtendedActividad) => {
+    console.log(`[${new Date().toISOString()}] 🔍 FRONTEND: Accessing activity details for activity ${activity.id}`);
+    if (activity.imgUrl) {
+      console.log(`[${new Date().toISOString()}] 🖼️ FRONTEND: Activity ${activity.id} has image evidence - attempting to load from: ${activity.imgUrl}`);
+    } else {
+      console.log(`[${new Date().toISOString()}] 📝 FRONTEND: Activity ${activity.id} has no image evidence`);
+    }
     setSelectedActivity(activity);
     setIsDetailModalOpen(true);
   };
