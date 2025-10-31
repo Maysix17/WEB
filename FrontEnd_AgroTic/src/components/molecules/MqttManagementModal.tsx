@@ -15,6 +15,7 @@ const MqttManagementModal: React.FC<{
   const [selectedConfig, setSelectedConfig] = useState<MqttConfig | undefined>();
   const [testingConfig, setTestingConfig] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,8 +49,11 @@ const MqttManagementModal: React.FC<{
     if (!confirm('¿Está seguro de eliminar esta configuración?')) return;
 
     try {
+      setSuccessMessage(null);
       await mqttConfigService.delete(configId);
       await loadConfigs();
+      setSuccessMessage('Configuración eliminada exitosamente.');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Error deleting config:', error);
       alert('Error al eliminar configuración');
@@ -59,6 +63,8 @@ const MqttManagementModal: React.FC<{
   const handleConfigSave = () => {
     setShowConfigModal(false);
     loadConfigs();
+    setSuccessMessage('Configuración guardada exitosamente.');
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const testConnection = async (config: MqttConfig) => {
@@ -112,6 +118,21 @@ const MqttManagementModal: React.FC<{
           </ModalHeader>
 
           <ModalBody>
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-green-800">{successMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>

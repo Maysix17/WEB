@@ -24,9 +24,24 @@ export class MqttConfigController {
   async create(@Body() createMqttConfigDto: CreateMqttConfigDto) {
     const config = await this.mqttConfigService.create(createMqttConfigDto);
 
-    // Si la configuración está activa, crear conexión MQTT
+    // Si la configuración está activa, intentar crear conexión MQTT en segundo plano
+    // No bloquear el guardado si falla la conexión
     if (config.activa) {
-      await this.mqttService.addConnection(config);
+      try {
+        // Crear una conexión dummy para validar que la configuración es correcta
+        // pero no bloquear el guardado si falla
+        setImmediate(async () => {
+          try {
+            await this.mqttService.addConnection(config);
+          } catch (error) {
+            console.error('Error creando conexión MQTT para nueva configuración:', error);
+            // No propagar el error - la configuración se guardó correctamente
+          }
+        });
+      } catch (error) {
+        console.error('Error iniciando conexión MQTT en segundo plano:', error);
+        // No propagar el error
+      }
     }
 
     return config;

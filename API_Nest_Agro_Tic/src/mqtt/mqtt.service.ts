@@ -131,6 +131,11 @@ export class MqttService implements OnModuleInit {
 
   // Método para agregar nueva conexión cuando se asigna una config a zona
   async addConnection(zonaMqttConfig: any) {
+    // Para configuraciones globales (sin zona específica), crear una conexión dummy
+    if (!zonaMqttConfig.zona) {
+      this.logger.log(`Configuración global ${zonaMqttConfig.nombre} guardada. Conexión MQTT se intentará cuando se asigne a una zona.`);
+      return;
+    }
     await this.createConnection(zonaMqttConfig);
   }
 

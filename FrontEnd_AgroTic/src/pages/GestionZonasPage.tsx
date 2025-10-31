@@ -13,6 +13,7 @@ const GestionZonasPage: React.FC = () => {
    const [selectedZona, setSelectedZona] = useState<Zona | null>(null);
    const [filters, setFilters] = useState<Record<string, any>>({});
    const [isLoading, setIsLoading] = useState(true);
+   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // MQTT related state
   const [showMqttSelectionModal, setShowMqttSelectionModal] = useState(false);
@@ -39,6 +40,7 @@ const GestionZonasPage: React.FC = () => {
       setIsLoading(true);
       const zonasData = await zonasService.getAll();
       setZonas(zonasData);
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -73,8 +75,8 @@ const GestionZonasPage: React.FC = () => {
     setShowReadingsModal(true);
   };
 
-  const handleBrokerSave = () => {
-    loadData(); // Reload configs
+  const handleBrokerSave = async () => {
+    await loadData(); // Reload configs asynchronously
     setShowMqttSelectionModal(false);
   };
 
@@ -82,8 +84,8 @@ const GestionZonasPage: React.FC = () => {
     setShowZonaModal(true);
   };
 
-  const handleZonaSave = () => {
-    loadData(); // Reload zones
+  const handleZonaSave = async () => {
+    await loadData(); // Reload zones asynchronously
     setShowZonaModal(false);
     setSelectedZona(null); // Clear selection to show all zones
     setEditingZona(null); // Clear editing state
@@ -152,10 +154,15 @@ const GestionZonasPage: React.FC = () => {
                   <h2 className="text-lg font-semibold text-gray-800">Resultados</h2>
                 </div>
               </div>
-              <div className="absolute top-4 right-6">
+              <div className="absolute top-4 right-6 flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
                   {filteredZonas.length} {filteredZonas.length === 1 ? 'zona' : 'zonas'}
                 </span>
+                {lastUpdate && (
+                  <span className="text-xs text-gray-500">
+                    Actualizado: {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
               </div>
 
               {isLoading ? (
@@ -220,7 +227,7 @@ const GestionZonasPage: React.FC = () => {
                             {zona.areaMetrosCuadrados ? zona.areaMetrosCuadrados.toLocaleString() : '-'}
                           </td>
                           <td className="px-6 py-3 text-sm text-gray-900">
-                            {zona.zonaMqttConfigs && zona.zonaMqttConfigs.length > 0 ? (
+                            {zona.zonaMqttConfigs && zona.zonaMqttConfigs.some(config => config.estado) ? (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 Conectado
                               </span>

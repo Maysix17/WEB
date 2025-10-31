@@ -40,6 +40,7 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
     latency?: number;
   } | null>(null);
   const [isConnectionValidated, setIsConnectionValidated] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   console.log('MqttConfigModal: Rendering with formData:', formData);
   console.log('MqttConfigModal: isOpen:', isOpen, 'isLoading:', isLoading, 'error:', error);
@@ -145,8 +146,30 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
       return;
     }
 
+    // Validar campos requeridos
+    if (!formData.nombre.trim()) {
+      setError('El nombre de la configuración es requerido.');
+      return;
+    }
+
+    if (!formData.host.trim()) {
+      setError('El host es requerido.');
+      return;
+    }
+
+    if (!formData.port || formData.port <= 0) {
+      setError('El puerto debe ser un número válido mayor a 0.');
+      return;
+    }
+
+    if (!formData.topicBase.trim()) {
+      setError('El tópico base es requerido.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
+    setSuccessMessage(null);
 
     try {
       const configData = {
@@ -158,13 +181,18 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
       if (existingConfig) {
         console.log('MqttConfigModal: Updating existing config:', existingConfig.id);
         await mqttConfigService.update(existingConfig.id, configData);
+        setSuccessMessage('Configuración actualizada exitosamente.');
       } else {
         console.log('MqttConfigModal: Creating new config');
         await mqttConfigService.create(configData);
+        setSuccessMessage('Configuración creada exitosamente.');
       }
 
       onSave();
-      onClose();
+      // Don't close immediately to show success message
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (err: any) {
       console.error('MqttConfigModal: Submit error:', err);
       setError(err.response?.data?.message || 'Error al guardar configuración');
@@ -279,6 +307,12 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
             {error && (
               <div className="text-red-600 text-xs bg-red-50 p-1 rounded border border-red-200">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="text-green-600 text-xs bg-green-50 p-1 rounded border border-green-200">
+                {successMessage}
               </div>
             )}
           </form>
