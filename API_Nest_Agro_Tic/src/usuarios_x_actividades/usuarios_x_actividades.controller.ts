@@ -6,12 +6,16 @@ import {
   Patch,
   Param,
   Delete,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { UsuariosXActividadesService } from './usuarios_x_actividades.service';
 import { CreateUsuariosXActividadeDto } from './dto/create-usuarios_x_actividade.dto';
 import { UpdateUsuariosXActividadeDto } from './dto/update-usuarios_x_actividade.dto';
+import { AuthenticationGuard } from '../common/guards/authentication.guard';
 
 @Controller('usuarios-x-actividades')
+@UseGuards(AuthenticationGuard)
 export class UsuariosXActividadesController {
   constructor(
     private readonly usuariosXActividadesService: UsuariosXActividadesService,
@@ -25,8 +29,9 @@ export class UsuariosXActividadesController {
   }
 
   @Get()
-  findAll() {
-    return this.usuariosXActividadesService.findAll();
+  findAll(@Request() req: any) {
+    const userId = req.userId;
+    return this.usuariosXActividadesService.findByUser(userId);
   }
 
   @Get(':id')

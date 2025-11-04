@@ -8,6 +8,10 @@ const TablePage: React.FC = () => {
   const [results] = useState<ResultItem[]>([
     { lote: "Sur", cultivo: "Plátano", sensor: "pH de suelo", fecha: "2025-08-30" },
     { lote: "Norte", cultivo: "Cacao", sensor: "Temperatura ambiente", fecha: "2025-08-29" },
+    { lote: "Este", cultivo: "Café", sensor: "Humedad del suelo", fecha: "2025-08-28" },
+    { lote: "Oeste", cultivo: "Maíz", sensor: "Luz solar", fecha: "2025-08-27" },
+    { lote: "Centro", cultivo: "Tomate", sensor: "Temperatura del suelo", fecha: "2025-08-26" },
+    { lote: "Alto", cultivo: "Papa", sensor: "Velocidad del viento", fecha: "2025-08-25" },
   ]);
 
   const [searchTerm, setSearchTerm] = useState("");

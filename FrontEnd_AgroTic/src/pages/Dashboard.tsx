@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, Button } from '@heroui/react';
 import {
   UserIcon,
@@ -7,6 +7,8 @@ import {
   ChartBarIcon,
   ClockIcon,
   BeakerIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import {
   Tooltip,
@@ -15,6 +17,9 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { io, Socket } from 'socket.io-client';
+import axios from '../lib/axios/axios';
+import type { Notification } from '../types/notification.types';
 
 // Mock data for prototype
 const mockUser = {
@@ -41,11 +46,32 @@ const mockLastInventoryMovement = {
   products: ['Fertilizante X: 100 unidades', 'Semillas Y: 50 paquetes'],
 };
 
-const mockPendingActivities = [
-  { id: 1, name: 'Riego en Zona A', date: '2025-10-31', time: '08:00', priority: 'Alta' },
-  { id: 2, name: 'Cosecha de Tomates', date: '2025-11-01', time: '10:00', priority: 'Media' },
-  { id: 3, name: 'Aplicación de Fertilizante', date: '2025-11-02', time: '14:00', priority: 'Baja' },
-];
+interface AssignedActivity {
+  id: string;
+  actividad: {
+    descripcion: string;
+    categoriaActividad: {
+      nombre: string;
+    };
+    cultivoVariedadZona: {
+      zona: {
+        nombre: string;
+      };
+    };
+    responsable: {
+      nombres: string;
+      apellidos: string;
+      rol: {
+        nombre: string;
+      };
+    };
+  };
+  fechaAsignacion: string;
+  usuario: {
+    nombres: string;
+    apellidos: string;
+  };
+}
 
 const environmentalMetrics = [
   { name: 'Humedad', value: '65%', unit: '%' },
@@ -63,12 +89,76 @@ const pieData = [
 
 const Dashboard: React.FC = () => {
   const [currentMetricIndex, setCurrentMetricIndex] = useState(0);
+  const [assignedActivities, setAssignedActivities] = useState<AssignedActivity[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
+  const [isActivitiesHovered, setIsActivitiesHovered] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const nextMetric = () => {
     setCurrentMetricIndex((prevIndex) =>
       (prevIndex + 1) % environmentalMetrics.length
     );
   };
+
+  const fetchAssignedActivities = async () => {
+    try {
+      const response = await axios.get('/usuarios-x-actividades');
+      setAssignedActivities(response.data);
+      setCurrentActivityIndex(0); // Reset to first page when data changes
+    } catch (error) {
+      console.error('Error fetching assigned activities:', error);
+    }
+  };
+
+  const itemsPerPage = 2;
+  const totalPages = Math.ceil(assignedActivities.length / itemsPerPage);
+  const startIndex = currentActivityIndex * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentActivities = assignedActivities.slice(startIndex, endIndex);
+
+  const nextActivityPage = () => {
+    if (currentActivityIndex < totalPages - 1 && !isAnimating) {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentActivityIndex(currentActivityIndex + 1);
+        setIsAnimating(false);
+      }, 150);
+    }
+  };
+
+  const prevActivityPage = () => {
+    if (currentActivityIndex > 0 && !isAnimating) {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentActivityIndex(currentActivityIndex - 1);
+        setIsAnimating(false);
+      }, 150);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignedActivities();
+
+    // WebSocket connection for real-time updates
+    const token = localStorage.getItem('token');
+    if (token) {
+      const newSocket = io('http://localhost:3000/notifications', {
+        auth: { token },
+      });
+
+      newSocket.on('newNotification', () => {
+        // Refresh activities when a new assignment notification is received
+        fetchAssignedActivities();
+      });
+
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.disconnect();
+      };
+    }
+  }, []);
   return (
     <div className="bg-gray-50 w-full flex flex-col h-full">
 
@@ -77,23 +167,68 @@ const Dashboard: React.FC = () => {
         {/* Left Column - 2 cards */}
         <div className="lg:col-span-2 flex flex-col gap-6 h-full">
           {/* Pending Activities Card */}
-          <Card className="shadow-lg hover:shadow-xl transition-shadow flex-1">
+          <Card
+            className="shadow-lg hover:shadow-xl transition-shadow flex-1 relative"
+            onMouseEnter={() => setIsActivitiesHovered(true)}
+            onMouseLeave={() => setIsActivitiesHovered(false)}
+          >
             <CardHeader className="flex items-center gap-3">
               <ClockIcon className="w-8 h-8 text-orange-500" />
               <h3 className="text-lg font-semibold">Actividades Programadas</h3>
             </CardHeader>
-            <CardBody>
+            <CardBody className={`transition-transform duration-300 ease-in-out ${isAnimating ? 'transform -translate-y-2' : ''}`}>
               <ul className="space-y-2">
-                {mockPendingActivities.map((activity) => (
-                  <li key={activity.id} className="border-l-4 border-orange-500 pl-3 py-2">
-                    <p className="text-gray-700 font-medium">{activity.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {activity.date} - {activity.time} | Prioridad: {activity.priority}
-                    </p>
+                {assignedActivities.length === 0 ? (
+                  <li className="border-l-4 border-orange-500 pl-3 py-2">
+                    <p className="text-gray-700">No tienes actividades asignadas</p>
                   </li>
-                ))}
+                ) : (
+                  currentActivities.map((activity) => (
+                    <li key={activity.id} className="border-l-4 border-orange-500 pl-3 py-2">
+                      <p className="text-gray-700 font-medium">
+                        {activity.actividad?.categoriaActividad?.nombre || 'Sin categoría'}: {activity.actividad?.descripcion || 'Sin descripción'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Zona: {activity.actividad?.cultivoVariedadZona?.zona?.nombre || 'Sin zona'} | Asignado por: {activity.actividad?.responsable?.nombres || 'N/A'} {activity.actividad?.responsable?.apellidos || ''} / {activity.actividad?.responsable?.rol?.nombre || 'Sin rol'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Fecha de asignación: {new Date(activity.fechaAsignacion).toLocaleDateString()}
+                      </p>
+                    </li>
+                  ))
+                )}
               </ul>
             </CardBody>
+
+            {/* Navigation Buttons - Only visible on hover */}
+            {isActivitiesHovered && assignedActivities.length > itemsPerPage && (
+              <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
+                <button
+                  onClick={prevActivityPage}
+                  disabled={currentActivityIndex === 0 || isAnimating}
+                  className={`p-2 rounded-full text-white shadow-lg transition-all duration-200 ${
+                    currentActivityIndex === 0 || isAnimating
+                      ? 'opacity-50 cursor-not-allowed bg-[#15A55A]'
+                      : 'hover:scale-110 bg-[#15A55A] hover:bg-[#128a4a]'
+                  }`}
+                  aria-label="Previous activities page"
+                >
+                  <ChevronUpIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={nextActivityPage}
+                  disabled={currentActivityIndex >= totalPages - 1 || isAnimating}
+                  className={`p-2 rounded-full text-white shadow-lg transition-all duration-200 ${
+                    currentActivityIndex >= totalPages - 1 || isAnimating
+                      ? 'opacity-50 cursor-not-allowed bg-[#15A55A]'
+                      : 'hover:scale-110 bg-[#15A55A] hover:bg-[#128a4a]'
+                  }`}
+                  aria-label="Next activities page"
+                >
+                  <ChevronDownIcon className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </Card>
 
           {/* Last Inventory Movement Card */}

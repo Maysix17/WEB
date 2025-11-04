@@ -1,32 +1,55 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsuarioXActividad } from './entities/usuarios_x_actividades.entity';
 import { CreateUsuariosXActividadeDto } from './dto/create-usuarios_x_actividade.dto';
 import { UpdateUsuariosXActividadeDto } from './dto/update-usuarios_x_actividade.dto';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class UsuariosXActividadesService {
   constructor(
     @InjectRepository(UsuarioXActividad)
     private readonly uxActRepo: Repository<UsuarioXActividad>,
+    @Inject(forwardRef(() => NotificationsGateway))
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async create(
     createDto: CreateUsuariosXActividadeDto,
   ): Promise<UsuarioXActividad> {
     const entity = this.uxActRepo.create(createDto);
-    return await this.uxActRepo.save(entity);
+    const savedEntity = await this.uxActRepo.save(entity);
+
+    // Emit notification to the assigned user
+    const responsable = savedEntity.actividad?.responsable;
+    const assignedBy = responsable
+      ? `${responsable.nombres} ${responsable.apellidos} / ${responsable.rol?.nombre || 'Sin rol'}`
+      : 'Sistema';
+
+    const notification = {
+      id: savedEntity.id,
+      activityCategory: savedEntity.actividad?.categoriaActividad?.nombre || 'Sin categoría',
+      zone: savedEntity.actividad?.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
+      assignmentDate: savedEntity.fechaAsignacion,
+      assignedBy: assignedBy,
+    };
+
+    this.notificationsGateway.emitNotificationToUser(savedEntity.fkUsuarioId, notification);
+
+    return savedEntity;
   }
 
   async findAll(): Promise<UsuarioXActividad[]> {
-    return await this.uxActRepo.find({ relations: ['usuario', 'actividad'] });
+    return await this.uxActRepo.find({
+      relations: ['usuario', 'actividad', 'actividad.categoriaActividad', 'actividad.cultivoVariedadZona', 'actividad.cultivoVariedadZona.zona', 'actividad.responsable', 'actividad.responsable.rol']
+    });
   }
 
   async findOne(id: string): Promise<UsuarioXActividad> {
     const entity = await this.uxActRepo.findOne({
       where: { id },
-      relations: ['usuario', 'actividad'],
+      relations: ['usuario', 'actividad', 'actividad.categoriaActividad', 'actividad.cultivoVariedadZona', 'actividad.cultivoVariedadZona.zona', 'actividad.responsable', 'actividad.responsable.rol'],
     });
     if (!entity)
       throw new NotFoundException(
@@ -66,5 +89,13 @@ export class UsuariosXActividadesService {
       { fkActividadId: actividadId },
       { activo: false },
     );
+  }
+
+  async findByUser(userId: string): Promise<UsuarioXActividad[]> {
+    return await this.uxActRepo.find({
+      where: { fkUsuarioId: userId, activo: true },
+      relations: ['usuario', 'actividad', 'actividad.categoriaActividad', 'actividad.cultivoVariedadZona', 'actividad.cultivoVariedadZona.zona', 'actividad.responsable', 'actividad.responsable.rol'],
+      order: { fechaAsignacion: 'DESC' },
+    });
   }
 }

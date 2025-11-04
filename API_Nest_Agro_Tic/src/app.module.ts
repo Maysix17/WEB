@@ -52,6 +52,7 @@ import { EstadosFenologicosModule } from './estados_fenologicos/estados_fenologi
 import { PermissionsWsModule } from './permissions-ws/permissions-ws.module';
 import { MqttConfigModule } from './mqtt_config/mqtt_config.module';
 import { MqttModule } from './mqtt/mqtt.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -203,6 +204,7 @@ import { MqttModule } from './mqtt/mqtt.module';
     PermissionsWsModule,
     MqttModule,
     MqttConfigModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
