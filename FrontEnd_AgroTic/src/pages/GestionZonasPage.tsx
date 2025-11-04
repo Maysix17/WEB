@@ -148,7 +148,7 @@ const GestionZonasPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {/* Table */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden relative" style={{ height: 'calc(-280px + 90vh)' }}>
+            <div className="bg-white rounded-lg shadow-md overflow-hidden relative" style={{ height: 'calc(-280px + 93vh)' }}>
               <div className="px-6 py-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-800">Resultados</h2>
@@ -289,13 +289,13 @@ const GestionZonasPage: React.FC = () => {
 
           {/* Map */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden relative" style={{ height: 'calc(-280px + 90vh)' }}>
+            <div className="bg-white rounded-lg shadow-md overflow-hidden relative" style={{ height: 'calc(-280px + 93vh)' }}>
               <div className="px-6 py-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-800">Mapa de Zonas</h2>
                 </div>
               </div>
-              <div className="w-full h-full rounded overflow-hidden flex items-center justify-center" style={{ height: '75%' }}>
+              <div className="w-full h-full rounded overflow-hidden flex items-center " style={{ height: '80%', width: '50vw' }}>
                 <LeafletMap
                   zonas={filteredZonas.map(z => ({
                     id: z.id,
