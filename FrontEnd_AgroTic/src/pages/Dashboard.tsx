@@ -17,8 +17,8 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { io, Socket } from 'socket.io-client';
 import axios from '../lib/axios/axios';
+import { useNotificationsSocket } from '../hooks/useNotificationsSocket';
 import type { Notification } from '../types/notification.types';
 
 // Mock data for prototype
@@ -90,7 +90,6 @@ const pieData = [
 const Dashboard: React.FC = () => {
   const [currentMetricIndex, setCurrentMetricIndex] = useState(0);
   const [assignedActivities, setAssignedActivities] = useState<AssignedActivity[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [isActivitiesHovered, setIsActivitiesHovered] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -137,27 +136,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Handler for new notifications
+  const handleNewNotification = () => {
+    fetchAssignedActivities();
+  };
+
+  // Use the notifications socket hook
+  useNotificationsSocket(handleNewNotification);
+
   useEffect(() => {
     fetchAssignedActivities();
-
-    // WebSocket connection for real-time updates
-    const token = localStorage.getItem('token');
-    if (token) {
-      const newSocket = io('http://localhost:3000/notifications', {
-        auth: { token },
-      });
-
-      newSocket.on('newNotification', () => {
-        // Refresh activities when a new assignment notification is received
-        fetchAssignedActivities();
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.disconnect();
-      };
-    }
   }, []);
   return (
     <div className="bg-gray-50 w-full flex flex-col h-full">

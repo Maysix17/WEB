@@ -42,8 +42,24 @@ export class NotificationsGateway
   async handleConnection(client: Socket, ...args: any[]) {
     try {
       this.logger.log(`New connection attempt from client: ${client.id}`);
-      const token = client.handshake.auth.token || client.handshake.query.token;
-      this.logger.log(`Token present: ${!!token}`);
+
+      // Try to get token from cookies first (HttpOnly cookies)
+      const cookies = client.handshake.headers.cookie;
+      let token: string | null = null;
+
+      if (cookies) {
+        const cookiePairs = cookies.split(';');
+        for (const cookie of cookiePairs) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'access_token') {
+            token = decodeURIComponent(value); // Decode URL-encoded cookie value
+            break;
+          }
+        }
+      }
+
+      // Fallback to auth/query params
+      token = token || client.handshake.auth.token || client.handshake.query.token;
 
       if (!token) {
         this.logger.warn(`No token provided for client: ${client.id}`);
@@ -59,7 +75,7 @@ export class NotificationsGateway
       client.data.user = payload;
       client.join(payload.sub); // Join room based on user ID
       this.logger.log(
-        `Client connected successfully: ${client.id}, User ID: ${payload.sub}, User: ${JSON.stringify(payload)}`,
+        `Client connected successfully: ${client.id}, User ID: ${payload.sub}`,
       );
     } catch (error) {
       this.logger.error(

@@ -10,30 +10,14 @@ export const useNotificationsSocket = (onNotification?: (notification: Notificat
   }, [onNotification]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const socket: Socket = io(`${import.meta.env.VITE_API_URL}/notifications`, {
+      withCredentials: true,
+    });
 
-    if (token) {
-      const socket: Socket = io(`${import.meta.env.VITE_API_URL}/notifications`, {
-        auth: { token },
-      });
+    socket.on('newNotification', handleNotification);
 
-      socket.on('connect', () => {
-        console.log('Connected to notifications WebSocket');
-      });
-
-      socket.on('newNotification', handleNotification);
-
-      socket.on('disconnect', () => {
-        console.log('Disconnected from notifications WebSocket');
-      });
-
-      socket.on('connect_error', (error) => {
-        console.error('WebSocket connection error:', error);
-      });
-
-      return () => {
-        socket.disconnect();
-      };
-    }
+    return () => {
+      socket.disconnect();
+    };
   }, [handleNotification]);
 };
