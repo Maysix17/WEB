@@ -47,15 +47,58 @@ export class CultivosVariedadXZonaService {
   }
 
   async findOne(id: number): Promise<CultivosVariedadXZona> {
+    console.log(`[DEBUG] findOne called for id: ${id}`);
     const cvz = await this.cvzRepository.findOne({
       where: { id: id.toString() },
+      relations: [
+        'cultivoXVariedad',
+        'cultivoXVariedad.variedad',
+        'cultivoXVariedad.variedad.tipoCultivo',
+        'zona',
+      ],
     });
+    console.log(`[DEBUG] findOne result:`, cvz);
+    if (cvz) {
+      console.log(`[DEBUG] cultivoXVariedad:`, cvz.cultivoXVariedad);
+      console.log(`[DEBUG] variedad:`, cvz.cultivoXVariedad?.variedad);
+      console.log(`[DEBUG] tipoCultivo:`, cvz.cultivoXVariedad?.variedad?.tipoCultivo);
+      console.log(`[DEBUG] zona:`, cvz.zona);
+    }
     if (!cvz) {
       throw new NotFoundException(
         `CultivosVariedadXZona con id ${id} no encontrada`,
       );
     }
     return cvz;
+  }
+
+  async getCropDetails(cvzId: string): Promise<{tipoCultivo: string, variedad: string, zona: string}> {
+    console.log(`[DEBUG] getCropDetails called for cvzId: ${cvzId}`);
+    const cvz = await this.cvzRepository.findOne({
+      where: { id: cvzId },
+      relations: [
+        'cultivoXVariedad',
+        'cultivoXVariedad.variedad',
+        'cultivoXVariedad.variedad.tipoCultivo',
+        'zona',
+      ],
+    });
+
+    if (!cvz) {
+      throw new NotFoundException(`Cultivo con id ${cvzId} no encontrado`);
+    }
+
+    const tipoCultivo = cvz.cultivoXVariedad?.variedad?.tipoCultivo?.nombre || 'Tipo desconocido';
+    const variedad = cvz.cultivoXVariedad?.variedad?.nombre || 'Variedad desconocida';
+    const zona = cvz.zona?.nombre || 'Zona desconocida';
+
+    console.log(`[DEBUG] getCropDetails result: tipoCultivo=${tipoCultivo}, variedad=${variedad}, zona=${zona}`);
+
+    return {
+      tipoCultivo,
+      variedad,
+      zona
+    };
   }
 
   async update(

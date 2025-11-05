@@ -229,11 +229,15 @@ const Dashboard: React.FC = () => {
         const harvest = harvestResponse.data;
         console.log('[DEBUG] fetchLastSale: Harvest data:', harvest);
 
-        if (harvest && harvest.fkCultivosVariedadXZonaId) {
-          console.log('[DEBUG] fetchLastSale: Harvest has crop ID:', harvest.fkCultivosVariedadXZonaId);
+        if (harvest && harvest.cultivosVariedadXZona) {
+          console.log('[DEBUG] fetchLastSale: Harvest has crop relations:', harvest.cultivosVariedadXZona);
 
-          // For now, skip the problematic crop details fetch and use basic data
-          console.log('[DEBUG] fetchLastSale: Skipping crop details fetch due to API issues');
+          const cvz = harvest.cultivosVariedadXZona;
+          const tipoCultivo = cvz.cultivoXVariedad?.variedad?.tipoCultivo?.nombre || 'Tipo desconocido';
+          const variedad = cvz.cultivoXVariedad?.variedad?.nombre || 'Variedad desconocida';
+          const zona = cvz.zona?.nombre || 'Zona desconocida';
+
+          console.log('[DEBUG] fetchLastSale: Extracted crop details - tipoCultivo:', tipoCultivo, 'variedad:', variedad, 'zona:', zona);
 
           const saleData: LastSaleData = {
             id: latestSale.id,
@@ -243,15 +247,29 @@ const Dashboard: React.FC = () => {
             ingresoTotal: parseFloat(latestSale.cantidad) * (parseFloat(latestSale.precioKilo) || 0),
             precioVenta: parseFloat(latestSale.precioUnitario) || 0,
             producto: 'Producto', // Placeholder until API is fixed
-            cultivo: 'Cultivo', // Placeholder until API is fixed
-            zona: 'Zona', // Placeholder until API is fixed
+            cultivo: `${tipoCultivo}, ${variedad}`,
+            zona: zona,
           };
 
           console.log('[DEBUG] fetchLastSale: Setting sale data:', saleData);
           setLastSale(saleData);
           setSelectedCropId(harvest.fkCultivosVariedadXZonaId);
         } else {
-          console.log('[DEBUG] fetchLastSale: Harvest missing crop ID');
+          console.log('[DEBUG] fetchLastSale: Harvest missing crop relations');
+          // Fallback to basic data
+          const saleData: LastSaleData = {
+            id: latestSale.id,
+            fecha: latestSale.fecha,
+            cantidad: parseFloat(latestSale.cantidad),
+            precioKilo: parseFloat(latestSale.precioKilo) || 0,
+            ingresoTotal: parseFloat(latestSale.cantidad) * (parseFloat(latestSale.precioKilo) || 0),
+            precioVenta: parseFloat(latestSale.precioUnitario) || 0,
+            producto: 'Producto',
+            cultivo: 'Cultivo desconocido',
+            zona: 'Zona desconocida',
+          };
+          setLastSale(saleData);
+          setSelectedCropId(harvest.fkCultivosVariedadXZonaId);
         }
       } else {
         console.log('[DEBUG] fetchLastSale: No sales found');

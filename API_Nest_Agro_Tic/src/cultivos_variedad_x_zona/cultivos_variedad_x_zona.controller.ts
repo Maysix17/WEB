@@ -41,6 +41,7 @@ export class CultivosVariedadXZonaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log(`[DEBUG] Controller findOne called with id: ${id}`);
     return this.cultivosVariedadXZonaService.findOne(+id);
   }
 
@@ -80,6 +81,12 @@ export class CultivosVariedadXZonaController {
   @Get(':id/edad')
   calcularEdadCultivo(@Param('id') id: string) {
     return this.cultivosVariedadXZonaService.calcularEdadCultivo(id);
+  }
+
+  @Get(':id/detalles-cultivo')
+  getCropDetails(@Param('id') id: string) {
+    console.log(`[DEBUG] Controller getCropDetails called with id: ${id}`);
+    return this.cultivosVariedadXZonaService.getCropDetails(id);
   }
 
 }

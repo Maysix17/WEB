@@ -55,7 +55,16 @@ export class CosechasService {
   }
 
   async findOne(id: string): Promise<Cosecha> {
-    const cosecha = await this.cosechaRepository.findOne({ where: { id } });
+    const cosecha = await this.cosechaRepository.findOne({
+      where: { id },
+      relations: [
+        'cultivosVariedadXZona',
+        'cultivosVariedadXZona.cultivoXVariedad',
+        'cultivosVariedadXZona.cultivoXVariedad.variedad',
+        'cultivosVariedadXZona.cultivoXVariedad.variedad.tipoCultivo',
+        'cultivosVariedadXZona.zona'
+      ],
+    });
     if (!cosecha) {
       throw new NotFoundException(`Cosecha con id ${id} no encontrada`);
     }
