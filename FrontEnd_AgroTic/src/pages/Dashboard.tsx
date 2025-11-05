@@ -40,6 +40,8 @@ interface LastSaleData {
   ingresoTotal: number;
   producto: string;
   cultivo: string;
+  precioVenta: number;
+  zona: string;
 }
 
 interface LastHarvestData {
@@ -236,11 +238,13 @@ const Dashboard: React.FC = () => {
           const saleData: LastSaleData = {
             id: latestSale.id,
             fecha: latestSale.fecha,
-            cantidad: latestSale.cantidad,
-            precioKilo: latestSale.precioKilo || 0,
-            ingresoTotal: latestSale.cantidad * (latestSale.precioKilo || 0),
+            cantidad: parseFloat(latestSale.cantidad),
+            precioKilo: parseFloat(latestSale.precioKilo) || 0,
+            ingresoTotal: parseFloat(latestSale.cantidad) * (parseFloat(latestSale.precioKilo) || 0),
+            precioVenta: parseFloat(latestSale.precioUnitario) || 0,
             producto: 'Producto', // Placeholder until API is fixed
             cultivo: 'Cultivo', // Placeholder until API is fixed
+            zona: 'Zona', // Placeholder until API is fixed
           };
 
           console.log('[DEBUG] fetchLastSale: Setting sale data:', saleData);
@@ -602,8 +606,8 @@ const Dashboard: React.FC = () => {
                       <p className="text-gray-700"><strong>Fecha:</strong> {new Date(lastSale.fecha).toLocaleDateString()}</p>
                       <p className="text-gray-700"><strong>Ingreso:</strong> ${lastSale.ingresoTotal.toFixed(2)}</p>
                       <p className="text-gray-700"><strong>Cantidad Vendida:</strong> {lastSale.cantidad} kg</p>
-                      <p className="text-gray-700"><strong>Producto:</strong> {lastSale.producto}</p>
-                      <p className="text-gray-700"><strong>Cultivo:</strong> {lastSale.cultivo}</p>
+                      <p className="text-gray-700"><strong>Precio de Venta:</strong> ${lastSale.precioVenta.toFixed(2)}</p>
+                      <p className="text-gray-700"><strong>Cultivo - Zona:</strong> {lastSale.cultivo} - {lastSale.zona}</p>
                     </>
                   ) : (
                     <p className="text-gray-700">No hay ventas registradas</p>

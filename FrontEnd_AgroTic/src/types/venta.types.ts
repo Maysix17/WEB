@@ -4,7 +4,9 @@ export interface Venta {
    fecha: string;
    fkCosechaId: string;
    precioKilo?: number;
- }
+   precioUnitario?: number;
+   unidadMedida?: string;
+  }
 
 export interface CreateVentaDto {
     cantidad: number;
