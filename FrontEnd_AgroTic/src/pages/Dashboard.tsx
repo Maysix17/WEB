@@ -10,13 +10,6 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import {
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
 import axios from '../lib/axios/axios';
 import { useNotificationsSocket } from '../hooks/useNotificationsSocket';
 // Removed unused import
@@ -131,8 +124,6 @@ const Dashboard: React.FC = () => {
   const [currentHarvestIndex, setCurrentHarvestIndex] = useState(0);
   const [isHarvestHovered, setIsHarvestHovered] = useState(false);
   const [isHarvestAnimating, setIsHarvestAnimating] = useState(false);
-  const [selectedCropId, setSelectedCropId] = useState<string | null>(null);
-  const [pieChartData, setPieChartData] = useState<any[]>([]);
 
   const nextMetric = () => {
     setCurrentMetricIndex((prevIndex) =>
@@ -309,13 +300,6 @@ const Dashboard: React.FC = () => {
           setTodaysSales(salesData);
           setCurrentSaleIndex(0); // Reset to first sale
 
-          // Set selected crop for pie chart from first sale
-          if (salesData.length > 0) {
-            const firstSale = todaysVentas[0];
-            const harvestResponse = await axios.get(`/cosechas/${firstSale.fkCosechaId}`);
-            const harvest = harvestResponse.data;
-            setSelectedCropId(harvest?.fkCultivosVariedadXZonaId || null);
-          }
         } else {
           console.log('[DEBUG] fetchTodaysSales: No sales today');
           setTodaysSales([]);
@@ -380,29 +364,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchPieChartData = async (cropId: string) => {
-    try {
-      console.log('[DEBUG] fetchPieChartData: Fetching data for cropId:', cropId);
-      const response = await axios.get(`/finanzas/cultivo/${cropId}/dinamico`);
-      const finanzas = response.data;
-      console.log('[DEBUG] fetchPieChartData: Received finanzas data:', finanzas);
-
-      const data = [
-        { name: 'Costos', value: finanzas.costoTotalProduccion || 0, color: '#8884d8' },
-        { name: 'Ingresos', value: finanzas.ingresosTotales || 0, color: '#82ca9d' },
-      ];
-
-      console.log('[DEBUG] fetchPieChartData: Setting pie chart data:', data);
-      setPieChartData(data);
-    } catch (error) {
-      console.error('[DEBUG] fetchPieChartData: Error fetching data:', error);
-      setPieChartData([
-        { name: 'Ventas', value: 60, color: '#8884d8' },
-        { name: 'Cosechas', value: 30, color: '#82ca9d' },
-        { name: 'Otros', value: 10, color: '#ffc658' },
-      ]);
-    }
-  };
 
   const fetchUserProfile = async () => {
     try {
@@ -452,16 +413,6 @@ const Dashboard: React.FC = () => {
       setTimeout(() => {
         setCurrentSaleIndex(currentSaleIndex + 1);
         setIsSaleAnimating(false);
-        // Update pie chart when sale changes
-        if (todaysSales[currentSaleIndex + 1]) {
-          // Fetch harvest for the new sale to get crop ID
-          axios.get(`/cosechas/${todaysSales[currentSaleIndex + 1].id}`)
-            .then(response => {
-              const harvest = response.data;
-              setSelectedCropId(harvest?.fkCultivosVariedadXZonaId || null);
-            })
-            .catch(error => console.error('Error updating crop ID:', error));
-        }
       }, 150);
     }
   };
@@ -472,16 +423,6 @@ const Dashboard: React.FC = () => {
       setTimeout(() => {
         setCurrentSaleIndex(currentSaleIndex - 1);
         setIsSaleAnimating(false);
-        // Update pie chart when sale changes
-        if (todaysSales[currentSaleIndex - 1]) {
-          // Fetch harvest for the new sale to get crop ID
-          axios.get(`/cosechas/${todaysSales[currentSaleIndex - 1].id}`)
-            .then(response => {
-              const harvest = response.data;
-              setSelectedCropId(harvest?.fkCultivosVariedadXZonaId || null);
-            })
-            .catch(error => console.error('Error updating crop ID:', error));
-        }
       }, 150);
     }
   };
@@ -570,15 +511,6 @@ const Dashboard: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Update pie chart when selected crop changes
-  useEffect(() => {
-    if (selectedCropId) {
-      console.log('[DEBUG] Dashboard: selectedCropId changed, fetching pie chart data for:', selectedCropId);
-      fetchPieChartData(selectedCropId);
-    } else {
-      console.log('[DEBUG] Dashboard: No selectedCropId, skipping pie chart fetch');
-    }
-  }, [selectedCropId]);
   return (
     <div className="bg-gray-50 w-full flex flex-col h-full">
 
@@ -838,48 +770,32 @@ const Dashboard: React.FC = () => {
               }`} style={{ animationDelay: '1.4s' }}>Ventas de Hoy</h3>
             </CardHeader>
             <CardBody className={`transition-transform duration-300 ease-in-out ${isMovementAnimating ? 'transform -translate-y-2' : ''} py-3`}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-full">
-                <div className="flex flex-col justify-center">
-                  {todaysSales.length === 0 ? (
-                    <p className="text-sm text-gray-700">No hay ventas registradas hoy</p>
-                  ) : (
-                    <div className="space-y-1">
-                      <div className="border-l-4 border-yellow-500 pl-3 py-2">
-                        <p className="text-gray-700 font-medium">
-                          {todaysSales[currentSaleIndex].cultivo} - {todaysSales[currentSaleIndex].zona}
+              <div className="flex flex-col justify-center h-full">
+                {todaysSales.length === 0 ? (
+                  <p className="text-sm text-gray-700">No hay ventas registradas hoy</p>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="border-l-4 border-yellow-500 pl-3 py-2">
+                      <p className="text-gray-700 font-medium">
+                        {todaysSales[currentSaleIndex].cultivo} - {todaysSales[currentSaleIndex].zona}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Fecha: {new Date(todaysSales[currentSaleIndex].fecha).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Ingreso: ${todaysSales[currentSaleIndex].ingresoTotal.toFixed(2)} | Cantidad: {todaysSales[currentSaleIndex].cantidad} kg
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Precio: ${todaysSales[currentSaleIndex].precioVenta.toFixed(2)}
+                      </p>
+                      {todaysSales.length > 1 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Venta {currentSaleIndex + 1} de {todaysSales.length}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          Fecha: {new Date(todaysSales[currentSaleIndex].fecha).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Ingreso: ${todaysSales[currentSaleIndex].ingresoTotal.toFixed(2)} | Cantidad: {todaysSales[currentSaleIndex].cantidad} kg
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Precio: ${todaysSales[currentSaleIndex].precioVenta.toFixed(2)}
-                        </p>
-                        {todaysSales.length > 1 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Venta {currentSaleIndex + 1} de {todaysSales.length}
-                          </p>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex justify-center items-center">
-                  <div className="w-full flex justify-center">
-                    <ResponsiveContainer width="80%" height={100}>
-                      <PieChart>
-                        <Pie data={pieChartData} dataKey="value" outerRadius={40}>
-                          {pieChartData.map((entry: any) => (
-                            <Cell key={`cell-${entry.name}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
                   </div>
-                </div>
+                )}
               </div>
             </CardBody>
 
