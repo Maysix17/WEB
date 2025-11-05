@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, Button } from '@heroui/react';
 import {
   UserIcon,
@@ -21,6 +21,8 @@ import axios from '../lib/axios/axios';
 import { useNotificationsSocket } from '../hooks/useNotificationsSocket';
 // Removed unused import
 import { movementsService } from '../services/movementsService';
+import { getVentas } from '../services/ventaService';
+import { getCosechas } from '../services/cosechasService';
 import type { MovimientoInventario } from '../types/movements.types';
 
 // Mock data for prototype
@@ -29,17 +31,24 @@ const mockUser = {
   role: 'Administrador',
 };
 
-const mockLastHarvest = {
-  date: '2025-10-30',
-  quantity: '500 kg',
-  details: 'Tomates orgánicos',
-};
+// Real data interfaces
+interface LastSaleData {
+  id: string;
+  fecha: string;
+  cantidad: number;
+  precioKilo: number;
+  ingresoTotal: number;
+  producto: string;
+  cultivo: string;
+}
 
-const mockLastSale = {
-  date: '2025-10-29',
-  total: '$2,500',
-  products: ['Tomates', 'Lechugas', 'Zanahorias'],
-};
+interface LastHarvestData {
+  id: string;
+  fecha: string;
+  cantidad: number;
+  unidadMedida: string;
+  cultivo: string;
+}
 
 // Removed unused mock data
 
@@ -87,11 +96,7 @@ const environmentalMetrics = [
 ];
 
 
-const pieData = [
-  { name: 'Ventas', value: 60, color: '#8884d8' },
-  { name: 'Cosechas', value: 30, color: '#82ca9d' },
-  { name: 'Otros', value: 10, color: '#ffc658' },
-];
+// Pie chart data will be dynamically loaded
 
 const Dashboard: React.FC = () => {
   const [currentMetricIndex, setCurrentMetricIndex] = useState(0);
@@ -105,6 +110,12 @@ const Dashboard: React.FC = () => {
   const [currentMovementPage, setCurrentMovementPage] = useState(0);
   const [isMovementsHovered, setIsMovementsHovered] = useState(false);
   const [isMovementAnimating, setIsMovementAnimating] = useState(false);
+
+  // Real data states
+  const [lastSale, setLastSale] = useState<LastSaleData | null>(null);
+  const [lastHarvest, setLastHarvest] = useState<LastHarvestData | null>(null);
+  const [selectedCropId, setSelectedCropId] = useState<string | null>(null);
+  const [pieChartData, setPieChartData] = useState<any[]>([]);
 
   const nextMetric = () => {
     setCurrentMetricIndex((prevIndex) =>
@@ -199,6 +210,117 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const fetchLastSale = async () => {
+    try {
+      console.log('[DEBUG] fetchLastSale: Starting to fetch last sale');
+      const ventas = await getVentas();
+      console.log('[DEBUG] fetchLastSale: Retrieved ventas:', ventas.length, 'sales');
+
+      if (ventas.length > 0) {
+        // Get the most recent sale
+        const latestSale = ventas.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0];
+        console.log('[DEBUG] fetchLastSale: Latest sale:', latestSale);
+
+        // Fetch additional details from the sale's harvest with relations
+        console.log('[DEBUG] fetchLastSale: Fetching harvest details for cosechaId:', latestSale.fkCosechaId);
+        const harvestResponse = await axios.get(`/cosechas/${latestSale.fkCosechaId}`);
+        const harvest = harvestResponse.data;
+        console.log('[DEBUG] fetchLastSale: Harvest data:', harvest);
+
+        if (harvest && harvest.fkCultivosVariedadXZonaId) {
+          console.log('[DEBUG] fetchLastSale: Harvest has crop ID:', harvest.fkCultivosVariedadXZonaId);
+
+          // For now, skip the problematic crop details fetch and use basic data
+          console.log('[DEBUG] fetchLastSale: Skipping crop details fetch due to API issues');
+
+          const saleData: LastSaleData = {
+            id: latestSale.id,
+            fecha: latestSale.fecha,
+            cantidad: latestSale.cantidad,
+            precioKilo: latestSale.precioKilo || 0,
+            ingresoTotal: latestSale.cantidad * (latestSale.precioKilo || 0),
+            producto: 'Producto', // Placeholder until API is fixed
+            cultivo: 'Cultivo', // Placeholder until API is fixed
+          };
+
+          console.log('[DEBUG] fetchLastSale: Setting sale data:', saleData);
+          setLastSale(saleData);
+          setSelectedCropId(harvest.fkCultivosVariedadXZonaId);
+        } else {
+          console.log('[DEBUG] fetchLastSale: Harvest missing crop ID');
+        }
+      } else {
+        console.log('[DEBUG] fetchLastSale: No sales found');
+      }
+    } catch (error) {
+      console.error('[DEBUG] fetchLastSale: Error:', error);
+      setLastSale(null);
+    }
+  };
+
+  const fetchLastHarvest = async () => {
+    try {
+      console.log('[DEBUG] fetchLastHarvest: Starting to fetch last harvest');
+      const cosechas = await getCosechas();
+      console.log('[DEBUG] fetchLastHarvest: Retrieved cosechas:', cosechas.length, 'harvests');
+
+      if (cosechas.length > 0) {
+        // Get the most recent harvest
+        const latestHarvest = cosechas.sort((a, b) => new Date(b.fecha || '').getTime() - new Date(a.fecha || '').getTime())[0];
+        console.log('[DEBUG] fetchLastHarvest: Latest harvest:', latestHarvest);
+
+        if (latestHarvest && latestHarvest.fkCultivosVariedadXZonaId) {
+          console.log('[DEBUG] fetchLastHarvest: Harvest has crop ID:', latestHarvest.fkCultivosVariedadXZonaId);
+
+          // For now, skip the problematic crop details fetch and use basic data
+          console.log('[DEBUG] fetchLastHarvest: Skipping crop details fetch due to API issues');
+
+          const harvestData: LastHarvestData = {
+            id: latestHarvest.id,
+            fecha: latestHarvest.fecha || '',
+            cantidad: latestHarvest.cantidad,
+            unidadMedida: latestHarvest.unidadMedida,
+            cultivo: 'Cultivo', // Placeholder until API is fixed
+          };
+
+          console.log('[DEBUG] fetchLastHarvest: Setting harvest data:', harvestData);
+          setLastHarvest(harvestData);
+        } else {
+          console.log('[DEBUG] fetchLastHarvest: Harvest missing crop ID');
+        }
+      } else {
+        console.log('[DEBUG] fetchLastHarvest: No harvests found');
+      }
+    } catch (error) {
+      console.error('[DEBUG] fetchLastHarvest: Error:', error);
+      setLastHarvest(null);
+    }
+  };
+
+  const fetchPieChartData = async (cropId: string) => {
+    try {
+      console.log('[DEBUG] fetchPieChartData: Fetching data for cropId:', cropId);
+      const response = await axios.get(`/finanzas/cultivo/${cropId}/dinamico`);
+      const finanzas = response.data;
+      console.log('[DEBUG] fetchPieChartData: Received finanzas data:', finanzas);
+
+      const data = [
+        { name: 'Costos', value: finanzas.costoTotalProduccion || 0, color: '#8884d8' },
+        { name: 'Ingresos', value: finanzas.ingresosTotales || 0, color: '#82ca9d' },
+      ];
+
+      console.log('[DEBUG] fetchPieChartData: Setting pie chart data:', data);
+      setPieChartData(data);
+    } catch (error) {
+      console.error('[DEBUG] fetchPieChartData: Error fetching data:', error);
+      setPieChartData([
+        { name: 'Ventas', value: 60, color: '#8884d8' },
+        { name: 'Cosechas', value: 30, color: '#82ca9d' },
+        { name: 'Otros', value: 10, color: '#ffc658' },
+      ]);
+    }
+  };
+
   const itemsPerPage = 2;
   const totalPages = Math.ceil(assignedActivities.length / itemsPerPage);
   const startIndex = currentActivityIndex * itemsPerPage;
@@ -253,8 +375,11 @@ const Dashboard: React.FC = () => {
 
   // Handler for new notifications
   const handleNewNotification = () => {
+    console.log('[DEBUG] handleNewNotification: Received notification, refreshing data');
     fetchAssignedActivities();
     fetchTodaysInventoryMovements(); // Also fetch movements on notification
+    fetchLastSale(); // Fetch latest sale data
+    fetchLastHarvest(); // Fetch latest harvest data
   };
 
   // Use the notifications socket hook
@@ -267,9 +392,22 @@ const Dashboard: React.FC = () => {
   // };
 
   useEffect(() => {
+    console.log('[DEBUG] Dashboard: Initial useEffect - fetching all data');
     fetchAssignedActivities();
     fetchTodaysInventoryMovements();
+    fetchLastSale();
+    fetchLastHarvest();
   }, []);
+
+  // Update pie chart when selected crop changes
+  useEffect(() => {
+    if (selectedCropId) {
+      console.log('[DEBUG] Dashboard: selectedCropId changed, fetching pie chart data for:', selectedCropId);
+      fetchPieChartData(selectedCropId);
+    } else {
+      console.log('[DEBUG] Dashboard: No selectedCropId, skipping pie chart fetch');
+    }
+  }, [selectedCropId]);
   return (
     <div className="bg-gray-50 w-full flex flex-col h-full">
 
@@ -357,7 +495,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-gray-700">No hay movimientos registrados hoy</p>
               ) : (
                 <div className="space-y-2">
-                  {currentMovements.map((movement, index) => (
+                  {currentMovements.map((movement) => (
                     <div key={movement.id} className="border-l-4 border-purple-500 pl-3 py-2">
                       <p className="text-gray-700 font-medium">
                         {movement.type}: {movement.product}
@@ -459,16 +597,24 @@ const Dashboard: React.FC = () => {
             <CardBody className="flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                 <div className="flex flex-col justify-center">
-                  <p className="text-gray-700"><strong>Fecha:</strong> {mockLastSale.date}</p>
-                  <p className="text-gray-700"><strong>Monto Total:</strong> {mockLastSale.total}</p>
-                  <p className="text-gray-700"><strong>Productos:</strong> {mockLastSale.products.join(', ')}</p>
+                  {lastSale ? (
+                    <>
+                      <p className="text-gray-700"><strong>Fecha:</strong> {new Date(lastSale.fecha).toLocaleDateString()}</p>
+                      <p className="text-gray-700"><strong>Ingreso:</strong> ${lastSale.ingresoTotal.toFixed(2)}</p>
+                      <p className="text-gray-700"><strong>Cantidad Vendida:</strong> {lastSale.cantidad} kg</p>
+                      <p className="text-gray-700"><strong>Producto:</strong> {lastSale.producto}</p>
+                      <p className="text-gray-700"><strong>Cultivo:</strong> {lastSale.cultivo}</p>
+                    </>
+                  ) : (
+                    <p className="text-gray-700">No hay ventas registradas</p>
+                  )}
                 </div>
                 <div className="flex justify-center items-center">
                   <ResponsiveContainer width="100%" height={120}>
                     <PieChart>
-                      <Pie data={pieData} dataKey="value" outerRadius={50}>
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Pie data={pieChartData} dataKey="value" outerRadius={50}>
+                        {pieChartData.map((entry: any) => (
+                          <Cell key={`cell-${entry.name}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -486,9 +632,15 @@ const Dashboard: React.FC = () => {
               <h3 className="text-lg font-semibold">Última Cosecha</h3>
             </CardHeader>
             <CardBody className="flex-1 flex flex-col justify-center">
-              <p className="text-gray-700"><strong>Fecha:</strong> {mockLastHarvest.date}</p>
-              <p className="text-gray-700"><strong>Cantidad:</strong> {mockLastHarvest.quantity}</p>
-              <p className="text-gray-700"><strong>Detalles:</strong> {mockLastHarvest.details}</p>
+              {lastHarvest ? (
+                <>
+                  <p className="text-gray-700"><strong>Fecha:</strong> {new Date(lastHarvest.fecha).toLocaleDateString()}</p>
+                  <p className="text-gray-700"><strong>Cantidad Cosechada:</strong> {lastHarvest.cantidad} {lastHarvest.unidadMedida}</p>
+                  <p className="text-gray-700"><strong>Cultivo:</strong> {lastHarvest.cultivo}</p>
+                </>
+              ) : (
+                <p className="text-gray-700">No hay cosechas registradas</p>
+              )}
             </CardBody>
           </Card>
         </div>

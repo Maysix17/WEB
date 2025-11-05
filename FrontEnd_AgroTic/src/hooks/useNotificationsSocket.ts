@@ -4,19 +4,36 @@ import type { Notification } from '../types/notification.types';
 
 export const useNotificationsSocket = (onNotification?: (notification: Notification) => void) => {
   const handleNotification = useCallback((notification: Notification) => {
+    console.log('[DEBUG] useNotificationsSocket: Received notification:', notification);
     if (onNotification) {
       onNotification(notification);
     }
   }, [onNotification]);
 
   useEffect(() => {
+    console.log('[DEBUG] useNotificationsSocket: Initializing socket connection');
+    console.log('[DEBUG] useNotificationsSocket: API URL:', import.meta.env.VITE_API_URL);
+
     const socket: Socket = io(`${import.meta.env.VITE_API_URL}/notifications`, {
       withCredentials: true,
+    });
+
+    socket.on('connect', () => {
+      console.log('[DEBUG] useNotificationsSocket: Socket connected successfully');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('[DEBUG] useNotificationsSocket: Socket connection error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[DEBUG] useNotificationsSocket: Socket disconnected:', reason);
     });
 
     socket.on('newNotification', handleNotification);
 
     return () => {
+      console.log('[DEBUG] useNotificationsSocket: Cleaning up socket connection');
       socket.disconnect();
     };
   }, [handleNotification]);
