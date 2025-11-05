@@ -102,11 +102,9 @@ const Dashboard: React.FC = () => {
 
   // Inventory movements state
   const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
-  const [currentMovementIndex, setCurrentMovementIndex] = useState(0);
+  const [currentMovementPage, setCurrentMovementPage] = useState(0);
   const [isMovementsHovered, setIsMovementsHovered] = useState(false);
   const [isMovementAnimating, setIsMovementAnimating] = useState(false);
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
-  const autoRotateRef = useRef<number | null>(null);
 
   const nextMetric = () => {
     setCurrentMetricIndex((prevIndex) =>
@@ -187,14 +185,14 @@ const Dashboard: React.FC = () => {
       const transformedMovements: InventoryMovement[] = movements.map((movement: MovimientoInventario) => ({
         id: movement.id,
         userName: movement.responsable || 'Usuario desconocido',
-        userId: movement.responsable || 'N/A', // Assuming responsable is the user ID or name
+        userId: '', // Not needed since responsable already contains name_DNI
         date: new Date(movement.fechaMovimiento).toLocaleDateString(),
         type: movement.tipoMovimiento?.nombre || 'Tipo desconocido',
         product: movement.lote?.producto?.nombre || 'Producto desconocido',
       }));
 
       setInventoryMovements(transformedMovements);
-      setCurrentMovementIndex(0); // Reset to first movement
+      setCurrentMovementPage(0); // Reset to first page
     } catch (error) {
       console.error('Error fetching today\'s inventory movements:', error);
       setInventoryMovements([]);
@@ -227,27 +225,27 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const movementsPerPage = 2;
+  const totalMovementPages = Math.ceil(inventoryMovements.length / movementsPerPage);
+  const startMovementIndex = currentMovementPage * movementsPerPage;
+  const endMovementIndex = startMovementIndex + movementsPerPage;
+  const currentMovements = inventoryMovements.slice(startMovementIndex, endMovementIndex);
+
   const nextMovementPage = () => {
-    if (inventoryMovements.length > 1 && !isMovementAnimating) {
+    if (currentMovementPage < totalMovementPages - 1 && !isMovementAnimating) {
       setIsMovementAnimating(true);
-      stopAutoRotation();
       setTimeout(() => {
-        setCurrentMovementIndex((prevIndex) =>
-          (prevIndex + 1) % inventoryMovements.length
-        );
+        setCurrentMovementPage(currentMovementPage + 1);
         setIsMovementAnimating(false);
       }, 150);
     }
   };
 
   const prevMovementPage = () => {
-    if (inventoryMovements.length > 1 && !isMovementAnimating) {
+    if (currentMovementPage > 0 && !isMovementAnimating) {
       setIsMovementAnimating(true);
-      stopAutoRotation();
       setTimeout(() => {
-        setCurrentMovementIndex((prevIndex) =>
-          prevIndex === 0 ? inventoryMovements.length - 1 : prevIndex - 1
-        );
+        setCurrentMovementPage(currentMovementPage - 1);
         setIsMovementAnimating(false);
       }, 150);
     }
@@ -262,36 +260,6 @@ const Dashboard: React.FC = () => {
   // Use the notifications socket hook
   useNotificationsSocket(handleNewNotification);
 
-  // Auto-rotate effect for inventory movements
-  useEffect(() => {
-    if (inventoryMovements.length > 1 && isAutoRotating) {
-      autoRotateRef.current = window.setInterval(() => {
-        setCurrentMovementIndex((prevIndex) =>
-          (prevIndex + 1) % inventoryMovements.length
-        );
-      }, 8000); // 8 seconds for auto-rotation
-    } else {
-      if (autoRotateRef.current) {
-        clearInterval(autoRotateRef.current);
-        autoRotateRef.current = null;
-      }
-    }
-
-    return () => {
-      if (autoRotateRef.current) {
-        clearInterval(autoRotateRef.current);
-      }
-    };
-  }, [inventoryMovements.length, isAutoRotating]);
-
-  // Stop auto-rotation when user interacts
-  const stopAutoRotation = () => {
-    setIsAutoRotating(false);
-    if (autoRotateRef.current) {
-      clearInterval(autoRotateRef.current);
-      autoRotateRef.current = null;
-    }
-  };
 
   // Resume auto-rotation after inactivity (currently not used, but kept for future enhancement)
   // const resumeAutoRotation = () => {
@@ -389,23 +357,25 @@ const Dashboard: React.FC = () => {
                 <p className="text-gray-700">No hay movimientos registrados hoy</p>
               ) : (
                 <div className="space-y-2">
-                  <div className="border-l-4 border-purple-500 pl-3 py-2">
-                    <p className="text-gray-700 font-medium">
-                      {inventoryMovements[currentMovementIndex].type}: {inventoryMovements[currentMovementIndex].product}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Usuario: {inventoryMovements[currentMovementIndex].userName} ({inventoryMovements[currentMovementIndex].userId})
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Fecha: {inventoryMovements[currentMovementIndex].date}
-                    </p>
-                  </div>
+                  {currentMovements.map((movement, index) => (
+                    <div key={movement.id} className="border-l-4 border-purple-500 pl-3 py-2">
+                      <p className="text-gray-700 font-medium">
+                        {movement.type}: {movement.product}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Usuario: {movement.userName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Fecha: {movement.date}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardBody>
 
             {/* Navigation Buttons - Only visible on hover */}
-            {isMovementsHovered && inventoryMovements.length > 1 && (
+            {isMovementsHovered && totalMovementPages > 1 && (
               <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
                 <button
                   onClick={prevMovementPage}
