@@ -294,21 +294,55 @@ const Dashboard: React.FC = () => {
         if (latestHarvest && latestHarvest.fkCultivosVariedadXZonaId) {
           console.log('[DEBUG] fetchLastHarvest: Harvest has crop ID:', latestHarvest.fkCultivosVariedadXZonaId);
 
-          // For now, skip the problematic crop details fetch and use basic data
-          console.log('[DEBUG] fetchLastHarvest: Skipping crop details fetch due to API issues');
+          // Fetch harvest details with relations
+          console.log('[DEBUG] fetchLastHarvest: Fetching harvest details for cosechaId:', latestHarvest.id);
+          const harvestResponse = await axios.get(`/cosechas/${latestHarvest.id}`);
+          const harvestWithRelations = harvestResponse.data;
+          console.log('[DEBUG] fetchLastHarvest: Harvest with relations:', harvestWithRelations);
 
+          if (harvestWithRelations && harvestWithRelations.cultivosVariedadXZona) {
+            console.log('[DEBUG] fetchLastHarvest: Harvest has crop relations:', harvestWithRelations.cultivosVariedadXZona);
+
+            const cvz = harvestWithRelations.cultivosVariedadXZona;
+            const tipoCultivo = cvz.cultivoXVariedad?.variedad?.tipoCultivo?.nombre || 'Tipo desconocido';
+            const variedad = cvz.cultivoXVariedad?.variedad?.nombre || 'Variedad desconocida';
+            const zona = cvz.zona?.nombre || 'Zona desconocida';
+
+            console.log('[DEBUG] fetchLastHarvest: Extracted crop details - tipoCultivo:', tipoCultivo, 'variedad:', variedad, 'zona:', zona);
+
+            const harvestData: LastHarvestData = {
+              id: latestHarvest.id,
+              fecha: latestHarvest.fecha || '',
+              cantidad: latestHarvest.cantidad,
+              unidadMedida: latestHarvest.unidadMedida,
+              cultivo: `${tipoCultivo}, ${variedad} - ${zona}`,
+            };
+
+            console.log('[DEBUG] fetchLastHarvest: Setting harvest data:', harvestData);
+            setLastHarvest(harvestData);
+          } else {
+            console.log('[DEBUG] fetchLastHarvest: Harvest missing crop relations after fetch');
+            // Fallback to basic data
+            const harvestData: LastHarvestData = {
+              id: latestHarvest.id,
+              fecha: latestHarvest.fecha || '',
+              cantidad: latestHarvest.cantidad,
+              unidadMedida: latestHarvest.unidadMedida,
+              cultivo: 'Cultivo desconocido - Zona desconocida',
+            };
+            setLastHarvest(harvestData);
+          }
+        } else {
+          console.log('[DEBUG] fetchLastHarvest: Harvest missing crop ID');
+          // Fallback to basic data
           const harvestData: LastHarvestData = {
             id: latestHarvest.id,
             fecha: latestHarvest.fecha || '',
             cantidad: latestHarvest.cantidad,
             unidadMedida: latestHarvest.unidadMedida,
-            cultivo: 'Cultivo', // Placeholder until API is fixed
+            cultivo: 'Cultivo desconocido - Zona desconocida',
           };
-
-          console.log('[DEBUG] fetchLastHarvest: Setting harvest data:', harvestData);
           setLastHarvest(harvestData);
-        } else {
-          console.log('[DEBUG] fetchLastHarvest: Harvest missing crop ID');
         }
       } else {
         console.log('[DEBUG] fetchLastHarvest: No harvests found');
