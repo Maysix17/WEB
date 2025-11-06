@@ -26,39 +26,97 @@ export class FinanzasService {
   ) {}
 
   async calcularFinanzasCosecha(cosechaId: string): Promise<FinanzasCosecha> {
-    // Obtener la cosecha con relaciones
+    console.log(
+      `[DEBUG] ================= INICIO CÁLCULO FINANZAS COSECHA ${cosechaId} =================`,
+    );
+
     const cosecha = await this.cosechaRepo.findOne({
       where: { id: cosechaId },
-      relations: ['cultivosVariedadXZona', 'ventas'],
+      relations: [
+        'cultivosVariedadXZona',
+        'cultivosVariedadXZona.cultivoXVariedad.variedad.tipoCultivo',
+        'cultivosVariedadXZona.estadoFenologico',
+        'ventas',
+      ],
     });
 
     if (!cosecha) {
+      console.error(`[ERROR] Cosecha con ID ${cosechaId} no encontrada.`);
       throw new NotFoundException(`Cosecha con ID ${cosechaId} no encontrada`);
     }
 
-    // Calcular costos de inventario desde reservas
+    console.log(`[DEBUG] Cosecha encontrada:`, {
+      id: cosecha.id,
+      cantidad: cosecha.cantidad,
+      tipoCultivo:
+        cosecha.cultivosVariedadXZona?.cultivoXVariedad?.variedad?.tipoCultivo
+          ?.nombre || 'Desconocido',
+      ventasCount: cosecha.ventas?.length || 0,
+    });
+
     const costoInventario = await this.calcularCostoInventario(cosechaId);
-
-    // Calcular costos de mano de obra desde actividades
     const costoManoObra = await this.calcularCostoManoObra(cosechaId);
-
-    // Calcular ingresos desde ventas
     const ingresosTotales = await this.calcularIngresosTotales(cosechaId);
 
-    // Datos básicos
     const cantidadCosechada = parseFloat(cosecha.cantidad.toString());
-    const cantidadVendida = cosecha.ventas?.reduce((total, venta) =>
-      total + parseFloat(venta.cantidad.toString()), 0) || 0;
+    const cantidadVendida =
+      cosecha.ventas?.reduce(
+        (total, venta) => total + parseFloat(venta.cantidad.toString()),
+        0,
+      ) || 0;
 
     const costoTotalProduccion = costoInventario + costoManoObra;
     const ganancias = ingresosTotales - costoTotalProduccion;
-    const margenGanancia = costoTotalProduccion > 0 ? (ganancias / ingresosTotales) * 100 : 0;
 
-    // Obtener precio promedio por kilo
+    console.log('[DEBUG] ---------- VALORES INTERMEDIOS ----------');
+    console.log(`[DEBUG] Costo Inventario: ${costoInventario}`);
+    console.log(`[DEBUG] Costo Mano de Obra: ${costoManoObra}`);
+    console.log(`[DEBUG] Costo Total Producción: ${costoTotalProduccion}`);
+    console.log(`[DEBUG] Ingresos Totales: ${ingresosTotales}`);
+    console.log(`[DEBUG] Ganancias: ${ganancias}`);
+    console.log(`[DEBUG] Cantidad Cosechada: ${cantidadCosechada}`);
+    console.log(`[DEBUG] Cantidad Vendida: ${cantidadVendida}`);
+    console.log('[DEBUG] -----------------------------------------');
+
+    let margenGanancia = 0;
+    if (ingresosTotales > 0) {
+      // Evitar división por cero o por números muy pequeños que disparen el margen
+      if (ingresosTotales < 0.01) {
+        console.warn(
+          `[WARN] Ingresos totales (${ingresosTotales}) es muy bajo. El margen podría ser engañoso.`,
+        );
+      }
+      const rawRatio = ganancias / ingresosTotales;
+      margenGanancia = rawRatio * 100;
+      console.log('[DEBUG] ---------- CÁLCULO MARGEN DE GANANCIA ----------');
+      console.log(`[DEBUG] Fórmula: (ganancias / ingresosTotales) * 100`);
+      console.log(
+        `[DEBUG] Aplicada: (${ganancias} / ${ingresosTotales}) * 100`,
+      );
+      console.log(`[DEBUG] Ratio Crudo: ${rawRatio}`);
+      console.log(`[DEBUG] Margen de Ganancia Calculado: ${margenGanancia}%`);
+      console.log('----------------------------------------------------');
+    } else {
+      console.log(
+        `[DEBUG] Ingresos totales es 0 o negativo, margen de ganancia se establece en 0.`,
+      );
+    }
+
+    // Validar y limitar el margen de ganancia para que encaje en numeric(5, 2)
+    const margenGananciaFinal = Math.max(
+      -999.99,
+      Math.min(999.99, margenGanancia),
+    );
+
+    if (margenGananciaFinal !== margenGanancia) {
+      console.warn(
+        `[WARN] Margen de ganancia (${margenGanancia}) fuera del rango. Ha sido ajustado a ${margenGananciaFinal}.`,
+      );
+    }
+
     const precioPorKilo = await this.calcularPrecioPromedioKilo(cosechaId);
 
-    // Crear o actualizar registro de finanzas
-    const finanzas = this.finanzasRepo.create({
+    const finanzasData = {
       fkCosechaId: cosechaId,
       cantidadCosechada,
       precioPorKilo,
@@ -68,11 +126,22 @@ export class FinanzasService {
       costoTotalProduccion,
       ingresosTotales,
       ganancias,
-      margenGanancia,
+      margenGanancia: margenGananciaFinal,
       fechaCalculo: new Date(),
-    });
+    };
 
-    return await this.finanzasRepo.save(finanzas);
+    console.log('[DEBUG] ---------- DATOS A GUARDAR EN DB ----------');
+    console.log(JSON.stringify(finanzasData, null, 2));
+    console.log('-------------------------------------------------');
+
+    const finanzas = this.finanzasRepo.create(finanzasData);
+    const resultado = await this.finanzasRepo.save(finanzas);
+
+    console.log(
+      `[DEBUG] ================= FIN CÁLCULO FINANZAS COSECHA ${cosechaId} =================`,
+    );
+
+    return resultado;
   }
 
   async calcularFinanzasCultivoDinamico(cultivoId: string): Promise<FinanzasCosecha> {
