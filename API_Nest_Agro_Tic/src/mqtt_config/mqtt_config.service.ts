@@ -91,14 +91,24 @@ export class MqttConfigService {
       return { success: false, error: { configName, zonaName } };
     }
 
-    // Check if there's already an active assignment for this zona
-    const existing = await this.zonaMqttConfigRepository.findOne({
-      where: { fkZonaId: zonaId, estado: true },
+    // Check if this config is already assigned to this zona (even if inactive)
+    const existingAssignment = await this.zonaMqttConfigRepository.findOne({
+      where: { fkZonaId: zonaId, fkMqttConfigId: configId },
     });
 
-    if (existing) {
-      // Deactivate existing assignment
-      await this.zonaMqttConfigRepository.update(existing.id, { estado: false });
+    if (existingAssignment) {
+      if (existingAssignment.estado) {
+        // Already active, no need to do anything
+        return { success: true, data: existingAssignment };
+      } else {
+        // Reactivate the existing assignment
+        await this.zonaMqttConfigRepository.update(existingAssignment.id, { estado: true });
+        const result = await this.zonaMqttConfigRepository.findOne({
+          where: { id: existingAssignment.id },
+          relations: ['mqttConfig', 'zona'],
+        });
+        return { success: true, data: result || undefined };
+      }
     }
 
     // Create new assignment

@@ -1,7 +1,11 @@
-import { IsNotEmpty, IsNumber, IsDate } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsDate, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateMedicionSensorDto {
+  @IsString()
+  @IsNotEmpty()
+  key: string;
+
   @IsNumber()
   @IsNotEmpty()
   valor: number;
@@ -11,7 +15,11 @@ export class CreateMedicionSensorDto {
   @IsNotEmpty()
   fechaMedicion: Date;
 
-  @IsNumber()
+  @IsOptional()
+  @IsString()
+  unidad?: string;
+
+  @IsString()
   @IsNotEmpty()
-  fkSensorId: number;
+  fkZonaMqttConfigId: string;
 }

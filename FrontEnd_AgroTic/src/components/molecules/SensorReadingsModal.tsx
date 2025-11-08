@@ -27,8 +27,9 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
   zonaId,
   zonaNombre,
 }) => {
-  const [sensorData, setSensorData] = useState<SensorData>({});
-  const [isLoading, setIsLoading] = useState(false);
+   const [sensorData, setSensorData] = useState<SensorData>({});
+   const [isLoading, setIsLoading] = useState(false);
+   const [currentPage, setCurrentPage] = useState(0);
 
   // Use MQTT socket hook for real-time updates
   const { lecturas } = useMqttSocket();
@@ -36,6 +37,7 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadHistoricalData();
+      setCurrentPage(0); // Reset to first page when modal opens
     }
   }, [isOpen, zonaId]);
 
@@ -126,6 +128,26 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
     setSensorData(data);
   };
 
+  // Pagination logic
+  const sensorsPerPage = 3;
+  const sensorEntries = Object.entries(sensorData);
+  const totalPages = Math.ceil(sensorEntries.length / sensorsPerPage);
+  const startIndex = currentPage * sensorsPerPage;
+  const endIndex = startIndex + sensorsPerPage;
+  const currentSensors = sensorEntries.slice(startIndex, endIndex);
+
+  const nextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   // Sensor Card Component
   const SensorCard = React.memo(({ sensorKey, data }: { sensorKey: string; data: SensorData[string] }) => {
     const chartData = data.history.map((point, index) => ({
@@ -143,31 +165,29 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
     };
 
     return (
-      <Card className="w-full h-100">
-        <CardHeader className="flex items-center justify-between ">
+      <Card className="w-full max-w-xs">
+        <CardHeader className="flex items-center justify-between pb-2">
           <div className="text-center flex-1">
-            <h3 className="text-xl font-bold text-gray-800 mb-1">{formatSensorKey(sensorKey)}</h3>
-            <p className="text-sm text-gray-500 font-medium">{data.unit}</p>
-            
+            <h3 className="text-lg font-bold text-gray-800 mb-1">{formatSensorKey(sensorKey)}</h3>
           </div>
           <Badge color="success" variant="flat" className="ml-2">
             Activo
           </Badge>
         </CardHeader>
-        <CardBody>
-          <div className="space-y-4">
+        <CardBody className="pt-0">
+          <div className="space-y-3">
             {/* Current Value */}
-            <div className="text-center bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-4 border border-green-100">
-              <div className="text-5xl font-bold text-green-600 mb-2">
-                {Number(data.lastValue).toFixed(2)}
+            <div className="text-center bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-3 border border-green-100">
+              <div className="text-3xl font-bold text-green-600 mb-1">
+                {Number(data.lastValue).toFixed(2)} <span className="text-lg text-green-700">{data.unit}</span>
               </div>
-              <div className="text-sm text-gray-600 font-medium">
+              <div className="text-xs text-gray-600 font-medium">
                 Última actualización: {new Date(data.lastUpdate).toLocaleString()}
               </div>
             </div>
 
             {/* Chart */}
-            <div className="h-36 bg-gray-50 rounded-lg p-2" style={{ minHeight: '144px', minWidth: '200px' }}>
+            <div className="h-24 bg-gray-50 rounded-lg p-2" style={{ minHeight: '96px' }}>
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
@@ -178,9 +198,9 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 10, fill: '#6b7280' }}
                       axisLine={false}
-                      width={35}
+                      width={30}
                     />
                     <Tooltip
                       formatter={(value: any) => {
@@ -199,9 +219,9 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
                       type="monotone"
                       dataKey="value"
                       stroke="#16a34a"
-                      strokeWidth={2.5}
-                      dot={{ fill: '#16a34a', strokeWidth: 2, r: 3 }}
-                      activeDot={{ r: 5, stroke: '#16a34a', strokeWidth: 2, fill: '#dcfce7' }}
+                      strokeWidth={2}
+                      dot={{ fill: '#16a34a', strokeWidth: 2, r: 2 }}
+                      activeDot={{ r: 4, stroke: '#16a34a', strokeWidth: 2, fill: '#dcfce7' }}
                       connectNulls={false}
                     />
                   </LineChart>
@@ -214,7 +234,7 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-white rounded-lg p-2 border border-gray-200">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mínimo</div>
                 <div className="text-sm font-bold text-blue-600 mt-1">
@@ -267,10 +287,57 @@ const SensorReadingsModal: React.FC<SensorReadingsModalProps> = ({
               <small className="text-gray-400">Las lecturas aparecerán aquí cuando el dispositivo MQTT esté activo.</small>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(sensorData).map(([key, data]) => (
-                <SensorCard key={key} sensorKey={key} data={data} />
-              ))}
+            <div className="space-y-4">
+              {/* Sensor Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {currentSensors.map(([key, data]) => (
+                  <SensorCard key={key} sensorKey={key} data={data} />
+                ))}
+              </div>
+
+              {/* Navigation Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 0}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Anterior
+                  </button>
+
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-700">
+                      Página {currentPage + 1} de {totalPages}
+                    </span>
+                    <div className="flex space-x-1">
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i)}
+                          className={`w-2 h-2 rounded-full ${
+                            i === currentPage ? 'bg-green-600' : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages - 1}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Siguiente
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </ModalBody>

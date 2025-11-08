@@ -227,10 +227,17 @@ const GestionZonasPage: React.FC = () => {
                             {zona.areaMetrosCuadrados ? zona.areaMetrosCuadrados.toLocaleString() : '-'}
                           </td>
                           <td className="px-6 py-3 text-sm text-gray-900">
-                            {zona.zonaMqttConfigs && zona.zonaMqttConfigs.some(config => config.estado) ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Conectado
-                              </span>
+                            {zona.zonaMqttConfigs && zona.zonaMqttConfigs.filter(config => config.estado).length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  {zona.zonaMqttConfigs.filter(config => config.estado).length} Conectado{zona.zonaMqttConfigs.filter(config => config.estado).length > 1 ? 's' : ''}
+                                </span>
+                                {zona.zonaMqttConfigs.filter(config => config.estado).map(config => (
+                                  <span key={config.id} className="text-xs text-gray-600 truncate max-w-32" title={config.mqttConfig?.nombre}>
+                                    {config.mqttConfig?.nombre}
+                                  </span>
+                                ))}
+                              </div>
                             ) : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 Desconectado

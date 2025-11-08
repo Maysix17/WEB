@@ -59,10 +59,10 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
     } else {
       setFormData({
         nombre: `Config ${zonaNombre}`,
-        host: 'broker.hivemq.com',
-        port: 8000,
-        protocol: 'ws',
-        topicBase: 'sensors/#',
+        host: 'test.mosquitto.org',
+        port: 1883,
+        protocol: 'mqtt',
+        topicBase: 'agrotic/sensores/',
         activa: true,
       });
     }
@@ -208,7 +208,7 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
   ];
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="sm">
+    <Modal isOpen={isOpen} onOpenChange={onClose} size="lg">
       <ModalContent>
         <ModalHeader>
           <h2 className="text-lg font-semibold">
@@ -216,33 +216,36 @@ const MqttConfigModal: React.FC<MqttConfigModalProps> = ({
           </h2>
         </ModalHeader>
 
-        <ModalBody className="max-h-96 overflow-y-auto">
+        <ModalBody className="min-h-96">
           <form onSubmit={handleSubmit} className="space-y-3">
-            <TextInput
-              label="Nombre"
-              placeholder="Configuración 1"
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <TextInput
+                label="Nombre"
+                placeholder="Configuración 1"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              />
 
-            <div className="grid grid-cols-3 gap-2">
               <TextInput
                 label="Host"
-                placeholder="broker.hivemq.com"
+                placeholder="test.mosquitto.org"
                 value={formData.host}
                 onChange={(e) => setFormData({ ...formData, host: e.target.value })}
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <TextInput
                 label="Puerto"
                 type="number"
-                placeholder="8000"
+                placeholder="1883"
                 value={formData.port.toString()}
                 onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value, 10) || 0 })}
               />
               <div className="flex flex-col">
-                <label className="text-gray-700 text-xs mb-1">Protocolo</label>
+                <label className="text-gray-700 text-sm mb-1">Protocolo</label>
                 <select
-                  className="w-full h-9 px-2 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.protocol}
                   onChange={(e) => setFormData({ ...formData, protocol: e.target.value })}
                 >

@@ -13,10 +13,21 @@ interface MqttConnection {
   connected: boolean;
 }
 
+interface BufferedReading {
+  key: string;
+  valor: number;
+  unidad: string;
+  fechaMedicion: Date;
+  fkZonaMqttConfigId: string;
+}
+
 @Injectable()
 export class MqttService implements OnModuleInit {
   private connections = new Map<string, MqttConnection>(); // configId -> connection
   private logger = new Logger(MqttService.name);
+  private readingBuffers = new Map<string, BufferedReading[]>(); // zonaMqttConfigId -> readings
+  private lastSaveTimes = new Map<string, Date>(); // zonaMqttConfigId -> last save time
+  private readonly SAVE_INTERVAL = 30 * 60 * 1000; // 30 minutes in milliseconds
 
   constructor(
     private readonly mqttConfigService: MqttConfigService,
@@ -170,16 +181,16 @@ export class MqttService implements OnModuleInit {
       const payload = JSON.parse(message.toString());
       this.logger.log(`Mensaje recibido en ${topic} para zona ${zonaMqttConfig.zona.id}:`, payload);
 
-      await this.saveSensorData(zonaMqttConfig.id, zonaMqttConfig.zona.id, payload);
+      await this.processSensorData(zonaMqttConfig.id, zonaMqttConfig.zona.id, payload);
 
     } catch (error) {
       this.logger.error('Error procesando mensaje MQTT:', error);
     }
   }
 
-  private async saveSensorData(zonaMqttConfigId: string, zonaId: string, payload: any) {
+  private async processSensorData(zonaMqttConfigId: string, zonaId: string, payload: any) {
     try {
-      const mediciones: any[] = [];
+      const realTimeMediciones: any[] = [];
 
       // Convertir cada key del payload en una medición
       Object.entries(payload).forEach(([key, value]) => {
@@ -187,29 +198,63 @@ export class MqttService implements OnModuleInit {
           // Extraer valor numérico y unidad si es posible
           const parsed = this.parseValueWithUnit(String(value));
 
-          mediciones.push({
+          const medicion = {
             key,
             valor: parsed.n,
+            unidad: parsed.unit,
             fechaMedicion: new Date(),
             fkZonaMqttConfigId: zonaMqttConfigId,
-          });
+          };
+
+          realTimeMediciones.push(medicion);
+
+          // Agregar al buffer para guardado periódico
+          this.addToBuffer(zonaMqttConfigId, medicion);
         }
       });
 
-      if (mediciones.length > 0) {
-        const saved = await this.medicionSensorService.saveBatch(mediciones);
-        this.logger.log(`Guardadas ${saved.length} mediciones`);
-
-        // Emitir a WebSocket
+      if (realTimeMediciones.length > 0) {
+        // Emitir lecturas en tiempo real inmediatamente
         this.mqttGateway.emitNuevaLectura({
           zonaId,
-          mediciones: saved,
+          mediciones: realTimeMediciones,
           timestamp: new Date(),
         });
+
+        // Verificar si es tiempo de guardar en BD
+        await this.checkAndSaveBufferedReadings(zonaMqttConfigId);
       }
 
     } catch (error) {
-      this.logger.error('Error guardando datos del sensor:', error);
+      this.logger.error('Error procesando datos del sensor:', error);
+    }
+  }
+
+  private addToBuffer(zonaMqttConfigId: string, medicion: BufferedReading) {
+    if (!this.readingBuffers.has(zonaMqttConfigId)) {
+      this.readingBuffers.set(zonaMqttConfigId, []);
+    }
+    this.readingBuffers.get(zonaMqttConfigId)!.push(medicion);
+  }
+
+  private async checkAndSaveBufferedReadings(zonaMqttConfigId: string) {
+    const lastSave = this.lastSaveTimes.get(zonaMqttConfigId);
+    const now = new Date();
+
+    if (!lastSave || (now.getTime() - lastSave.getTime()) >= this.SAVE_INTERVAL) {
+      const buffer = this.readingBuffers.get(zonaMqttConfigId);
+      if (buffer && buffer.length > 0) {
+        try {
+          const saved = await this.medicionSensorService.saveBatch(buffer);
+          this.logger.log(`Guardadas ${saved.length} mediciones en BD para zonaMqttConfig ${zonaMqttConfigId}`);
+
+          // Limpiar buffer y actualizar tiempo de último guardado
+          this.readingBuffers.set(zonaMqttConfigId, []);
+          this.lastSaveTimes.set(zonaMqttConfigId, now);
+        } catch (error) {
+          this.logger.error('Error guardando mediciones en BD:', error);
+        }
+      }
     }
   }
 

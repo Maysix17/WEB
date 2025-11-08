@@ -22,6 +22,9 @@ export class MedicionSensor {
   @Column({ name: 'med_fecha_medicion', type: 'timestamp' })
   fechaMedicion: Date;
 
+  @Column({ name: 'med_unidad', type: 'varchar', length: 20, nullable: true })
+  unidad: string;
+
   @Column({ name: 'fk_id_zona_mqtt_config' })
   fkZonaMqttConfigId: string;
 

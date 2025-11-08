@@ -20,12 +20,12 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
   onSave,
 }) => {
   const [mqttConfigs, setMqttConfigs] = useState<MqttConfig[]>([]);
-  const [activeZonaMqttConfig, setActiveZonaMqttConfig] = useState<ZonaMqttConfig | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testingConfig, setTestingConfig] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
-  const [assignmentError, setAssignmentError] = useState<string | null>(null);
-  const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
+   const [zonaMqttConfigs, setZonaMqttConfigs] = useState<ZonaMqttConfig[]>([]);
+   const [loading, setLoading] = useState(false);
+   const [testingConfig, setTestingConfig] = useState<string | null>(null);
+   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
+   const [assignmentError, setAssignmentError] = useState<string | null>(null);
+   const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,12 +38,12 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
-      const [configsData, activeConfigData] = await Promise.all([
+      const [configsData, zonaConfigsData] = await Promise.all([
         mqttConfigService.getAll(),
-        mqttConfigService.getActiveZonaMqttConfig(zonaId),
+        mqttConfigService.getZonaMqttConfigs(zonaId),
       ]);
       setMqttConfigs(configsData);
-      setActiveZonaMqttConfig(activeConfigData);
+      setZonaMqttConfigs(zonaConfigsData);
     } catch (error) {
       console.error('Error loading MQTT data:', error);
     } finally {
@@ -88,6 +88,17 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
     try {
       setAssignmentError(null); // Clear any previous error
       setAssignmentSuccess(null); // Clear any previous success
+
+      // Check if this config is already assigned to this zone
+      const alreadyAssigned = zonaMqttConfigs.some(config =>
+        config.fkMqttConfigId === configId && config.estado
+      );
+
+      if (alreadyAssigned) {
+        setAssignmentError('Esta configuración ya está conectada a esta zona.');
+        return;
+      }
+
       const result = await mqttConfigService.assignConfigToZona(zonaId, configId);
       if (!result.success) {
         const { configName, zonaName } = result.error!;
@@ -119,11 +130,11 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
   };
 
   const isConfigActive = (configId: string) => {
-    return activeZonaMqttConfig?.mqttConfig?.id === configId;
+    return zonaMqttConfigs.some(config => config.fkMqttConfigId === configId && config.estado);
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="lg">
+    <Modal isOpen={isOpen} onOpenChange={onClose} size="xl">
       <ModalContent>
         <ModalHeader>
           <h2 className="text-lg font-semibold">
@@ -249,6 +260,20 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
                         )}
                       </div>
                     </div>
+
+                    {/* Show connected configurations for this zone */}
+                    {zonaMqttConfigs
+                      .filter(zonaConfig => zonaConfig.fkMqttConfigId === config.id && zonaConfig.estado)
+                      .map(zonaConfig => (
+                        <div key={zonaConfig.id} className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-green-800 font-medium">Conectado a esta zona</span>
+                            <span className="text-xs text-green-600">
+                              {new Date(zonaConfig.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 );
               })}
