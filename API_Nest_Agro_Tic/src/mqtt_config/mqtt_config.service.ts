@@ -142,8 +142,8 @@ export class MqttConfigService {
 
   async getZonaMqttConfigs(zonaId: string): Promise<ZonaMqttConfig[]> {
     return await this.zonaMqttConfigRepository.find({
-      where: { fkZonaId: zonaId },
-      relations: ['mqttConfig'],
+      where: { fkZonaId: zonaId, estado: true },
+      relations: ['mqttConfig', 'zona'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -152,6 +152,14 @@ export class MqttConfigService {
     return await this.zonaMqttConfigRepository.findOne({
       where: { fkZonaId: zonaId, estado: true },
       relations: ['mqttConfig', 'zona'],
+    });
+  }
+
+  async getZonaMqttConfigsByConfig(configId: string): Promise<ZonaMqttConfig[]> {
+    return await this.zonaMqttConfigRepository.find({
+      where: { fkMqttConfigId: configId },
+      relations: ['mqttConfig', 'zona'],
+      order: { createdAt: 'DESC' },
     });
   }
 }

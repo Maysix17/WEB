@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardBody, Button } from '@heroui/react';
+import { Card, CardHeader, CardBody } from '@heroui/react';
 import {
-  UserIcon,
   TruckIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   ClockIcon,
-  BeakerIcon,
   ChevronUpIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
@@ -17,6 +15,7 @@ import { movementsService } from '../services/movementsService';
 import { getVentas } from '../services/ventaService';
 import { getCosechasToday } from '../services/cosechasService';
 import { getProfile } from '../services/profileService';
+import DynamicSensorCard from '../components/molecules/DynamicSensorCard';
 import type { Venta } from '../types/venta.types';
 import type { Cosecha } from '../types/cosechas.types';
 import type { MovimientoInventario } from '../types/movements.types';
@@ -82,12 +81,6 @@ interface InventoryMovement {
   product: string;
 }
 
-const environmentalMetrics = [
-  { name: 'Humedad', value: '65%', unit: '%' },
-  { name: 'pH del Suelo', value: '6.8', unit: '' },
-  { name: 'Temperatura', value: '24°C', unit: '' },
-  { name: 'Humedad del Suelo', value: '78%', unit: '%' },
-];
 
 
 // Pie chart data will be dynamically loaded
@@ -100,8 +93,6 @@ const Dashboard: React.FC = () => {
 
   // Animation states
   const [isPageLoaded, setIsPageLoaded] = useState(false);
-
-  const [currentMetricIndex, setCurrentMetricIndex] = useState(0);
   const [assignedActivities, setAssignedActivities] = useState<AssignedActivity[]>([]);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [isActivitiesHovered, setIsActivitiesHovered] = useState(false);
@@ -125,11 +116,6 @@ const Dashboard: React.FC = () => {
   const [isHarvestHovered, setIsHarvestHovered] = useState(false);
   const [isHarvestAnimating, setIsHarvestAnimating] = useState(false);
 
-  const nextMetric = () => {
-    setCurrentMetricIndex((prevIndex) =>
-      (prevIndex + 1) % environmentalMetrics.length
-    );
-  };
 
   const fetchAssignedActivities = async () => {
     try {
@@ -677,37 +663,10 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 flex flex-col gap-4 h-full">
           {/* Welcome and Environmental Data Cards - Side by side with fixed height */}
           <div className="flex gap-3 flex-none h-36">
-            {/* Environmental Data Card */}
-            <Card className={`shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex-1 flex flex-col transform ${
-              isPageLoaded
-                ? 'opacity-100 translate-y-0'
-                : 'opacity-0 translate-y-8'
-            }`}
-            style={{ animationDelay: '0.5s' }}>
-              <CardHeader className="flex items-center gap-3">
-                <BeakerIcon className={`w-8 h-8 text-green-500 transition-all duration-500 ${
-                  isPageLoaded ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-                }`} style={{ animationDelay: '0.8s' }} />
-                <h3 className={`text-lg font-semibold transition-all duration-500 ${
-                  isPageLoaded ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-                }`} style={{ animationDelay: '1.0s' }}>
-                  Datos del Ambiente<br />
-                  Zona Actual
-                </h3>
-              </CardHeader>
-              <CardBody className="flex-1 flex flex-col items-center justify-center text-center">
-                <p className="text-xl font-bold text-green-600">
-                  {environmentalMetrics[currentMetricIndex].name}: {environmentalMetrics[currentMetricIndex].value}
-                </p>
-                <Button
-                  color="primary"
-                  size="sm"
-                  onClick={nextMetric}
-                >
-                  Siguiente
-                </Button>
-              </CardBody>
-            </Card>
+            {/* Dynamic Environmental Data Card - Made wider */}
+            <div className="flex-1">
+              <DynamicSensorCard />
+            </div>
 
             {/* Welcome Card */}
             <Card className={`shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex-1 flex flex-col transform ${

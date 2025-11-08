@@ -67,9 +67,19 @@ export class MqttConfigController {
     return this.mqttConfigService.getZonaMqttConfigs(zonaId);
   }
 
+  @Get(':configId/zona-mqtt-configs')
+  getZonaMqttConfigsByConfig(@Param('configId') configId: string) {
+    return this.mqttConfigService.getZonaMqttConfigsByConfig(configId);
+  }
+
   @Get('zona/:zonaId/active')
   getActiveZonaMqttConfig(@Param('zonaId') zonaId: string) {
     return this.mqttConfigService.getActiveZonaMqttConfig(zonaId);
+  }
+
+  @Get('active-zona-mqtt-configs')
+  getAllActiveZonaMqttConfigs() {
+    return this.mqttConfigService.findActiveZonaMqttConfigs();
   }
 
   @Get(':id')
