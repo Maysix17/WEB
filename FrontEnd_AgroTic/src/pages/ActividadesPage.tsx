@@ -227,12 +227,14 @@ const ActividadesPage: React.FC = () => {
         onSave={async (data) => {
           try {
             console.log('ActividadesPage onSave - data.fecha:', data.fecha);
-            console.log('ActividadesPage onSave - data.fecha ISO:', data.fecha.toISOString());
-            console.log('ActividadesPage onSave - data.fecha local:', data.fecha.toLocaleDateString());
+            console.log('ActividadesPage onSave - data.fecha type:', typeof data.fecha);
+
+            // Parse the date string to ensure it's treated as local date
+            const fechaAsignacion = typeof data.fecha === 'string' ? new Date(data.fecha + 'T00:00:00') : data.fecha;
 
             const actividadData = {
               descripcion: data.descripcion,
-              fechaAsignacion: data.fecha,
+              fechaAsignacion,
               horasDedicadas: 0, // 0 initially, set when finalizing
               observacion: '', // empty string initially, set when finalizing
               estado: true,
@@ -242,12 +244,13 @@ const ActividadesPage: React.FC = () => {
 
             console.log('ActividadesPage onSave - actividadData.fechaAsignacion:', actividadData.fechaAsignacion);
             console.log('ActividadesPage onSave - actividadData.fechaAsignacion ISO:', actividadData.fechaAsignacion.toISOString());
+            console.log('ActividadesPage onSave - actividadData.fechaAsignacion local:', actividadData.fechaAsignacion.toLocaleDateString());
 
             const actividad = await createActividad(actividadData);
 
             // Save users
              for (const userId of data.usuarios) {
-               await createUsuarioXActividad({ fkUsuarioId: userId, fkActividadId: actividad.id, fechaAsignacion: data.fecha });
+               await createUsuarioXActividad({ fkUsuarioId: userId, fkActividadId: actividad.id, fechaAsignacion: fechaAsignacion });
              }
 
             // Save reservations
@@ -269,7 +272,7 @@ const ActividadesPage: React.FC = () => {
             await fetchEvents(selectedDate);
 
             // If the activity was created for the same date as currently viewed activities, refresh the list
-            const activityDateStr = format(data.fecha, 'yyyy-MM-dd');
+            const activityDateStr = typeof data.fecha === 'string' ? data.fecha : format(data.fecha, 'yyyy-MM-dd');
             const modalDateStr = format(modalDate, 'yyyy-MM-dd');
             if (activityDateStr === modalDateStr && isListModalOpen) {
               const updatedActivities = await getActividadesByDateWithActive(activityDateStr);

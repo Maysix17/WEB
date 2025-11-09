@@ -50,13 +50,14 @@ interface FinalizeActivityModalProps {
 }
 
 const FinalizeActivityModal: React.FC<FinalizeActivityModalProps> = ({ isOpen, onClose, activity, onSave }) => {
-   const [returnedQuantities, setReturnedQuantities] = useState<{ [key: string]: number }>({});
-   const [horas, setHoras] = useState('');
-   const [precioHora, setPrecioHora] = useState('');
-   const [observacion, setObservacion] = useState('');
-   const [evidencia, setEvidencia] = useState<File | null>(null);
-   const [isUpdateEstadoModalOpen, setIsUpdateEstadoModalOpen] = useState(false);
-   const [isUpdateCantidadModalOpen, setIsUpdateCantidadModalOpen] = useState(false);
+    const [returnedQuantities, setReturnedQuantities] = useState<{ [key: string]: number }>({});
+    const [horas, setHoras] = useState('');
+    const [precioHora, setPrecioHora] = useState('');
+    const [observacion, setObservacion] = useState('');
+    const [evidencia, setEvidencia] = useState<File | null>(null);
+    const [isUpdateEstadoModalOpen, setIsUpdateEstadoModalOpen] = useState(false);
+    const [isUpdateCantidadModalOpen, setIsUpdateCantidadModalOpen] = useState(false);
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (isOpen && activity) {
@@ -68,19 +69,32 @@ const FinalizeActivityModal: React.FC<FinalizeActivityModalProps> = ({ isOpen, o
       setEvidencia(null);
       setIsUpdateEstadoModalOpen(false);
       setIsUpdateCantidadModalOpen(false);
+      setErrors({});
     }
   }, [isOpen, activity]);
 
   const handleSave = () => {
     // Validation
+    const newErrors: { [key: string]: string } = {};
     const horasNum = parseFloat(horas);
     const precioNum = parseFloat(precioHora);
+
     if (!horas || horasNum <= 0) {
-      alert('Horas dedicadas es requerido y debe ser un número positivo');
-      return;
+      newErrors.horas = 'Horas dedicadas es requerido y debe ser un número positivo';
     }
     if (!precioHora || isNaN(precioNum) || precioNum <= 0) {
-      alert('Precio por hora es requerido y debe ser un monto válido');
+      newErrors.precioHora = 'Precio por hora es requerido y debe ser un monto válido';
+    }
+    if (!observacion.trim()) {
+      newErrors.observacion = 'La observación es requerida';
+    }
+    if (!evidencia) {
+      newErrors.evidencia = 'La evidencia es requerida';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -151,7 +165,9 @@ const FinalizeActivityModal: React.FC<FinalizeActivityModalProps> = ({ isOpen, o
                       onChange={(e) => setHoras(e.target.value)}
                       min="0"
                       step="0.5"
+                      isInvalid={!!errors.horas}
                     />
+                    {errors.horas && <p className="text-red-500 text-xs mt-1">{errors.horas}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Precio por hora *</label>
@@ -162,7 +178,9 @@ const FinalizeActivityModal: React.FC<FinalizeActivityModalProps> = ({ isOpen, o
                       onChange={(e) => setPrecioHora(e.target.value)}
                       min="0"
                       step="0.01"
+                      isInvalid={!!errors.precioHora}
                     />
+                    {errors.precioHora && <p className="text-red-500 text-xs mt-1">{errors.precioHora}</p>}
                   </div>
                 </div>
               </div>
@@ -172,21 +190,25 @@ const FinalizeActivityModal: React.FC<FinalizeActivityModalProps> = ({ isOpen, o
                 <h3 className="font-semibold mb-2">Observación y Evidencia</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Observación</label>
+                    <label className="block text-sm font-medium mb-1">Observación *</label>
                     <Textarea
                       placeholder="Observaciones adicionales..."
                       value={observacion}
                       onChange={(e) => setObservacion(e.target.value)}
                       rows={3}
+                      isInvalid={!!errors.observacion}
                     />
+                    {errors.observacion && <p className="text-red-500 text-xs mt-1">{errors.observacion}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Evidencia</label>
+                    <label className="block text-sm font-medium mb-1">Evidencia *</label>
                     <Input
                       type="file"
                       accept="image/*,application/pdf"
                       onChange={(e) => setEvidencia(e.target.files?.[0] || null)}
+                      isInvalid={!!errors.evidencia}
                     />
+                    {errors.evidencia && <p className="text-red-500 text-xs mt-1">{errors.evidencia}</p>}
                   </div>
                 </div>
               </div>

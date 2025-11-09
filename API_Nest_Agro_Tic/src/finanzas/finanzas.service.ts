@@ -329,4 +329,108 @@ export class FinanzasService {
 
     return finanzas;
   }
+
+  async calcularFinanzasCultivoActividades(cultivoId: string): Promise<FinanzasCosecha> {
+    console.log(`[DEBUG] ================= INICIO CÁLCULO FINANZAS CULTIVO ACTIVIDADES ${cultivoId} =================`);
+
+    // Buscar actividades del cultivo
+    const actividades = await this.actividadRepo.find({
+      where: { fkCultivoVariedadZonaId: cultivoId },
+      relations: [
+        'reservas',
+        'reservas.lote',
+        'reservas.lote.producto',
+        'reservas.lote.producto.categoria',
+        'reservas.estado'
+      ],
+    });
+
+    if (actividades.length === 0) {
+      console.error(`[ERROR] No se encontraron actividades para el cultivo ${cultivoId}.`);
+      throw new NotFoundException(`No se encontraron actividades para el cultivo ${cultivoId}`);
+    }
+
+    console.log(`[DEBUG] Encontradas ${actividades.length} actividades para el cultivo ${cultivoId}`);
+
+    // Calcular costos basados en actividades
+    const costoInventario = await this.calcularCostoInventarioPorActividades(actividades);
+    const costoManoObra = await this.calcularCostoManoObraPorActividades(actividades);
+
+    const costoTotalProduccion = costoInventario + costoManoObra;
+
+    console.log('[DEBUG] ---------- COSTOS CALCULADOS ----------');
+    console.log(`[DEBUG] Costo Inventario: ${costoInventario}`);
+    console.log(`[DEBUG] Costo Mano de Obra: ${costoManoObra}`);
+    console.log(`[DEBUG] Costo Total Producción: ${costoTotalProduccion}`);
+    console.log('[DEBUG] ---------------------------------------');
+
+    // Crear resultado con costos estimados (sin ingresos ya que no hay ventas)
+    const finanzas = this.finanzasRepo.create({
+      fkCosechaId: cultivoId, // Usamos el ID del cultivo como referencia
+      cantidadCosechada: 0, // No hay cosecha aún
+      precioPorKilo: 0, // No hay ventas aún
+      cantidadVendida: 0,
+      costoInventario,
+      costoManoObra,
+      costoTotalProduccion,
+      ingresosTotales: 0, // No hay ingresos aún
+      ganancias: -(costoTotalProduccion), // Pérdida estimada (solo costos)
+      margenGanancia: 0, // No aplicable sin ingresos
+      fechaCalculo: new Date(),
+    });
+
+    console.log(`[DEBUG] ================= FIN CÁLCULO FINANZAS CULTIVO ACTIVIDADES ${cultivoId} =================`);
+
+    return finanzas;
+  }
+
+  private async calcularCostoInventarioPorActividades(actividades: any[]): Promise<number> {
+    let costoTotal = 0;
+
+    for (const actividad of actividades) {
+      if (actividad.reservas && actividad.reservas.length > 0) {
+        for (const reserva of actividad.reservas) {
+          // Solo considerar reservas activas (no confirmadas/usadas)
+          if (reserva.estado && reserva.estado.nombre !== 'Confirmada') {
+            const esDivisible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+
+            if (esDivisible) {
+              // Lógica para productos divisibles (consumibles)
+              const costoReserva = (reserva.cantidadUsada || reserva.cantidadReservada || 0) *
+                (reserva.precioProducto / reserva.capacidadPresentacionProducto);
+              costoTotal += costoReserva;
+            } else {
+              // Lógica para productos no divisibles (herramientas)
+              const vidaUtilPromedioPorUsos = reserva.lote?.producto?.vidaUtilPromedioPorUsos;
+
+              if (vidaUtilPromedioPorUsos && vidaUtilPromedioPorUsos > 0) {
+                const valorResidual = reserva.precioProducto * 0.1;
+                const costoPorUso = (reserva.precioProducto - valorResidual) / vidaUtilPromedioPorUsos;
+                costoTotal += costoPorUso;
+              } else {
+                // Fallback
+                const costoReserva = (reserva.cantidadUsada || reserva.cantidadReservada || 0) *
+                  (reserva.precioProducto / reserva.capacidadPresentacionProducto);
+                costoTotal += costoReserva;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return costoTotal;
+  }
+
+  private async calcularCostoManoObraPorActividades(actividades: any[]): Promise<number> {
+    let costoTotal = 0;
+
+    for (const actividad of actividades) {
+      // Costo = horas dedicadas * precio por hora
+      const costoActividad = (actividad.horasDedicadas || 0) * (actividad.precioHora || 0);
+      costoTotal += costoActividad;
+    }
+
+    return costoTotal;
+  }
 }

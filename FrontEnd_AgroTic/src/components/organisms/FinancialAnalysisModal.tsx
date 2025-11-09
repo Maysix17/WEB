@@ -51,14 +51,34 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // Si tenemos cultivoId, usar análisis dinámico del cultivo completo
-      // Si solo tenemos cosechaId, usar análisis de cosecha individual
-      const endpoint = cultivoId
-        ? `/finanzas/cultivo/${cultivoId}/dinamico`
-        : `/finanzas/cosecha/${cosechaId}/calcular`;
+      let endpoint = '';
 
-      const response = await apiClient.get(endpoint);
-      setFinanzas(response.data);
+      if (cultivoId) {
+        // Verificar si el cultivo tiene cosechas para usar análisis dinámico o basado en actividades
+        try {
+          const cosechasResponse = await apiClient.get(`/cosechas/cultivo/${cultivoId}`);
+          const cosechas = cosechasResponse.data;
+
+          if (cosechas && cosechas.length > 0) {
+            // Tiene cosechas, usar análisis dinámico completo
+            endpoint = `/finanzas/cultivo/${cultivoId}/dinamico`;
+          } else {
+            // No tiene cosechas, usar análisis basado en actividades
+            endpoint = `/finanzas/cultivo/${cultivoId}/actividades`;
+          }
+        } catch (cosechasError) {
+          // Si no puede verificar cosechas, asumir análisis basado en actividades
+          endpoint = `/finanzas/cultivo/${cultivoId}/actividades`;
+        }
+      } else if (cosechaId) {
+        // Análisis de cosecha individual
+        endpoint = `/finanzas/cosecha/${cosechaId}/calcular`;
+      }
+
+      if (endpoint) {
+        const response = await apiClient.get(endpoint);
+        setFinanzas(response.data);
+      }
     } catch (err) {
       setError('Error al cargar los datos financieros');
       console.error('Error loading financial data:', err);
@@ -175,6 +195,11 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
             <h2 className="text-2xl font-semibold">
               {cultivoId ? 'Análisis Financiero del Cultivo' : 'Análisis Financiero de Cosecha'}
             </h2>
+            {cultivoId && finanzas && finanzas.cantidadCosechada === 0 && (
+              <div className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                Basado en actividades
+              </div>
+            )}
           </div>
         </ModalHeader>
         <ModalBody className="max-h-[calc(90vh-120px)] overflow-y-auto">
@@ -207,19 +232,25 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
                           <div>
                             <p className="text-sm font-medium text-blue-600">Producción</p>
                             <p className="text-xl font-bold text-blue-900">
-                              {formatNumber(finanzas.cantidadCosechada)} KG
+                              {finanzas.cantidadCosechada > 0
+                                ? `${formatNumber(finanzas.cantidadCosechada)} KG`
+                                : 'Sin cosecha aún'
+                              }
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="bg-primary-50 p-4 rounded-lg">
+                      <div className={`p-4 rounded-lg ${finanzas.ingresosTotales > 0 ? 'bg-primary-50' : 'bg-gray-50'}`}>
                         <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 bg-primary-600 rounded text-white flex items-center justify-center">💵</div>
+                          <div className={`h-8 w-8 rounded text-white flex items-center justify-center ${finanzas.ingresosTotales > 0 ? 'bg-primary-600' : 'bg-gray-600'}`}>💵</div>
                           <div>
-                            <p className="text-sm font-medium text-primary-600">Ingresos Totales</p>
-                            <p className="text-xl font-bold text-primary-900">
-                              {formatCurrency(finanzas.ingresosTotales)}
+                            <p className={`text-sm font-medium ${finanzas.ingresosTotales > 0 ? 'text-primary-600' : 'text-gray-600'}`}>Ingresos Totales</p>
+                            <p className={`text-xl font-bold ${finanzas.ingresosTotales > 0 ? 'text-primary-900' : 'text-gray-900'}`}>
+                              {finanzas.ingresosTotales > 0
+                                ? formatCurrency(finanzas.ingresosTotales)
+                                : 'Sin ventas aún'
+                              }
                             </p>
                           </div>
                         </div>
@@ -265,7 +296,7 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
                 {/* Pie Chart */}
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Cosecha
+                    {finanzas.cantidadCosechada > 0 ? 'Cosecha' : 'Costos Estimados'}
                   </h3>
                   <div style={{ width: '100%', height: '300px', minWidth: '300px', minHeight: '300px' }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -277,11 +308,11 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
                               value: parseFloat(finanzas.costoTotalProduccion.toString()),
                               fill: '#DC2626'
                             },
-                            {
+                            ...(finanzas.ingresosTotales > 0 ? [{
                               name: 'Ingresos\npor Ventas',
                               value: parseFloat(finanzas.ingresosTotales.toString()),
                               fill: '#16A34A'
-                            }
+                            }] : [])
                           ]}
                           cx="50%"
                           cy="50%"
@@ -295,6 +326,11 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
+                  {finanzas.cantidadCosechada === 0 && (
+                    <p className="text-sm text-gray-600 mt-2 text-center">
+                      * Costos estimados basados en actividades realizadas
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -324,34 +360,54 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          Producción Cosechada
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          {formatNumber(finanzas.cantidadCosechada)} KG
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          {formatCurrency(finanzas.precioPorKilo)}/KG
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-                          {formatCurrency(finanzas.cantidadCosechada * finanzas.precioPorKilo)}
-                        </td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          Cantidad Vendida
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          {formatNumber(finanzas.cantidadVendida)} KG
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          {formatCurrency(finanzas.precioPorKilo)}/KG
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-                          {formatCurrency(finanzas.ingresosTotales)}
-                        </td>
-                      </tr>
+                      {finanzas.cantidadCosechada > 0 && (
+                        <>
+                          <tr>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              Producción Cosechada
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {formatNumber(finanzas.cantidadCosechada)} KG
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {formatCurrency(finanzas.precioPorKilo)}/KG
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                              {formatCurrency(finanzas.cantidadCosechada * finanzas.precioPorKilo)}
+                            </td>
+                          </tr>
+                          <tr className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              Cantidad Vendida
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {formatNumber(finanzas.cantidadVendida)} KG
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {formatCurrency(finanzas.precioPorKilo)}/KG
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                              {formatCurrency(finanzas.ingresosTotales)}
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                      {finanzas.cantidadCosechada === 0 && (
+                        <tr>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            Costos Estimados
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                            -
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                            Basado en actividades
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                            {formatCurrency(finanzas.costoTotalProduccion)}
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
                           Costo Inventario
@@ -402,18 +458,20 @@ export const FinancialAnalysisModal: React.FC<FinancialAnalysisModalProps> = ({
               </div>
 
               {/* Métricas Adicionales */}
-              <div className="grid grid-cols-1 gap-6">
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Eficiencia de Ventas</h4>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {finanzas.cantidadCosechada > 0 ?
-                      ((finanzas.cantidadVendida / finanzas.cantidadCosechada) * 100).toFixed(1) : 0}%
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {formatNumber(finanzas.cantidadVendida)} de {formatNumber(finanzas.cantidadCosechada)} KG vendidos
-                  </p>
+              {finanzas.cantidadCosechada > 0 && (
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Eficiencia de Ventas</h4>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {finanzas.cantidadCosechada > 0 ?
+                        ((finanzas.cantidadVendida / finanzas.cantidadCosechada) * 100).toFixed(1) : 0}%
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {formatNumber(finanzas.cantidadVendida)} de {formatNumber(finanzas.cantidadCosechada)} KG vendidos
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

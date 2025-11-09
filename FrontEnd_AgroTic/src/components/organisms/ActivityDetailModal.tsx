@@ -5,6 +5,7 @@ import { getReservationsByActivity, confirmUsage } from '../../services/activida
 import apiClient from '../../lib/axios/axios';
 import FinalizeActivityModal from './FinalizeActivityModal';
 import { usePermission } from '../../contexts/PermissionContext';
+import Swal from 'sweetalert2';
 
 interface Reservation {
   id: string;
@@ -138,7 +139,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
        console.log('🔍 DEBUG: Request successful, response:', response);
 
-       alert('Actividad finalizada exitosamente');
+       Swal.fire({
+         title: '¡Actividad Finalizada!',
+         text: 'La actividad ha sido finalizada exitosamente.',
+         icon: 'success',
+         confirmButtonText: 'Aceptar'
+       });
        setIsFinalizeModalOpen(false);
        onClose();
        // Reload the page to update all activity counts
@@ -151,9 +157,19 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
        console.error('❌ ERROR: Error message:', error.message);
 
        if (error.response?.data) {
-         alert(`Error al finalizar la actividad: ${JSON.stringify(error.response.data)}`);
+         Swal.fire({
+           title: 'Error',
+           text: `Error al finalizar la actividad: ${JSON.stringify(error.response.data)}`,
+           icon: 'error',
+           confirmButtonText: 'Aceptar'
+         });
        } else {
-         alert('Error al finalizar la actividad');
+         Swal.fire({
+           title: 'Error',
+           text: 'Error al finalizar la actividad',
+           icon: 'error',
+           confirmButtonText: 'Aceptar'
+         });
        }
      }
    };
@@ -300,10 +316,20 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                                   // Refresh reservations
                                   const updatedRes = await getReservationsByActivity(activity.id);
                                   setReservations(updatedRes);
-                                  alert('Uso confirmado');
+                                  Swal.fire({
+                                    title: 'Uso Confirmado',
+                                    text: 'El uso del insumo ha sido confirmado exitosamente.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar'
+                                  });
                                 } catch (error) {
                                   console.error('Error confirming usage:', error);
-                                  alert('Error al confirmar uso');
+                                  Swal.fire({
+                                    title: 'Error',
+                                    text: 'Error al confirmar uso',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar'
+                                  });
                                 }
                               }
                             }}

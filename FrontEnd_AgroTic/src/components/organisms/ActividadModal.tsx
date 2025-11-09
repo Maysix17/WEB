@@ -359,8 +359,10 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
       return;
     }
 
+    // Send date as YYYY-MM-DD string to avoid timezone issues
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const data = {
-      fecha: selectedDate,
+      fecha: dateStr,
       usuarios: selectedUsuarios.map(u => u.id),
       materiales: Object.values(selectedProducts).map(prod => ({ id: prod.product.id, nombre: prod.product.nombre, qty: prod.qty, isSurplus: prod.isSurplus })),
       categoria,
@@ -368,13 +370,11 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
       lote: selectedLote?.id
     };
     console.log('ActividadModal handleSave - data.fecha:', data.fecha);
-    console.log('ActividadModal handleSave - data.fecha ISO:', data.fecha.toISOString());
-    console.log('ActividadModal handleSave - data.fecha local:', data.fecha.toLocaleDateString());
+    console.log('ActividadModal handleSave - data.fecha type:', typeof data.fecha);
     onSave(data);
 
     // Notify parent component to update activity count for this date
     if (onActivityCreated) {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
       onActivityCreated(dateStr);
     }
 

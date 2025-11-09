@@ -17,6 +17,8 @@ import EstadosFenologicosModal from "../components/organisms//EstadosFenologicos
 import HarvestSellModal from "../components/organisms/HarvestSellModal";
 import { FinancialAnalysisModal } from "../components/organisms/FinancialAnalysisModal";
 import MqttManagementModal from "../components/molecules/MqttManagementModal";
+import Swal from 'sweetalert2';
+import apiClient from '../lib/axios/axios';
 import {
   DocumentTextIcon,
   CurrencyDollarIcon,
@@ -143,13 +145,40 @@ const CultivosPage: React.FC = () => {
     console.log('Modal state set - isOpen:', true, 'cultivo:', cultivo);
   };
 
-  const handleOpenFinancialAnalysisModal = (cultivo: Cultivo) => {
-    // For now, we'll use the cosechaid if available, or show a message
-    if (cultivo.cosechaid) {
-      setSelectedCosechaId(cultivo.cosechaid);
-      setIsFinancialAnalysisModalOpen(true);
-    } else {
-      alert('Este cultivo no tiene cosechas registradas para análisis financiero');
+  const handleOpenFinancialAnalysisModal = async (cultivo: Cultivo) => {
+    try {
+      // Verificar si el cultivo tiene actividades registradas
+      const response = await apiClient.get(`/actividades/by-cultivo-variedad-zona/${cultivo.cvzid}`);
+      const actividades = response.data;
+
+      if (actividades && actividades.length > 0) {
+        // Usar análisis basado en actividades
+        setSelectedCultivo(cultivo);
+        setIsFinancialAnalysisModalOpen(true);
+      } else {
+        // No hay actividades registradas
+        await Swal.fire({
+          title: 'Sin actividades registradas',
+          text: 'Este cultivo no tiene actividades registradas para realizar análisis financiero. Registra algunas actividades primero.',
+          icon: 'info',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#16A34A',
+          customClass: {
+            popup: 'rounded-lg',
+            title: 'text-lg font-semibold text-gray-800',
+            htmlContainer: 'text-sm text-gray-600'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error verificando actividades:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'Ocurrió un error al verificar las actividades del cultivo.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#DC2626'
+      });
     }
   };
 
@@ -502,7 +531,7 @@ const CultivosPage: React.FC = () => {
       <FinancialAnalysisModal
         isOpen={isFinancialAnalysisModalOpen}
         onClose={() => setIsFinancialAnalysisModalOpen(false)}
-        cosechaId={selectedCosechaId}
+        cultivoId={selectedCultivo?.cvzid}
       />
 
       <MqttManagementModal

@@ -25,4 +25,9 @@ export class FinanzasController {
   async calcularFinanzasCultivoDinamico(@Param('cultivoId') cultivoId: string): Promise<FinanzasCosecha> {
     return await this.finanzasService.calcularFinanzasCultivoDinamico(cultivoId);
   }
+
+  @Get('cultivo/:cultivoId/actividades')
+  async calcularFinanzasCultivoActividades(@Param('cultivoId') cultivoId: string): Promise<FinanzasCosecha> {
+    return await this.finanzasService.calcularFinanzasCultivoActividades(cultivoId);
+  }
 }
