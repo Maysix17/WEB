@@ -82,6 +82,11 @@ class ZonasService {
   async delete(id: string): Promise<void> {
     await axios.delete(`${this.baseUrl}/${id}`);
   }
+
+  async getZonaCultivosVariedadXZona(zonaId: string) {
+    const response = await axios.get(`${this.baseUrl}/${zonaId}/cultivos-variedad-zona`);
+    return response.data;
+  }
 }
 
 class MqttConfigService {

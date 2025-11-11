@@ -212,7 +212,7 @@ const GenericFiltersPanel: React.FC<GenericFiltersPanelProps> = ({
                 <CustomButton
                   variant="light"
                   size="sm"
-                  label="Bróker"
+                  label="Gestionar Broker"
                   onClick={onManageMqtt}
                   className="rounded-lg px-3 py-1 h-8 text-gray-600"
                 />

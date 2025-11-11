@@ -162,4 +162,9 @@ export class MqttConfigService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async isZonaMqttConfigActive(id: string): Promise<boolean> {
+    const zmc = await this.zonaMqttConfigRepository.findOne({ where: { id } });
+    return !!(zmc && zmc.estado);
+  }
 }

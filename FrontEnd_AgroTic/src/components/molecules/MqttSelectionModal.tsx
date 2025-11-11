@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { type ZonaMqttConfig, type MqttConfig, mqttConfigService } from '../../services/zonasService';
+import { type ZonaMqttConfig, type MqttConfig, mqttConfigService, zonasService } from '../../services/zonasService';
 import CustomButton from '../atoms/Boton';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
@@ -20,12 +20,13 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
   onSave,
 }) => {
   const [mqttConfigs, setMqttConfigs] = useState<MqttConfig[]>([]);
-   const [zonaMqttConfigs, setZonaMqttConfigs] = useState<ZonaMqttConfig[]>([]);
-   const [loading, setLoading] = useState(false);
-   const [testingConfig, setTestingConfig] = useState<string | null>(null);
-   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
-   const [assignmentError, setAssignmentError] = useState<string | null>(null);
-   const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
+    const [zonaMqttConfigs, setZonaMqttConfigs] = useState<ZonaMqttConfig[]>([]);
+    const [crops, setCrops] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [testingConfig, setTestingConfig] = useState<string | null>(null);
+    const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
+    const [assignmentError, setAssignmentError] = useState<string | null>(null);
+    const [assignmentSuccess, setAssignmentSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,12 +39,15 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
-      const [configsData, zonaConfigsData] = await Promise.all([
+      const [configsData, zonaConfigsData, cropsData] = await Promise.all([
         mqttConfigService.getAll(),
         mqttConfigService.getZonaMqttConfigs(zonaId),
+        zonasService.getZonaCultivosVariedadXZona(zonaId),
       ]);
       setMqttConfigs(configsData);
       setZonaMqttConfigs(zonaConfigsData);
+      const cropNames = cropsData?.map((cv: any) => cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre).filter(Boolean) as string[];
+      setCrops(cropNames);
     } catch (error) {
       console.error('Error loading MQTT data:', error);
     } finally {
@@ -143,9 +147,10 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
         </ModalHeader>
 
         <ModalBody>
-          <div className="text-sm text-gray-600 mb-4">
-            Zona: <strong>{zonaNombre}</strong>
-          </div>
+           <div className="text-sm text-gray-600 mb-4">
+             Zona: <strong>{zonaNombre}</strong>
+             {crops.length > 0 && <div className="mt-1">Cultivos: {crops.join(', ')}</div>}
+           </div>
 
           {assignmentError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">

@@ -181,15 +181,22 @@ export class MqttService implements OnModuleInit {
       const payload = JSON.parse(message.toString());
       this.logger.log(`Mensaje recibido en ${topic} para zona ${zonaMqttConfig.zona.id}:`, payload);
 
-      await this.processSensorData(zonaMqttConfig.id, zonaMqttConfig.zona.id, payload);
+      await this.processSensorData(zonaMqttConfig.id, zonaMqttConfig.zona.id, payload, zonaMqttConfig);
 
     } catch (error) {
       this.logger.error('Error procesando mensaje MQTT:', error);
     }
   }
 
-  private async processSensorData(zonaMqttConfigId: string, zonaId: string, payload: any) {
+  private async processSensorData(zonaMqttConfigId: string, zonaId: string, payload: any, zonaMqttConfig?: any) {
     try {
+      // Verificar que la zona MQTT config esté activa antes de procesar
+      const isActive = await this.mqttConfigService.isZonaMqttConfigActive(zonaMqttConfigId);
+      if (!isActive) {
+        this.logger.warn(`Datos MQTT recibidos para zona inactiva ${zonaId}, ignorando`);
+        return;
+      }
+
       const realTimeMediciones: any[] = [];
 
       // Convertir cada key del payload en una medición

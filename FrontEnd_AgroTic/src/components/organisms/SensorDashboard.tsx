@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Spinner, Badge } from '@heroui/react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardBody, CardHeader, Spinner, Badge, Button } from '@heroui/react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { medicionSensorService, zonasService } from '../../services/zonasService';
-import { getAllCultivos } from '../../services/cultivosService';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
 import CustomButton from '../atoms/Boton';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import MqttManagementModal from '../molecules/MqttManagementModal';
+import ZoneSelectionModal from '../molecules/ZoneSelectionModal';
 
 interface SensorDashboardProps {
   filters: Record<string, any>;
@@ -15,25 +15,24 @@ interface SensorDashboardProps {
 interface SensorData {
   [key: string]: {
     unit: string;
-    history: Array<{ value: number; timestamp: string; zonaId: string; cultivoNombre?: string }>;
+    history: Array<{ value: number; timestamp: string; zonaId: string; cultivoNombres?: string[] }>;
     lastValue: number;
     lastUpdate: string;
     zonaNombre: string;
-    cultivoNombre?: string;
+    cultivoNombres?: string[];
   };
 }
-
-import type { Cultivo } from '../../types/cultivos.types';
 
 const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
   const [sensorData, setSensorData] = useState<SensorData>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [zonas, setZonas] = useState<any[]>([]);
   const [showMqttManagementModal, setShowMqttManagementModal] = useState(false);
+  const [showZoneSelectionModal, setShowZoneSelectionModal] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Use MQTT socket hook for real-time updates
-  const { lecturas } = useMqttSocket();
+  const { lecturas, isConnected } = useMqttSocket();
 
   useEffect(() => {
     loadInitialData();
@@ -43,7 +42,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     if (Object.keys(sensorData).length > 0) {
       // Apply filters when sensorData or filters change
       const filteredData = applyFilters(sensorData);
-      // Update display or something, but for now, just log
+      // Reset carousel index if out of bounds
+      setCurrentIndex(prev => Math.min(prev, Math.max(0, Object.keys(filteredData).length - 4)));
     }
   }, [filters, sensorData]);
 
@@ -58,8 +58,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           const zona = zonas.find(z => z.id === lectura.zonaId);
           if (!zona) return;
 
-          const cultivo = cultivos.find(c => zona.cultivos?.some((zc: any) => zc.cultivoId === c.id));
-          const cultivoNombre = cultivo?.tipoCultivo?.nombre;
+          const cultivoNombres = zona.cultivosVariedad?.map((cv: any) => cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre).filter(Boolean) as string[];
 
           lectura.mediciones.forEach(medicion => {
             const sensorKey = medicion.key;
@@ -68,17 +67,17 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
             if (!newData[sensorKey]) {
               newData[sensorKey] = {
                 unit: medicion.unidad,
-                history: [{ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombre }],
+                history: [{ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres }],
                 lastValue: newValue,
                 lastUpdate: medicion.fechaMedicion,
                 zonaNombre: zona.nombre,
-                cultivoNombre,
+                cultivoNombres,
               };
               hasUpdates = true;
             } else {
               newData[sensorKey].lastValue = newValue;
               newData[sensorKey].lastUpdate = medicion.fechaMedicion;
-              newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombre });
+              newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
               // Keep only last 50 values
               if (newData[sensorKey].history.length > 50) {
                 newData[sensorKey].history = newData[sensorKey].history.slice(-50);
@@ -91,21 +90,19 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         return hasUpdates ? newData : prevData;
       });
     }
-  }, [lecturas, zonas, cultivos]);
+  }, [lecturas, zonas]);
 
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [mediciones, zonasData, cultivosData] = await Promise.all([
+      const [mediciones, zonasData] = await Promise.all([
         medicionSensorService.getAll(),
-        zonasService.getAll(),
-        getAllCultivos()
+        zonasService.getAll()
       ]);
 
       setZonas(zonasData);
-      setCultivos(cultivosData);
 
-      processMediciones(mediciones, zonasData, cultivosData);
+      processMediciones(mediciones, zonasData);
     } catch (error) {
       console.error('Error loading sensor data:', error);
     } finally {
@@ -113,15 +110,14 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     }
   };
 
-  const processMediciones = (mediciones: any[], zonasData: any[], cultivosData: Cultivo[]) => {
+  const processMediciones = (mediciones: any[], zonasData: any[]) => {
     const data: SensorData = {};
 
     mediciones.forEach(medicion => {
       const zona = zonasData.find(z => z.id === medicion.fkZonaId);
       if (!zona) return;
 
-      const cultivo = cultivosData.find(c => zona.cultivos?.some((zc: any) => zc.cultivoId === c.id));
-      const cultivoNombre = cultivo?.tipoCultivo?.nombre;
+      const cultivoNombres = zona.cultivosVariedad?.map((cv: any) => cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre).filter(Boolean) as string[];
 
       if (!data[medicion.key]) {
         data[medicion.key] = {
@@ -130,7 +126,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           lastValue: medicion.valor,
           lastUpdate: medicion.fechaMedicion,
           zonaNombre: zona.nombre,
-          cultivoNombre,
+          cultivoNombres,
         };
       }
 
@@ -138,7 +134,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         value: medicion.valor,
         timestamp: medicion.fechaMedicion,
         zonaId: medicion.fkZonaId,
-        cultivoNombre
+        cultivoNombres
       });
 
       // Keep only last 50 values
@@ -164,7 +160,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
     Object.entries(data).forEach(([key, sensor]) => {
       const matchesZona = !zonaFilter || sensor.zonaNombre.toLowerCase().includes(zonaFilter);
-      const matchesCultivo = !cultivoFilter || (sensor.cultivoNombre && sensor.cultivoNombre.toLowerCase().includes(cultivoFilter));
+      const matchesCultivo = !cultivoFilter || (sensor.cultivoNombres && sensor.cultivoNombres.some(nombre => nombre.toLowerCase().includes(cultivoFilter)));
 
       if (matchesZona && matchesCultivo) {
         filtered[key] = sensor;
@@ -221,7 +217,10 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         <CardHeader className="flex items-center justify-between pb-2">
           <div className="text-center flex-1">
             <h3 className="text-lg font-bold text-gray-800 mb-1">{formatSensorKey(sensorKey)}</h3>
-            <p className="text-xs text-gray-600">{data.zonaNombre} {data.cultivoNombre && `(${data.cultivoNombre})`}</p>
+            <div className="text-xs text-gray-600">
+              <p>{data.zonaNombre}</p>
+              {data.cultivoNombres && data.cultivoNombres.length > 0 && <p>Cultivos: {data.cultivoNombres.join(', ')}</p>}
+            </div>
           </div>
           <Badge color="success" variant="flat" className="ml-2">
             Activo
@@ -259,7 +258,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         const row = [
           key,
           sensor.zonaNombre,
-          sensor.cultivoNombre || '',
+          sensor.cultivoNombres ? sensor.cultivoNombres.join(', ') : '',
           point.value.toString(),
           sensor.unit,
           point.timestamp
@@ -283,14 +282,22 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     document.body.removeChild(link);
   };
 
+  const handlePrev = () => {
+    setCurrentIndex(prev => Math.max(0, prev - 4));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex(prev => Math.min(sensorEntries.length - 4, prev + 4));
+  };
+
   return (
-    <div className="mt-6">
+    <div>
       {/* Header with export and broker button */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <h1 className="text-2xl font-bold text-gray-800">
-              Dashboard de Sensores
+              Gestión de IOT
             </h1>
 
             {/* Toolbar compacto */}
@@ -307,8 +314,16 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
               <CustomButton
                 variant="light"
                 size="sm"
-                label="Bróker"
+                label="Gestionar Broker"
                 onClick={() => setShowMqttManagementModal(true)}
+                className="rounded-lg px-3 py-1 h-8 text-gray-600"
+              />
+
+              <CustomButton
+                variant="light"
+                size="sm"
+                label="Configurar Zonas"
+                onClick={() => setShowZoneSelectionModal(true)}
                 className="rounded-lg px-3 py-1 h-8 text-gray-600"
               />
             </div>
@@ -316,10 +331,12 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         </div>
 
         <div className="p-6">
-          {isLoading ? (
+          {isLoading || (isConnected && sensorEntries.length === 0) ? (
             <div className="text-center py-8">
               <Spinner size="lg" color="primary" />
-              <p className="mt-2 text-gray-600">Cargando datos de sensores...</p>
+              <p className="mt-2 text-gray-600">
+                {isLoading ? 'Cargando datos de sensores...' : 'Esperando datos de sensores...'}
+              </p>
             </div>
           ) : sensorEntries.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -334,60 +351,90 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Sensor Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sensorEntries.map(([key, data]) => (
-                  <SensorCard key={key} sensorKey={key} data={data} />
-                ))}
+              {/* Sensor Cards Carousel */}
+              <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sensorEntries.slice(currentIndex, currentIndex + 4).map(([key, data]) => (
+                    <SensorCard key={key} sensorKey={key} data={data} />
+                  ))}
+                </div>
+                {sensorEntries.length > 4 && (
+                  <>
+                    <Button
+                      isDisabled={currentIndex === 0}
+                      onClick={handlePrev}
+                      isIconOnly
+                      className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 bg-gray-300 hover:bg-[#15a55a] transition-colors disabled:bg-gray-200 disabled:hover:bg-gray-200"
+                    >
+                      <ChevronLeftIcon className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      isDisabled={currentIndex >= sensorEntries.length - 4}
+                      onClick={handleNext}
+                      isIconOnly
+                      className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 bg-gray-300 hover:bg-[#15a55a] transition-colors disabled:bg-gray-200 disabled:hover:bg-gray-200"
+                    >
+                      <ChevronRightIcon className="w-5 h-5" />
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Chart */}
               <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold text-gray-800">Gráfica de Sensores</h3>
-                  <p className="text-sm text-gray-600">Valores en tiempo real de los sensores</p>
-                </CardHeader>
+                
                 <CardBody>
-                  <div className="h-96">
+                  <div className="flex">
                     {chartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis
-                            dataKey="time"
-                            type="number"
-                            tick={{ fontSize: 12 }}
-                            tickFormatter={(value) => new Date(value).toLocaleTimeString()}
-                            domain={['dataMin', 'dataMax']}
-                            tickCount={10}
-                          />
-                          <YAxis
-                            label={{ value: 'Valor', angle: -90, position: 'insideLeft' }}
-                            domain={[0, (dataMax) => Math.ceil(dataMax / 10) * 10 + 5]}
-                            tickCount={10}
-                          />
-                          <Tooltip
-                            labelFormatter={(value) => `Hora: ${new Date(value).toLocaleString()}`}
-                            formatter={(value: any, name: any) => [
-                              `${Number(value).toFixed(2)} ${filteredSensorData[name]?.unit || ''}`,
-                              String(name).replace(/([A-Z])/g, ' $1').toLowerCase()
-                            ]}
-                          />
-                          {sensorEntries.map(([key], index) => (
-                            <Line
-                              key={key}
-                              type="monotone"
-                              dataKey={key}
-                              stroke={`hsl(${index * 137.5 % 360}, 70%, 50%)`}
-                              strokeWidth={2}
-                              dot={false}
-                              connectNulls={true}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <>
+                        <div className="w-4/5">
+                          <ResponsiveContainer width="100%" height={278}>
+                            <LineChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis
+                                dataKey="time"
+                                type="number"
+                                tick={{ fontSize: 12 }}
+                                tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                                domain={['dataMin', 'dataMax']}
+                                tickCount={10}
+                              />
+                              <YAxis
+                                label={{ value: 'Valor', angle: -90, position: 'insideLeft' }}
+                                domain={[0, (dataMax) => Math.ceil(dataMax / 10) * 10 + 5]}
+                                tickCount={10}
+                              />
+                              {sensorEntries.map(([key], index) => (
+                                <Line
+                                  key={key}
+                                  type="monotone"
+                                  dataKey={key}
+                                  stroke={`hsl(${index * 137.5 % 360}, 70%, 50%)`}
+                                  strokeWidth={2}
+                                  dot={false}
+                                  connectNulls={true}
+                                  isAnimationActive={false}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="w-1/5 p-4">
+                          <div className="space-y-2">
+                            {sensorEntries.map(([key], index) => (
+                              <div key={key} className="flex items-center">
+                                <div
+                                  className="w-4 h-4 rounded-full mr-2"
+                                  style={{ backgroundColor: `hsl(${index * 137.5 % 360}, 70%, 50%)` }}
+                                ></div>
+                                <span className="text-sm">{String(key).replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500">
+                      <div className="flex items-center justify-center w-full text-gray-500">
                         No hay datos suficientes para mostrar la gráfica
                       </div>
                     )}
@@ -404,6 +451,14 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         <MqttManagementModal
           isOpen={showMqttManagementModal}
           onClose={() => setShowMqttManagementModal(false)}
+        />
+      )}
+
+      {showZoneSelectionModal && (
+        <ZoneSelectionModal
+          isOpen={showZoneSelectionModal}
+          onClose={() => setShowZoneSelectionModal(false)}
+          onSave={() => loadInitialData()} // Refresh data when MQTT config is assigned
         />
       )}
     </div>

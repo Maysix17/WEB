@@ -669,7 +669,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Welcome Card */}
-            <Card className={`shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex-1 flex flex-col transform ${
+            <Card className={` shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex-1 flex flex-col transform ${
               isPageLoaded
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-8'
@@ -690,7 +690,9 @@ const Dashboard: React.FC = () => {
                     </>
                   ) : user ? (
                     <>
-                      <h3 className="text-lg font-semibold">¡Bienvenido, {user.nombres} {user.apellidos}!</h3>
+                      <h3 className="text-lg font-semibold">¡Bienvenido,
+                        <br />
+                         {user.nombres} {user.apellidos}!</h3>
                       <p className="text-sm text-gray-600">Rol: {user.rol.nombre}</p>
                     </>
                   ) : (
@@ -702,9 +704,6 @@ const Dashboard: React.FC = () => {
                 </div>
               </CardHeader>
               <CardBody className="flex flex-col items-center justify-center text-center py-2">
-                <p className="text-gray-700 text-sm">
-                  ¡Hola! Aquí tienes un resumen de tu actividad reciente.
-                </p>
               </CardBody>
             </Card>
           </div>

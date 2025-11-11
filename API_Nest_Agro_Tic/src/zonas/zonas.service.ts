@@ -22,7 +22,7 @@ export class ZonasService {
 
   async findAll(): Promise<Zona[]> {
     return await this.zonaRepository.find({
-      relations: ['zonaMqttConfigs']
+      relations: ['zonaMqttConfigs', 'cultivosVariedad', 'cultivosVariedad.cultivoXVariedad', 'cultivosVariedad.cultivoXVariedad.variedad', 'cultivosVariedad.cultivoXVariedad.variedad.tipoCultivo']
     });
   }
 

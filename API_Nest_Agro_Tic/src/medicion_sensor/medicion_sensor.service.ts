@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MedicionSensor } from './entities/medicion_sensor.entity';
+import { ZonaMqttConfig } from '../mqtt_config/entities/zona_mqtt_config.entity';
 import { CreateMedicionSensorDto } from './dto/create-medicion_sensor.dto';
 import { UpdateMedicionSensorDto } from './dto/update-medicion_sensor.dto';
 
@@ -18,10 +19,14 @@ export class MedicionSensorService {
   }
 
   async findAll(): Promise<MedicionSensor[]> {
-    return await this.medicionSensorRepository.find({
-      relations: ['zonaMqttConfig', 'zonaMqttConfig.mqttConfig', 'zonaMqttConfig.zona'],
-      order: { fechaMedicion: 'DESC' },
-    });
+    return await this.medicionSensorRepository
+      .createQueryBuilder('ms')
+      .innerJoinAndSelect('ms.zonaMqttConfig', 'zmc')
+      .innerJoinAndSelect('zmc.mqttConfig', 'mc')
+      .innerJoinAndSelect('zmc.zona', 'z')
+      .where('zmc.estado = :estado', { estado: true })
+      .orderBy('ms.fechaMedicion', 'DESC')
+      .getMany();
   }
 
   async findOne(id: string): Promise<MedicionSensor | null> {
@@ -32,43 +37,40 @@ export class MedicionSensorService {
   }
 
   async findByZona(zonaId: string): Promise<MedicionSensor[]> {
-    return await this.medicionSensorRepository.find({
-      relations: ['zonaMqttConfig', 'zonaMqttConfig.mqttConfig', 'zonaMqttConfig.zona'],
-      where: {
-        zonaMqttConfig: {
-          fkZonaId: zonaId,
-          estado: true
-        }
-      },
-      order: { fechaMedicion: 'DESC' },
-    });
+    return await this.medicionSensorRepository
+      .createQueryBuilder('ms')
+      .innerJoinAndSelect('ms.zonaMqttConfig', 'zmc')
+      .innerJoinAndSelect('zmc.mqttConfig', 'mc')
+      .innerJoinAndSelect('zmc.zona', 'z')
+      .where('zmc.fkZonaId = :zonaId', { zonaId })
+      .andWhere('zmc.estado = :estado', { estado: true })
+      .orderBy('ms.fechaMedicion', 'DESC')
+      .getMany();
   }
 
   async findByMqttConfig(mqttConfigId: string): Promise<MedicionSensor[]> {
-    return await this.medicionSensorRepository.find({
-      relations: ['zonaMqttConfig', 'zonaMqttConfig.mqttConfig', 'zonaMqttConfig.zona'],
-      where: {
-        zonaMqttConfig: {
-          fkMqttConfigId: mqttConfigId,
-          estado: true
-        }
-      },
-      order: { fechaMedicion: 'DESC' },
-    });
+    return await this.medicionSensorRepository
+      .createQueryBuilder('ms')
+      .innerJoinAndSelect('ms.zonaMqttConfig', 'zmc')
+      .innerJoinAndSelect('zmc.mqttConfig', 'mc')
+      .innerJoinAndSelect('zmc.zona', 'z')
+      .where('zmc.fkMqttConfigId = :mqttConfigId', { mqttConfigId })
+      .andWhere('zmc.estado = :estado', { estado: true })
+      .orderBy('ms.fechaMedicion', 'DESC')
+      .getMany();
   }
 
   async findRecentByZona(zonaId: string, limit: number = 50): Promise<MedicionSensor[]> {
-    return await this.medicionSensorRepository.find({
-      relations: ['zonaMqttConfig', 'zonaMqttConfig.mqttConfig', 'zonaMqttConfig.zona'],
-      where: {
-        zonaMqttConfig: {
-          fkZonaId: zonaId,
-          estado: true
-        }
-      },
-      order: { fechaMedicion: 'DESC' },
-      take: limit,
-    });
+    return await this.medicionSensorRepository
+      .createQueryBuilder('ms')
+      .innerJoinAndSelect('ms.zonaMqttConfig', 'zmc')
+      .innerJoinAndSelect('zmc.mqttConfig', 'mc')
+      .innerJoinAndSelect('zmc.zona', 'z')
+      .where('zmc.fkZonaId = :zonaId', { zonaId })
+      .andWhere('zmc.estado = :estado', { estado: true })
+      .orderBy('ms.fechaMedicion', 'DESC')
+      .take(limit)
+      .getMany();
   }
 
   async update(id: string, updateMedicionSensorDto: UpdateMedicionSensorDto): Promise<MedicionSensor> {

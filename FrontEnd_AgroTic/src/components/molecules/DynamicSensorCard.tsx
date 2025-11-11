@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardBody } from '@heroui/react';
+import { Card, CardHeader, CardBody, Spinner } from '@heroui/react';
 import { BeakerIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
 import { mqttConfigService, medicionSensorService, type MedicionSensor } from '../../services/zonasService';
@@ -14,14 +14,16 @@ interface SensorReading {
 }
 
 const DynamicSensorCard: React.FC = () => {
-  const { lecturas } = useMqttSocket();
+  const { lecturas, isConnected } = useMqttSocket();
   const [sensorReadings, setSensorReadings] = useState<SensorReading[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load all active MQTT configurations and their sensor data
   const loadAllSensorData = useCallback(async () => {
+    setIsLoading(true);
     try {
       // Get all active zona-mqtt-configs (only active connections)
       const activeZonaMqttConfigs = await mqttConfigService.getAllActiveZonaMqttConfigs();
@@ -57,6 +59,8 @@ const DynamicSensorCard: React.FC = () => {
       console.log('All sensor readings loaded:', allReadings);
     } catch (error) {
       console.error('Error loading MQTT configurations:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -173,16 +177,22 @@ const DynamicSensorCard: React.FC = () => {
 
   return (
     <Card
-      className="shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex flex-col transform opacity-100 translate-y-0"
+      className="shadow-lg hover:shadow-xl transition-all duration-700 ease-out flex flex-col transform opacity-100 translate-y-0 h-full"
       style={{ animationDelay: '0.5s' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <CardBody className="flex-1 flex flex-row items-start justify-start text-left relative gap-4 pl-6">
-        <BeakerIcon className="w-10 h-10 text-green-500 transition-all duration-500 flex-shrink-0"
-                    style={{ animationDelay: '0.8s' }} />
+      <CardBody className="flex-1 flex flex-row items-start justify-start text-left relative gap-4 pl-6 overflow-hidden">
+       
         <div className="flex flex-col items-start justify-start text-left">
-          {sensorReadings.length === 0 ? (
+          {isLoading || (isConnected && sensorReadings.length === 0) ? (
+            <div className="text-center py-4">
+              <Spinner size="sm" color="primary" />
+              <p className="text-xs text-gray-600 mt-1">
+                {isLoading ? 'Cargando datos de sensores...' : 'Esperando datos de sensores...'}
+              </p>
+            </div>
+          ) : sensorReadings.length === 0 ? (
             <div className="text-gray-500">
               <p className="text-sm">Esperando datos de sensores...</p>
               <p className="text-xs text-gray-400 mt-1">No hay configuraciones de broker activas</p>
