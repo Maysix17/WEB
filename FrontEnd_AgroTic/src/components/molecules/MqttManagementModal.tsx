@@ -67,6 +67,7 @@ const MqttManagementModal: React.FC<{
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
+
   const testConnection = async (config: MqttConfig) => {
     setTestingConfig(config.id);
     setTestResults(prev => ({ ...prev, [config.id]: { success: false, message: 'Probando...' } }));

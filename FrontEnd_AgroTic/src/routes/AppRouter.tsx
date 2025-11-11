@@ -18,6 +18,7 @@ import ActividadesPage from "../pages/ActividadesPage";
 import ZapatoPage from "../pages/ZapatoPage";
 import InventoryPage from "../pages/InventoryPage";
 import MovementsPage from "../pages/MovementsPage";
+import IotPage from "../pages/IotPage";
 
 const AppRouter = () => {
   return (
@@ -54,10 +55,11 @@ const AppRouter = () => {
           <Route path="panel-control" element={<PanelControl />} />
           <Route path="cultivos" element={<CultivosPage />} />
           <Route path="actividades" element={<ActividadesPage />} />
-          <Route path="iot" element={<GestionZonasPage />} />
+          <Route path="zonas" element={<GestionZonasPage />} />
           <Route path="zapato" element={<ZapatoPage />} />
           <Route path="inventario" element={<InventoryPage />} />
           <Route path="movements" element={<MovementsPage />} />
+          <Route path="iot" element={<IotPage />} />
         </Route>
 
         <Route path="/reset-password" element={<ResetPasswordPage />} />

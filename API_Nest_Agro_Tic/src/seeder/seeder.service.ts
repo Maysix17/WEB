@@ -50,12 +50,9 @@ const PERMISOS_BASE = [
   { moduloNombre: 'Usuarios', recurso: 'roles', acciones: ACCIONES_CRUD },
   { moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] },
 
-  // Módulo de IOT
-  { moduloNombre: 'IOT', recurso: 'acceso_iot', acciones: ACCION_VER },
-  { moduloNombre: 'IOT', recurso: 'dispositivos', acciones: ACCIONES_CRUD },
-  { moduloNombre: 'IOT', recurso: 'sensores', acciones: ACCIONES_CRUD },
-  // Las mediciones no se suelen actualizar o eliminar, solo crear y leer
-  { moduloNombre: 'IOT', recurso: 'mediciones', acciones: ['leer', 'crear'] },
+  // Módulo de zonas
+  { moduloNombre: 'zonas', recurso: 'acceso_zonas', acciones: ACCION_VER },
+  { moduloNombre: 'zonas', recurso: 'zonas', acciones: ACCIONES_CRUD },
 
   // Módulo de Cultivos
   {
@@ -304,10 +301,8 @@ export class SeederService {
       await this.crearRolSiNoExiste('INVITADO');
 
       // Asignar permisos específicos al INSTRUCTOR
-      const permisoCrearUsuarios = await this.permisoRepository.findOne({
-        where: { accion: 'crear', recurso: { nombre: 'usuarios' } },
-        relations: ['recurso'],
-      });
+      const allPermisos = await this.permisoRepository.find({ relations: ['recurso'] });
+      const permisoCrearUsuarios = allPermisos.find(p => p.accion === 'crear' && p.recurso.nombre === 'usuarios');
 
       if (rolInstructor && permisoCrearUsuarios) {
         // Cargamos el rol con sus permisos para no sobreescribirlos
@@ -334,14 +329,7 @@ export class SeederService {
       }
 
       // Asignar permisos de acceso a módulos para INVITADO e INSTRUCTOR
-      const permisosAcceso = await this.permisoRepository.find({
-        where: [
-          { accion: 'ver', recurso: { nombre: 'acceso_inicio' } },
-          { accion: 'ver', recurso: { nombre: 'acceso_iot' } },
-          { accion: 'ver', recurso: { nombre: 'acceso_cultivos' } },
-        ],
-        relations: ['recurso'],
-      });
+      const permisosAcceso = allPermisos.filter(p => p.accion === 'ver' && ['acceso_inicio', 'acceso_zonas', 'acceso_cultivos'].includes(p.recurso.nombre));
 
       const asignarPermisosARol = async (rol: Rol, nombreRol: string) => {
         if (rol && permisosAcceso.length > 0) {

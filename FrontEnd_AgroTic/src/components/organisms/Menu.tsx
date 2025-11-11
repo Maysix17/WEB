@@ -10,6 +10,7 @@ import {
   UserIcon,
   Bars3Icon,
   XMarkIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import logo from "../../assets/AgroTic.png";
 import logoSena from "../../assets/logoSena.png";
@@ -45,27 +46,30 @@ const Menu: React.FC = () => {
 
   const mainModules = [
     { nombre: "Inicio" },
-    { nombre: "IOT" },
+    { nombre: "zonas" },
     { nombre: "Cultivos" },
     { nombre: "Actividades" },
     { nombre: "Inventario" },
     { nombre: "Usuarios" },
+    { nombre: "IOT" },
   ];
 
   const getIcon = (label: string) => {
     switch (label) {
       case "Inicio":
         return HomeIcon;
-      case "IOT":
-        return CpuChipIcon;
-      case "Cultivos":
+      case "zonas":
         return CubeIcon;
+      case "Cultivos":
+        return GlobeAltIcon;
       case "Actividades":
         return ClipboardDocumentListIcon;
       case "Inventario":
         return ArchiveBoxIcon;
       case "Usuarios":
         return UserIcon;
+      case "IOT":
+        return CpuChipIcon;
       default:
         return HomeIcon;
     }
@@ -75,14 +79,16 @@ const Menu: React.FC = () => {
     switch (label) {
       case "Inicio":
         return "/app";
-      case "IOT":
-        return "/app/iot";
+      case "zonas":
+        return "/app/zonas";
       case "Cultivos":
         return "/app/cultivos";
       case "Actividades":
         return "/app/actividades";
       case "Inventario":
         return "/app/inventario";
+      case "IOT":
+        return "/app/iot";
       default:
         return "/app";
     }
@@ -92,10 +98,10 @@ const Menu: React.FC = () => {
     (module) =>
       permissions.some(
         (perm) => perm.modulo === module.nombre && perm.accion === "ver"
-      ) || module.nombre === "Usuarios" || module.nombre === "Actividades"
+      ) || module.nombre === "Usuarios" || module.nombre === "Actividades" || module.nombre === "IOT"
   );
 
-  const priorityOrder = ["Inicio", "IOT", "Cultivos", "Actividades", "Inventario", "Usuarios"];
+  const priorityOrder = ["Inicio", "zonas", "IOT", "Cultivos", "Actividades", "Inventario", "Usuarios"];
   const sortedFilteredModules = [...filteredModules].sort((a, b) => {
     const aIndex = priorityOrder.indexOf(a.nombre);
     const bIndex = priorityOrder.indexOf(b.nombre);
