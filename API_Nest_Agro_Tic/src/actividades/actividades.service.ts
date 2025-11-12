@@ -364,7 +364,17 @@ export class ActividadesService {
     // Enrich with responsable information
     const enriched = await this.enrichActividadesWithResponsable(actividades);
     console.log(`[${new Date().toISOString()}] ✅ BACKEND: Enriched activities with responsable info`);
-    return enriched;
+
+    // Add cost calculations for finalized activities
+    const enrichedWithCosts = enriched.map(actividad => {
+      if (actividad.estado === false && actividad.reservas) { // finalized
+        const costData = this.calculateActivityCosts(actividad);
+        (actividad as any).costData = costData;
+      }
+      return actividad;
+    });
+
+    return enrichedWithCosts;
   }
 
   private async enrichActividadesWithResponsable(actividades: Actividad[]): Promise<Actividad[]> {
@@ -400,5 +410,39 @@ export class ActividadesService {
     // Sort to show responsable first (assuming current user is the responsable)
     // For now, we'll keep the order but mark the responsable
     return enriched;
+  }
+
+  private calculateActivityCosts(actividad: Actividad): any {
+    if (!actividad.reservas) return null;
+
+    let totalInputsCost = 0;
+    const reservationsWithCosts = actividad.reservas.map(reserva => {
+      const cantidadUsada = reserva.cantidadUsada || 0;
+      // Unit price: for divisible products, precioProducto / capacidadPresentacionProducto
+      const unitPrice = reserva.capacidadPresentacionProducto > 0
+        ? reserva.precioProducto / reserva.capacidadPresentacionProducto
+        : 0;
+      const subtotal = cantidadUsada * unitPrice;
+      totalInputsCost += subtotal;
+
+      return {
+        ...reserva,
+        unitPrice,
+        subtotal,
+      };
+    });
+
+    // Labor cost: horasDedicadas * precioHora (use precioHora if set, else default to 0)
+    const laborRate = actividad.precioHora || 0; // or get from config
+    const laborCost = (actividad.horasDedicadas || 0) * laborRate;
+
+    const totalActivityCost = totalInputsCost + laborCost;
+
+    return {
+      reservations: reservationsWithCosts,
+      totalInputsCost,
+      laborCost,
+      totalActivityCost,
+    };
   }
 }

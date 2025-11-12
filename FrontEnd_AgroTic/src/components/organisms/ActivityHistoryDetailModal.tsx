@@ -6,6 +6,8 @@ interface Reservation {
   id: string;
   cantidadReservada: number;
   cantidadUsada?: number;
+  precioProducto?: number;
+  capacidadPresentacionProducto?: number;
   lote?: {
     nombre: string;
     producto: { nombre: string; unidadMedida?: { abreviatura: string } };
@@ -18,6 +20,7 @@ interface Activity {
   descripcion: string;
   fechaAsignacion: string;
   horasDedicadas?: number;
+  precioHora?: number;
   observacion?: string;
   estado: boolean;
   categoriaActividad?: { nombre: string };
@@ -157,7 +160,7 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
                   </svg>
                   Información de la Actividad
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-purple-700 uppercase tracking-wide">Fecha Asignación</label>
                     <div className="text-sm text-gray-900 font-medium">
@@ -182,6 +185,28 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
                       {activity.categoriaActividad?.nombre || 'Sin categoría'}
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-purple-700 uppercase tracking-wide">Costo de Mano de Obra</label>
+                    <div className="text-sm text-gray-900">
+                      ${((activity.horasDedicadas || 0) * (activity.precioHora || 0)).toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-purple-700 uppercase tracking-wide">Costo Total de la Actividad</label>
+                    <div className="text-sm text-gray-900">
+                      ${(() => {
+                        const totalInputsCost = reservations.reduce((sum, res) => {
+                          const unitPrice = res.capacidadPresentacionProducto && res.capacidadPresentacionProducto > 0
+                            ? (res.precioProducto || 0) / res.capacidadPresentacionProducto
+                            : 0;
+                          const subtotal = (res.cantidadUsada || 0) * unitPrice;
+                          return sum + subtotal;
+                        }, 0);
+                        const laborCost = (activity.horasDedicadas || 0) * (activity.precioHora || 0);
+                        return (totalInputsCost + laborCost).toFixed(2);
+                      })()}
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-3">
                   <label className="block text-xs font-medium text-purple-700 uppercase tracking-wide mb-1">Observación</label>
@@ -200,24 +225,31 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
                   Reservas de Insumos
                 </h3>
                 <div className="space-y-2 max-h-32 overflow-auto">
-                  {reservations.map((res, idx) => (
-                    <div key={idx} className="p-3 bg-white rounded border">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-medium text-gray-900 text-sm">{res.lote?.producto?.nombre}</span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          res.estado?.nombre === 'Confirmada' ? 'bg-green-100 text-green-800' :
-                          res.estado?.nombre === 'En Uso' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {res.estado?.nombre}
-                        </span>
+                  {reservations.map((res, idx) => {
+                    const unitPrice = res.capacidadPresentacionProducto && res.capacidadPresentacionProducto > 0
+                      ? (res.precioProducto || 0) / res.capacidadPresentacionProducto
+                      : 0;
+                    const subtotal = (res.cantidadUsada || 0) * unitPrice;
+                    return (
+                      <div key={idx} className="p-3 bg-white rounded border">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium text-gray-900 text-sm">{res.lote?.producto?.nombre}</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            res.estado?.nombre === 'Confirmada' ? 'bg-green-100 text-green-800' :
+                            res.estado?.nombre === 'En Uso' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {res.estado?.nombre}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                          <div>Reservado: <span className="font-medium">{res.cantidadReservada} {res.lote?.producto?.unidadMedida?.abreviatura}</span></div>
+                          <div>Usado: <span className="font-medium">{res.cantidadUsada || 0} {res.lote?.producto?.unidadMedida?.abreviatura}</span></div>
+                          <div>Subtotal: <span className="font-medium">${subtotal.toFixed(2)}</span></div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                        <div>Reservado: <span className="font-medium">{res.cantidadReservada} {res.lote?.producto?.unidadMedida?.abreviatura}</span></div>
-                        <div>Usado: <span className="font-medium">{res.cantidadUsada || 0} {res.lote?.producto?.unidadMedida?.abreviatura}</span></div>
-                      </div>
-                    </div>
-                  )) || <p className="text-gray-500 italic">No hay reservas</p>}
+                    );
+                  }) || <p className="text-gray-500 italic">No hay reservas</p>}
                 </div>
               </div>
             </div>

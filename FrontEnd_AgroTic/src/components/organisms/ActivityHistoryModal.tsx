@@ -23,10 +23,14 @@ interface ExtendedActividad extends Actividad {
       producto?: {
         nombre: string;
         unidadMedida?: { abreviatura: string };
+        categoria?: { esDivisible: boolean; vidaUtilPromedioPorUsos?: number };
       };
     };
     cantidadUsada?: number;
+    precioProducto?: number;
+    capacidadPresentacionProducto?: number;
   }[];
+  precioHora?: number;
 }
 
 interface ActivityHistoryModalProps {
@@ -127,6 +131,40 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
     setDateRange([null, null]);
   };
 
+  const calculateCostoManoObra = (activity: ExtendedActividad) => {
+    return (activity.horasDedicadas || 0) * (activity.precioHora || 0);
+  };
+
+  const calculateCostoInventario = (activity: ExtendedActividad) => {
+    if (!activity.reservas || activity.reservas.length === 0) return 0;
+    let total = 0;
+    for (const reserva of activity.reservas) {
+      const cantidadUsada = reserva.cantidadUsada || 0;
+      if (cantidadUsada > 0) {
+        const esDivisible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+        if (esDivisible) {
+          const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+          total += cantidadUsada * precioUnitario;
+        } else {
+          const vidaUtil = reserva.lote?.producto?.categoria?.vidaUtilPromedioPorUsos;
+          if (vidaUtil && vidaUtil > 0) {
+            const valorResidual = (reserva.precioProducto || 0) * 0.1;
+            const costoPorUso = ((reserva.precioProducto || 0) - valorResidual) / vidaUtil;
+            total += costoPorUso;
+          } else {
+            const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+            total += cantidadUsada * precioUnitario;
+          }
+        }
+      }
+    }
+    return total;
+  };
+
+  const calculateCostoTotalActividad = (activity: ExtendedActividad) => {
+    return calculateCostoManoObra(activity) + calculateCostoInventario(activity);
+  };
+
   const exportToExcel = () => {
     if (filteredActivities.length === 0) {
       alert('No hay actividades para exportar.');
@@ -139,10 +177,12 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
 
       // Sheet: Historial de Actividades
       const actividadesData = [
-        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas"]
+        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
       ];
 
       filteredActivities.forEach((activity: ExtendedActividad) => {
+        const costoManoObra = calculateCostoManoObra(activity);
+        const costoTotal = calculateCostoTotalActividad(activity);
         actividadesData.push([
           activity.id,
           formatDate(activity.fechaAsignacion),
@@ -152,7 +192,9 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
           activity.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
           activity.estado === false ? 'Finalizada' : 'En Progreso',
           activity.observacion || '',
-          (activity.horasDedicadas || 0).toString()
+          (activity.horasDedicadas || 0).toString(),
+          costoManoObra.toFixed(2),
+          costoTotal.toFixed(2)
         ]);
       });
 
@@ -168,19 +210,36 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
         { wch: 15 }, // Zona
         { wch: 12 }, // Estado
         { wch: 50 }, // Observación
-        { wch: 15 }  // Horas Dedicadas
+        { wch: 15 }, // Horas Dedicadas
+        { wch: 20 }, // Costo de Mano de Obra
+        { wch: 20 }  // Costo Total de la Actividad
       ];
 
       XLSX.utils.book_append_sheet(wb, wsActividades, "Historial de Actividades");
 
       // Sheet: Detalle de Inventario Utilizado
       const inventarioData = [
-        ["ID Actividad", "Fecha Asignación", "Categoría", "Usuario Responsable", "Producto", "Cantidad Reservada", "Cantidad Usada", "Unidad de Medida", "Zona", "Estado"]
+        ["ID Actividad", "Fecha Asignación", "Categoría", "Usuario Responsable", "Producto", "Cantidad Reservada", "Cantidad Usada", "Unidad de Medida", "Precio Unitario", "Subtotal", "Zona", "Estado"]
       ];
 
       filteredActivities.forEach((activity: ExtendedActividad) => {
         if (activity.reservas && activity.reservas.length > 0) {
           activity.reservas.forEach((reserva: any) => {
+            const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+            const cantidadUsada = reserva.cantidadUsada || 0;
+            const esDivisible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+            let subtotal = 0;
+            if (esDivisible) {
+              subtotal = cantidadUsada * precioUnitario;
+            } else {
+              const vidaUtil = reserva.lote?.producto?.categoria?.vidaUtilPromedioPorUsos;
+              if (vidaUtil && vidaUtil > 0) {
+                const valorResidual = (reserva.precioProducto || 0) * 0.1;
+                subtotal = ((reserva.precioProducto || 0) - valorResidual) / vidaUtil;
+              } else {
+                subtotal = cantidadUsada * precioUnitario;
+              }
+            }
             inventarioData.push([
               activity.id,
               formatDate(activity.fechaAsignacion),
@@ -188,8 +247,10 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
               getResponsibleUser(activity),
               reserva.lote?.producto?.nombre || 'Producto desconocido',
               reserva.cantidadReservada || 0,
-              reserva.cantidadUsada || 0,
+              cantidadUsada,
               reserva.lote?.producto?.unidadMedida?.abreviatura || 'N/A',
+              precioUnitario.toFixed(2),
+              subtotal.toFixed(2),
               activity.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
               activity.estado === false ? 'Finalizada' : 'En Progreso'
             ]);
@@ -205,6 +266,8 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
             0,
             0,
             'N/A',
+            '0.00',
+            '0.00',
             activity.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
             activity.estado === false ? 'Finalizada' : 'En Progreso'
           ]);
@@ -223,11 +286,52 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
         { wch: 18 }, // Cantidad Reservada
         { wch: 15 }, // Cantidad Usada
         { wch: 18 }, // Unidad de Medida
+        { wch: 15 }, // Precio Unitario
+        { wch: 12 }, // Subtotal
         { wch: 15 }, // Zona
         { wch: 12 }  // Estado
       ];
 
       XLSX.utils.book_append_sheet(wb, wsInventario, "Detalle de Inventario");
+
+      // Sheet: Análisis de Costos
+      const costosData = [
+        ["ID Actividad", "Fecha Asignación", "Categoría", "Usuario Responsable", "Costo de Mano de Obra", "Costo Total Insumos", "Costo Total Actividad", "Zona", "Estado"]
+      ];
+
+      filteredActivities.forEach((activity: ExtendedActividad) => {
+        const costoManoObra = calculateCostoManoObra(activity);
+        const costoInventario = calculateCostoInventario(activity);
+        const costoTotal = calculateCostoTotalActividad(activity);
+        costosData.push([
+          activity.id,
+          formatDate(activity.fechaAsignacion),
+          activity.categoriaActividad?.nombre || 'Sin categoría',
+          getResponsibleUser(activity),
+          costoManoObra.toFixed(2),
+          costoInventario.toFixed(2),
+          costoTotal.toFixed(2),
+          activity.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
+          activity.estado === false ? 'Finalizada' : 'En Progreso'
+        ]);
+      });
+
+      const wsCostos = XLSX.utils.aoa_to_sheet(costosData);
+
+      // Set column widths for cost analysis sheet
+      wsCostos['!cols'] = [
+        { wch: 15 }, // ID Actividad
+        { wch: 15 }, // Fecha Asignación
+        { wch: 20 }, // Categoría
+        { wch: 25 }, // Usuario Responsable
+        { wch: 20 }, // Costo de Mano de Obra
+        { wch: 20 }, // Costo Total Insumos
+        { wch: 20 }, // Costo Total Actividad
+        { wch: 15 }, // Zona
+        { wch: 12 }  // Estado
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsCostos, "Análisis de Costos");
 
       // Generate and download file
       const fileName = `Historial_Actividades_${cultivoName}_${new Date().toISOString().split('T')[0]}.xlsx`;

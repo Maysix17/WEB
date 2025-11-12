@@ -8,7 +8,7 @@ import { getActividadesByCultivoVariedadZonaId } from '../../services/actividade
 import { getCosechasByCultivo } from '../../services/cosechasService';
 import { getVentas } from '../../services/ventaService';
 import type { Actividad } from '../../services/actividadesService';
-import type { Cosecha } from '../../types/cosechas.types';
+import apiClient from '../../lib/axios/axios';
 
 interface CultivoDetailsModalProps {
    isOpen: boolean;
@@ -50,10 +50,61 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         cosechas.some(cosecha => cosecha.id === venta.fkCosechaId)
       );
 
+      // Fetch financial data for the cultivo
+      let finanzas = null;
+      try {
+        const cosechasResponse = await apiClient.get(`/cosechas/cultivo/${currentCultivo.cvzid}`);
+        const cosechasCultivo = cosechasResponse.data;
+        if (cosechasCultivo && cosechasCultivo.length > 0) {
+          const response = await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/dinamico`);
+          finanzas = response.data;
+        } else {
+          const response = await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/actividades`);
+          finanzas = response.data;
+        }
+      } catch (finanzasError) {
+        console.warn('Could not fetch financial data:', finanzasError);
+      }
+
+      // Calculate total production cost from activities
+      const calculateCostoManoObra = (activity: Actividad) => {
+        return (activity.horasDedicadas || 0) * ((activity as any).precioHora || 0);
+      };
+
+      const calculateCostoInventario = (activity: Actividad) => {
+        if (!(activity as any).reservas || (activity as any).reservas.length === 0) return 0;
+        let total = 0;
+        for (const reserva of (activity as any).reservas) {
+          const cantidadUsada = reserva.cantidadUsada || 0;
+          if (cantidadUsada > 0) {
+            const esDivisible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+            if (esDivisible) {
+              const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+              total += cantidadUsada * precioUnitario;
+            } else {
+              const vidaUtil = reserva.lote?.producto?.categoria?.vidaUtilPromedioPorUsos;
+              if (vidaUtil && vidaUtil > 0) {
+                const valorResidual = (reserva.precioProducto || 0) * 0.1;
+                const costoPorUso = ((reserva.precioProducto || 0) - valorResidual) / vidaUtil;
+                total += costoPorUso;
+              } else {
+                const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+                total += cantidadUsada * precioUnitario;
+              }
+            }
+          }
+        }
+        return total;
+      };
+
+      const costoTotalProduccion = actividades
+        .filter(act => act.estado === false) // Only finalized activities
+        .reduce((sum, act) => sum + calculateCostoManoObra(act) + calculateCostoInventario(act), 0);
+
       // Create workbook
       const wb = XLSX.utils.book_new();
 
-      // Sheet 1: Resumen del Cultivo
+      // Sheet 1: Resumen del Cultivo (with added total production cost)
       const resumenData = [
         ["Campo", "Valor"],
         ["ID del Cultivo", currentCultivo.cvzid],
@@ -73,67 +124,230 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         ["Total Cosechas", cosechas.length],
         ["Total Ventas", cultivoVentas.length],
         ["Ingresos Totales", cultivoVentas.reduce((sum, venta) => sum + (venta.precioUnitario || 0) * venta.cantidad, 0).toFixed(2)],
+        ["Costo Total de Producción", costoTotalProduccion.toFixed(2)],
         ["Fecha de Exportación", new Date().toLocaleDateString('es-CO')]
       ];
       const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+      wsResumen['!cols'] = [
+        { wch: 30 }, // Campo
+        { wch: 25 }  // Valor
+      ];
       XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen del Cultivo");
 
-      // Sheet 2: Actividades Realizadas
+      // Filter finalized activities for the activity sheets
+      const finalizedActivities = actividades.filter(act => act.estado === false);
+
+      // Sheet 2: Historial de Actividades
       const actividadesData = [
-        ["ID", "Descripción", "Fecha Asignación", "Horas Dedicadas", "Estado", "Observación", "Responsable"]
+        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
       ];
-      actividades.forEach((act: Actividad) => {
+
+      finalizedActivities.forEach((activity: Actividad) => {
+        const costoManoObra = calculateCostoManoObra(activity);
+        const costoTotal = costoManoObra + calculateCostoInventario(activity);
         actividadesData.push([
-          act.id,
-          act.descripcion,
-          act.fechaAsignacion ? new Date(act.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
-          (act.horasDedicadas || 0).toString(),
-          act.estado ? "Completada" : "Pendiente",
-          act.observacion || "",
-          (act.dniResponsable || "N/A").toString()
+          activity.id,
+          activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
+          (activity as any).categoriaActividad?.nombre || 'Sin categoría',
+          (activity as any).responsableNombre || 'Sin responsable',
+          (activity as any).reservas && (activity as any).reservas.length > 0
+            ? (activity as any).reservas.map((r: any) => `${r.lote?.producto?.nombre} (${r.cantidadUsada || 0} ${r.lote?.producto?.unidadMedida?.abreviatura})`).join(', ')
+            : 'Sin inventario',
+          (currentCultivo as any).zona?.nombre || 'Sin zona',
+          'Finalizada',
+          activity.observacion || '',
+          (activity.horasDedicadas || 0).toString(),
+          costoManoObra.toFixed(2),
+          costoTotal.toFixed(2)
         ]);
       });
+
       const wsActividades = XLSX.utils.aoa_to_sheet(actividadesData);
-      XLSX.utils.book_append_sheet(wb, wsActividades, "Actividades");
-
-      // Sheet 3: Detalles Financieros (simplified - assuming costs from activities)
-      const costosTotales = actividades.reduce((sum, act) => sum + (act.horasDedicadas || 0) * 10, 0); // Assuming $10/hour
-      const ingresosTotales = cultivoVentas.reduce((sum, venta) => sum + (venta.precioUnitario || 0) * venta.cantidad, 0);
-      const financierosData = [
-        ["Categoría", "Descripción", "Monto", "Tipo"],
-        ["Mano de Obra", "Costo estimado de actividades", costosTotales.toFixed(2), "Gasto"],
-        ["Ventas", "Ingresos por ventas", ingresosTotales.toFixed(2), "Ingreso"],
-        ["Total Gastos", "", costosTotales.toFixed(2), ""],
-        ["Total Ingresos", "", ingresosTotales.toFixed(2), ""],
-        ["Ganancia Neta", "", (ingresosTotales - costosTotales).toFixed(2), ""]
+      wsActividades['!cols'] = [
+        { wch: 15 }, // ID
+        { wch: 15 }, // Fecha Asignación
+        { wch: 20 }, // Categoría
+        { wch: 25 }, // Usuario Responsable
+        { wch: 40 }, // Inventario Utilizado
+        { wch: 15 }, // Zona
+        { wch: 12 }, // Estado
+        { wch: 50 }, // Observación
+        { wch: 15 }, // Horas Dedicadas
+        { wch: 20 }, // Costo de Mano de Obra
+        { wch: 20 }  // Costo Total de la Actividad
       ];
-      const wsFinancieros = XLSX.utils.aoa_to_sheet(financierosData);
-      XLSX.utils.book_append_sheet(wb, wsFinancieros, "Financieros");
+      XLSX.utils.book_append_sheet(wb, wsActividades, "Historial de Actividades");
 
-      // Sheet 4: Cosechas y Ventas
-      const cosechasVentasData = [
-        ["ID Cosecha", "Fecha Cosecha", "Cantidad", "Unidad", "Disponible", "Estado", "ID Venta", "Fecha Venta", "Precio Unitario", "Total Venta"]
+      // Sheet 3: Detalle de Inventario
+      const inventarioData = [
+        ["ID Actividad", "Fecha Asignación", "Categoría", "Usuario Responsable", "Producto", "Cantidad Reservada", "Cantidad Usada", "Unidad de Medida", "Precio Unitario", "Subtotal", "Zona", "Estado"]
       ];
-      cosechas.forEach((cosecha: Cosecha) => {
-        const venta = cultivoVentas.find(v => v.fkCosechaId === cosecha.id);
-        cosechasVentasData.push([
-          cosecha.id,
-          cosecha.fecha ? new Date(cosecha.fecha).toLocaleDateString('es-CO') : "N/A",
-          cosecha.cantidad.toString(),
-          cosecha.unidadMedida,
-          cosecha.cantidadDisponible.toString(),
-          cosecha.cerrado ? "Cerrada" : "Abierta",
-          venta?.id || "Sin venta",
-          venta?.fecha ? new Date(venta.fecha).toLocaleDateString('es-CO') : "N/A",
-          (venta?.precioUnitario || 0).toString(),
-          venta ? ((venta.precioUnitario || 0) * venta.cantidad).toFixed(2) : "0.00"
+
+      finalizedActivities.forEach((activity: Actividad) => {
+        if ((activity as any).reservas && (activity as any).reservas.length > 0) {
+          (activity as any).reservas.forEach((reserva: any) => {
+            const precioUnitario = (reserva.precioProducto || 0) / (reserva.capacidadPresentacionProducto || 1);
+            const cantidadUsada = reserva.cantidadUsada || 0;
+            const esDivisible = reserva.lote?.producto?.categoria?.esDivisible ?? true;
+            let subtotal = 0;
+            if (esDivisible) {
+              subtotal = cantidadUsada * precioUnitario;
+            } else {
+              const vidaUtil = reserva.lote?.producto?.categoria?.vidaUtilPromedioPorUsos;
+              if (vidaUtil && vidaUtil > 0) {
+                const valorResidual = (reserva.precioProducto || 0) * 0.1;
+                subtotal = ((reserva.precioProducto || 0) - valorResidual) / vidaUtil;
+              } else {
+                subtotal = cantidadUsada * precioUnitario;
+              }
+            }
+            inventarioData.push([
+              activity.id,
+              activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
+              (activity as any).categoriaActividad?.nombre || 'Sin categoría',
+              (activity as any).responsableNombre || 'Sin responsable',
+              reserva.lote?.producto?.nombre || 'Producto desconocido',
+              reserva.cantidadReservada || 0,
+              cantidadUsada,
+              reserva.lote?.producto?.unidadMedida?.abreviatura || 'N/A',
+              precioUnitario.toFixed(2),
+              subtotal.toFixed(2),
+              (currentCultivo as any).zona?.nombre || 'Sin zona',
+              'Finalizada'
+            ]);
+          });
+        } else {
+          inventarioData.push([
+            activity.id,
+            activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
+            (activity as any).categoriaActividad?.nombre || 'Sin categoría',
+            (activity as any).responsableNombre || 'Sin responsable',
+            'Sin inventario utilizado',
+            0,
+            0,
+            'N/A',
+            '0.00',
+            '0.00',
+            (currentCultivo as any).zona?.nombre || 'Sin zona',
+            'Finalizada'
+          ]);
+        }
+      });
+
+      const wsInventario = XLSX.utils.aoa_to_sheet(inventarioData);
+      wsInventario['!cols'] = [
+        { wch: 15 }, // ID Actividad
+        { wch: 15 }, // Fecha Asignación
+        { wch: 20 }, // Categoría
+        { wch: 25 }, // Usuario Responsable
+        { wch: 30 }, // Producto
+        { wch: 18 }, // Cantidad Reservada
+        { wch: 15 }, // Cantidad Usada
+        { wch: 18 }, // Unidad de Medida
+        { wch: 15 }, // Precio Unitario
+        { wch: 12 }, // Subtotal
+        { wch: 15 }, // Zona
+        { wch: 12 }  // Estado
+      ];
+      XLSX.utils.book_append_sheet(wb, wsInventario, "Detalle de Inventario");
+
+      // Sheet 4: Análisis de Costos
+      const costosData = [
+        ["ID Actividad", "Fecha Asignación", "Categoría", "Usuario Responsable", "Costo de Mano de Obra", "Costo Total Insumos", "Costo Total Actividad", "Zona", "Estado"]
+      ];
+
+      finalizedActivities.forEach((activity: Actividad) => {
+        const costoManoObra = calculateCostoManoObra(activity);
+        const costoInventario = calculateCostoInventario(activity);
+        const costoTotal = costoManoObra + costoInventario;
+        costosData.push([
+          activity.id,
+          activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
+          (activity as any).categoriaActividad?.nombre || 'Sin categoría',
+          (activity as any).responsableNombre || 'Sin responsable',
+          costoManoObra.toFixed(2),
+          costoInventario.toFixed(2),
+          costoTotal.toFixed(2),
+          (currentCultivo as any).zona?.nombre || 'Sin zona',
+          'Finalizada'
         ]);
       });
-      const wsCosechasVentas = XLSX.utils.aoa_to_sheet(cosechasVentasData);
-      XLSX.utils.book_append_sheet(wb, wsCosechasVentas, "Cosechas y Ventas");
+
+      const wsCostos = XLSX.utils.aoa_to_sheet(costosData);
+      wsCostos['!cols'] = [
+        { wch: 15 }, // ID Actividad
+        { wch: 15 }, // Fecha Asignación
+        { wch: 20 }, // Categoría
+        { wch: 25 }, // Usuario Responsable
+        { wch: 20 }, // Costo de Mano de Obra
+        { wch: 20 }, // Costo Total Insumos
+        { wch: 20 }, // Costo Total Actividad
+        { wch: 15 }, // Zona
+        { wch: 12 }  // Estado
+      ];
+      XLSX.utils.book_append_sheet(wb, wsCostos, "Análisis de Costos");
+
+      // Financial sheets (only if financial data is available)
+      if (finanzas) {
+        // Sheet 5: Resumen Financiero
+        const resumenFinancieroData = [
+          ["Concepto", "Valor"],
+          ["Cantidad Cosechada", finanzas.cantidadCosechada.toString() + " KG"],
+          ["Precio por Kilo", `$${finanzas.precioPorKilo.toFixed(2)}`],
+          ["Fecha de Venta", finanzas.fechaVenta ? new Date(finanzas.fechaVenta).toLocaleDateString('es-CO') : "N/A"],
+          ["Cantidad Vendida", finanzas.cantidadVendida.toString() + " KG"],
+          ["Costo Inventario", `$${finanzas.costoInventario.toFixed(2)}`],
+          ["Costo Mano de Obra", `$${finanzas.costoManoObra.toFixed(2)}`],
+          ["Costo Total de Producción", `$${finanzas.costoTotalProduccion.toFixed(2)}`],
+          ["Ingresos Totales", `$${finanzas.ingresosTotales.toFixed(2)}`],
+          ["Ganancias", `$${finanzas.ganancias.toFixed(2)}`],
+          ["Margen de Ganancia", `${(finanzas.margenGanancia * 100).toFixed(2)}%`],
+          ["Fecha de Cálculo", new Date(finanzas.fechaCalculo).toLocaleDateString('es-CO')],
+          ["Fecha de Exportación", new Date().toLocaleDateString('es-CO')]
+        ];
+        const wsResumenFinanciero = XLSX.utils.aoa_to_sheet(resumenFinancieroData);
+        wsResumenFinanciero['!cols'] = [
+          { wch: 30 }, // Concepto
+          { wch: 25 }  // Valor
+        ];
+        XLSX.utils.book_append_sheet(wb, wsResumenFinanciero, "Resumen Financiero");
+
+        // Sheet 6: Detalle de Costos
+        const detalleCostosData = [
+          ["Categoría", "Descripción", "Monto"],
+          ["Producción", "Costo total de producción", finanzas.costoTotalProduccion.toString()],
+          ["Inventario", "Costo de insumos y materiales", finanzas.costoInventario.toString()],
+          ["Mano de Obra", "Costo de mano de obra", finanzas.costoManoObra.toString()],
+          ["Total Costos", "Suma de todos los costos", finanzas.costoTotalProduccion.toString()]
+        ];
+        const wsDetalleCostos = XLSX.utils.aoa_to_sheet(detalleCostosData);
+        wsDetalleCostos['!cols'] = [
+          { wch: 15 }, // Categoría
+          { wch: 35 }, // Descripción
+          { wch: 20 }  // Monto
+        ];
+        XLSX.utils.book_append_sheet(wb, wsDetalleCostos, "Detalle de Costos");
+
+        // Sheet 7: Ingresos y Rentabilidad
+        const ingresosRentabilidadData = [
+          ["Concepto", "Cantidad", "Precio Unitario", "Total"],
+          ["Producción Total", finanzas.cantidadCosechada.toString() + " KG", `$${finanzas.precioPorKilo.toFixed(2)}`, `$${finanzas.cantidadCosechada * finanzas.precioPorKilo}`],
+          ["Ventas Realizadas", finanzas.cantidadVendida.toString() + " KG", `$${finanzas.precioPorKilo.toFixed(2)}`, `$${finanzas.ingresosTotales.toFixed(2)}`],
+          ["Eficiencia de Ventas", `${((finanzas.cantidadVendida / finanzas.cantidadCosechada) * 100).toFixed(2)}%`, "", ""],
+          ["Resultado Final", "", "", `$${finanzas.ganancias.toFixed(2)}`]
+        ];
+        const wsIngresosRentabilidad = XLSX.utils.aoa_to_sheet(ingresosRentabilidadData);
+        wsIngresosRentabilidad['!cols'] = [
+          { wch: 25 }, // Concepto
+          { wch: 20 }, // Cantidad
+          { wch: 20 }, // Precio Unitario
+          { wch: 20 }  // Total
+        ];
+        XLSX.utils.book_append_sheet(wb, wsIngresosRentabilidad, "Ingresos y Rentabilidad");
+      }
 
       // Generate and download file
-      const fileName = `Informe_Cultivo_${currentCultivo.ficha}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `Informe_Completo_Cultivo_${currentCultivo.ficha}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
     } catch (error) {
