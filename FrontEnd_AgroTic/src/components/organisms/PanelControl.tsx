@@ -4,6 +4,7 @@ import GenericDataTable from './GenericDataTable';
 import AdminUserForm from './AdminUserForm';
 import CreateRoleModal from './CreateRoleModal';
 import ManageRolesModal from './ManageRolesModal';
+import FichaModal from './FichaModal';
 import userSearchService from '../../services/userSearchService';
 
 const PanelControl: React.FC = () => {
@@ -13,6 +14,7 @@ const PanelControl: React.FC = () => {
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isManageRolesModalOpen, setIsManageRolesModalOpen] = useState(false);
+  const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
 
   const handleSearch = useCallback(async () => {
     const searchTerm = filters.buscar || '';
@@ -93,7 +95,8 @@ const PanelControl: React.FC = () => {
           onCreate={() => setIsUserFormOpen(true)}
           onManageActions={[
             { label: 'Crear nuevo rol', icon: <span>➕</span>, onClick: () => setIsRoleModalOpen(true) },
-            { label: 'Gestionar roles', icon: <span>⚙️</span>, onClick: () => setIsManageRolesModalOpen(true) }
+            { label: 'Gestionar roles', icon: <span>⚙️</span>, onClick: () => setIsManageRolesModalOpen(true) },
+            { label: 'Gestionar fichas', icon: <span>📄</span>, onClick: () => setIsFichaModalOpen(true) }
           ]}
         />
 
@@ -171,6 +174,11 @@ const PanelControl: React.FC = () => {
       <ManageRolesModal
         isOpen={isManageRolesModalOpen}
         onClose={() => setIsManageRolesModalOpen(false)}
+      />
+
+      <FichaModal
+        isOpen={isFichaModalOpen}
+        onClose={() => setIsFichaModalOpen(false)}
       />
     </div>
   );

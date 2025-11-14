@@ -12,23 +12,25 @@ export class FichasService {
     private readonly fichaRepository: Repository<Ficha>,
   ) {}
 
-  create(createFichaDto: CreateFichaDto) {
-    return 'This action adds a new ficha';
+  async create(createFichaDto: CreateFichaDto) {
+    const ficha = this.fichaRepository.create(createFichaDto);
+    return this.fichaRepository.save(ficha);
   }
 
   async findAll() {
     return this.fichaRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ficha`;
+  async findOne(id: string) {
+    return this.fichaRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateFichaDto: UpdateFichaDto) {
-    return `This action updates a #${id} ficha`;
+  async update(id: string, updateFichaDto: UpdateFichaDto) {
+    await this.fichaRepository.update(id, updateFichaDto);
+    return this.fichaRepository.findOne({ where: { id } });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ficha`;
+  async remove(id: string) {
+    return this.fichaRepository.delete(id);
   }
 }
