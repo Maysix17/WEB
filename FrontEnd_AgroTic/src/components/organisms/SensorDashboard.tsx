@@ -92,9 +92,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
               };
               hasUpdates = true;
             } else {
-              newData[sensorKey].lastValue = newValue;
-              newData[sensorKey].lastUpdate = medicion.fechaMedicion;
               newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
+              if (new Date(medicion.fechaMedicion) > new Date(newData[sensorKey].lastUpdate)) {
+                newData[sensorKey].lastValue = newValue;
+                newData[sensorKey].lastUpdate = medicion.fechaMedicion;
+              }
               // Keep only last 50 values
               if (newData[sensorKey].history.length > 50) {
                 newData[sensorKey].history = newData[sensorKey].history.slice(-50);
