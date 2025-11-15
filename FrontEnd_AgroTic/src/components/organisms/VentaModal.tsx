@@ -220,7 +220,7 @@ const VentaModal: React.FC<VentaModalProps> = ({ isOpen, onClose, cultivo, onSuc
               <div class="line"><span>Cultivo:</span><span>${saleData.cultivo}</span></div>
               <div class="line"><span>Zona:</span><span>${saleData.zona}</span></div>
               <div class="line"><span>Cantidad:</span><span>${saleData.cantidad} ${saleData.unidadMedida}</span></div>
-              <div class="line"><span>Precio Unit.:</span><span>$${saleData.precioUnitario}</span></div>
+              <div class="line"><span>Precio ${saleData.unidadMedida === 'kg' ? 'Kilo' : 'Libra'}.:</span><span>$${saleData.precioUnitario}</span></div>
               <div class="line"><span>Cosechas Sel.:</span><span>${saleData.cosechasSeleccionadas}</span></div>
               <div class="total">
                 <div class="line"><span>TOTAL:</span><span>$${saleData.total.toFixed(2)}</span></div>
@@ -279,7 +279,7 @@ const VentaModal: React.FC<VentaModalProps> = ({ isOpen, onClose, cultivo, onSuc
     y += 4;
     doc.text(`Cantidad: ${saleData.cantidad} ${saleData.unidadMedida}`, 5, y);
     y += 4;
-    doc.text(`Precio Unit.: $${saleData.precioUnitario}`, 5, y);
+    doc.text(`Precio ${saleData.unidadMedida === 'kg' ? 'Kilo' : 'Libra'}.: $${saleData.precioUnitario}`, 5, y);
     y += 4;
     doc.text(`Cosechas Sel.: ${saleData.cosechasSeleccionadas}`, 5, y);
     y += 8;
@@ -365,7 +365,7 @@ const VentaModal: React.FC<VentaModalProps> = ({ isOpen, onClose, cultivo, onSuc
                   <p><strong>Zona:</strong> {saleData?.zona}</p>
                   <p><strong>Fecha:</strong> {new Date(saleData?.fecha).toLocaleDateString()}</p>
                   <p><strong>Cantidad:</strong> {saleData?.cantidad} {saleData?.unidadMedida}</p>
-                  <p><strong>Precio Unitario:</strong> ${saleData?.precioUnitario}</p>
+                  <p><strong>Precio {saleData?.unidadMedida === 'kg' ? 'Kilo' : 'Libra'}:</strong> ${saleData?.precioUnitario}</p>
                   <p><strong>Total:</strong> ${saleData?.total?.toFixed(2)}</p>
                   <p><strong>Cosechas Seleccionadas:</strong> {saleData?.cosechasSeleccionadas}</p>
                 </div>

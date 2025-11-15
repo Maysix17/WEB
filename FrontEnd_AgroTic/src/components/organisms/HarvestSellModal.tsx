@@ -214,16 +214,6 @@ const HarvestSellModal: React.FC<HarvestSellModalProps> = ({
               </p>
             )}
           </div>
-
-          {/* Historial rápido */}
-          {isPerenne && (
-            <div className="mt-4 p-3 bg-blue-50 rounded">
-              <h4 className="font-medium text-blue-900">Historial</h4>
-              <p className="text-sm text-blue-800">
-                Cosechas registradas: {loading ? 'Cargando...' : cosechasDisponibles.length + (hasCosecha ? 1 : 0)}
-              </p>
-            </div>
-          )}
             </>
           )}
         </ModalBody>
