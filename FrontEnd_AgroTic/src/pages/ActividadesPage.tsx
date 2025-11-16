@@ -154,6 +154,7 @@ const ActividadesPage: React.FC = () => {
                       if (countClick > 0) {
                         const activitiesData = await getActividadesByDateWithActive(dateStr);
                         setActivities(activitiesData);
+                        setModalDate(value);
                         setIsListModalOpen(true);
                       } else {
                         setModalDate(value);
@@ -226,9 +227,6 @@ const ActividadesPage: React.FC = () => {
         onActivityCreated={updateActivityCount}
         onSave={async (data) => {
           try {
-            console.log('ActividadesPage onSave - data.fecha:', data.fecha);
-            console.log('ActividadesPage onSave - data.fecha type:', typeof data.fecha);
-
             // Parse the date string to ensure it's treated as local date
             const fechaAsignacion = typeof data.fecha === 'string' ? new Date(data.fecha + 'T00:00:00') : data.fecha;
 
@@ -241,10 +239,6 @@ const ActividadesPage: React.FC = () => {
               fkCultivoVariedadZonaId: data.lote, // data.lote is cvz.id from search
               fkCategoriaActividadId: data.categoria,
             };
-
-            console.log('ActividadesPage onSave - actividadData.fechaAsignacion:', actividadData.fechaAsignacion);
-            console.log('ActividadesPage onSave - actividadData.fechaAsignacion ISO:', actividadData.fechaAsignacion.toISOString());
-            console.log('ActividadesPage onSave - actividadData.fechaAsignacion local:', actividadData.fechaAsignacion.toLocaleDateString());
 
             const actividad = await createActividad(actividadData);
 
