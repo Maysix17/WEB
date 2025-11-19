@@ -4,9 +4,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } fro
 import { medicionSensorService, zonasService } from '../../services/zonasService';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
 import CustomButton from '../atoms/Boton';
-import { ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import MqttManagementModal from '../molecules/MqttManagementModal';
 import ZoneSelectionModal from '../molecules/ZoneSelectionModal';
+import SensorSearchModal from './SensorSearchModal';
 
 interface SensorDashboardProps {
   filters: Record<string, any>;
@@ -29,6 +30,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
   const [zonas, setZonas] = useState<any[]>([]);
   const [showMqttManagementModal, setShowMqttManagementModal] = useState(false);
   const [showZoneSelectionModal, setShowZoneSelectionModal] = useState(false);
+  const [showSensorSearchModal, setShowSensorSearchModal] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedSensors, setSelectedSensors] = useState<string[]>([]);
 
@@ -267,44 +269,6 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     );
   });
 
-  const handleExport = () => {
-    // Generate CSV for export
-    const csvData = generateCSV(filteredSensorData);
-    downloadCSV(csvData, 'reporte_sensores.csv');
-  };
-
-  const generateCSV = (data: SensorData): string => {
-    const headers = ['Sensor', 'Zona', 'Cultivo', 'Valor', 'Unidad', 'Fecha'];
-    const rows: string[] = [headers.join(',')];
-
-    Object.entries(data).forEach(([key, sensor]) => {
-      sensor.history.forEach(point => {
-        const row = [
-          key,
-          sensor.zonaNombre,
-          sensor.cultivoNombres ? sensor.cultivoNombres.join(', ') : '',
-          point.value.toString(),
-          sensor.unit,
-          point.timestamp
-        ];
-        rows.push(row.map(field => `"${field}"`).join(','));
-      });
-    });
-
-    return rows.join('\n');
-  };
-
-  const downloadCSV = (data: string, filename: string) => {
-    const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const handlePrev = () => {
     setCurrentIndex(prev => Math.max(0, prev - 4));
@@ -327,11 +291,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
             {/* Toolbar compacto */}
             <div className="flex items-center gap-3">
               <CustomButton
-                color="success"
+                color="primary"
                 variant="solid"
-                onClick={handleExport}
-                label="Exportar Reporte"
-                icon={<ArrowDownTrayIcon className="w-4 h-4" />}
+                onClick={() => setShowSensorSearchModal(true)}
+                label="Buscar Sensores"
+                icon={<MagnifyingGlassIcon className="w-4 h-4" />}
                 className="rounded-lg px-3 py-1 h-8"
               />
 
@@ -496,6 +460,13 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           isOpen={showZoneSelectionModal}
           onClose={() => setShowZoneSelectionModal(false)}
           onSave={() => loadInitialData()} // Refresh data when MQTT config is assigned
+        />
+      )}
+
+      {showSensorSearchModal && (
+        <SensorSearchModal
+          isOpen={showSensorSearchModal}
+          onClose={() => setShowSensorSearchModal(false)}
         />
       )}
     </div>

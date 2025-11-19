@@ -11,6 +11,8 @@ import {
 import { MedicionSensorService } from './medicion_sensor.service';
 import { CreateMedicionSensorDto } from './dto/create-medicion_sensor.dto';
 import { UpdateMedicionSensorDto } from './dto/update-medicion_sensor.dto';
+import { SensorSearchResponseDto } from './dto/sensor-search-response.dto';
+import { HistoricalSensorDataRequestDto, HistoricalSensorDataResponseDto } from './dto/historical-sensor-data.dto';
 
 @Controller('medicion-sensor')
 export class MedicionSensorController {
@@ -40,6 +42,16 @@ export class MedicionSensorController {
   @Get('mqtt-config/:mqttConfigId')
   findByMqttConfig(@Param('mqttConfigId') mqttConfigId: string) {
     return this.medicionSensorService.findByMqttConfig(mqttConfigId);
+  }
+
+  @Get('sensor-search')
+  getSensorSearchData(): Promise<SensorSearchResponseDto> {
+    return this.medicionSensorService.getSensorSearchData();
+  }
+
+  @Post('historical-data')
+  getHistoricalSensorData(@Body() request: HistoricalSensorDataRequestDto): Promise<HistoricalSensorDataResponseDto> {
+    return this.medicionSensorService.getHistoricalSensorData(request.sensorKeys);
   }
 
   @Get(':id')

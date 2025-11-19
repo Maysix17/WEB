@@ -176,6 +176,16 @@ class MedicionSensorService {
     const response = await axios.post(`${this.baseUrl}/batch`, mediciones);
     return response.data;
   }
+
+  async getSensorSearchData(): Promise<any> {
+    const response = await axios.get(`${this.baseUrl}/sensor-search`);
+    return response.data;
+  }
+
+  async getHistoricalData(sensorKeys: string[]) {
+    const response = await axios.post(`${this.baseUrl}/historical-data`, { sensorKeys });
+    return response.data;
+  }
 }
 
 export const zonasService = new ZonasService();
