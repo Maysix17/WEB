@@ -2,6 +2,7 @@ import { IsOptional, IsArray, IsString, IsUUID, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class ReportDataRequestDto {
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   @Transform(({ value }) => {
@@ -10,7 +11,7 @@ export class ReportDataRequestDto {
     }
     return value;
   })
-  med_keys: string[];
+  med_keys?: string[];
 
   @IsOptional()
   @IsArray()

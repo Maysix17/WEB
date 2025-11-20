@@ -13,6 +13,9 @@ import { CreateMedicionSensorDto } from './dto/create-medicion_sensor.dto';
 import { UpdateMedicionSensorDto } from './dto/update-medicion_sensor.dto';
 import { SensorSearchResponseDto } from './dto/sensor-search-response.dto';
 import { HistoricalSensorDataRequestDto, HistoricalSensorDataResponseDto } from './dto/historical-sensor-data.dto';
+import { ReportDataRequestDto } from './dto/report-data-request.dto';
+import { ReportDataResponseDto } from './dto/report-data-response.dto';
+import { CultivosZonasResponseDto } from './dto/cultivos-zonas-response.dto';
 
 @Controller('medicion-sensor')
 export class MedicionSensorController {
@@ -52,6 +55,16 @@ export class MedicionSensorController {
   @Post('historical-data')
   getHistoricalSensorData(@Body() request: HistoricalSensorDataRequestDto): Promise<HistoricalSensorDataResponseDto> {
     return this.medicionSensorService.getHistoricalSensorData(request.sensorKeys);
+  }
+
+  @Post('report-data')
+  getReportData(@Body() request: ReportDataRequestDto): Promise<ReportDataResponseDto[]> {
+    return this.medicionSensorService.getReportData(request);
+  }
+
+  @Get('by-cultivos-zonas')
+  getCultivosZonas(): Promise<CultivosZonasResponseDto[]> {
+    return this.medicionSensorService.getCultivosZonas();
   }
 
   @Get(':id')

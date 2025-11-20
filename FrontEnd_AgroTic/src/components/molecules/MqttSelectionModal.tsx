@@ -46,10 +46,16 @@ const MqttSelectionModal: React.FC<MqttSelectionModalProps> = ({
       ]);
       setMqttConfigs(configsData);
       setZonaMqttConfigs(zonaConfigsData);
-      const cropNames = cropsData?.map((cv: any) => cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre).filter(Boolean) as string[];
+      
+      // Ensure cropsData is an array before calling map
+      const cropNames = Array.isArray(cropsData) 
+        ? cropsData.map((cv: any) => cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre).filter(Boolean)
+        : [];
       setCrops(cropNames);
     } catch (error) {
       console.error('Error loading MQTT data:', error);
+      // Set crops to empty array on error to prevent further issues
+      setCrops([]);
     } finally {
       setLoading(false);
     }

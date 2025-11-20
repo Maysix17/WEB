@@ -11,7 +11,10 @@ import { Logger } from '@nestjs/common';
 @WebSocketGateway({
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
+  transports: ['websocket', 'polling'],
 })
 export class MqttGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

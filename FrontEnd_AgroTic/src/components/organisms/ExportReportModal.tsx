@@ -11,27 +11,35 @@ import {
   Card,
   CardBody,
   Chip,
+  Select,
+  SelectItem,
+  Spinner,
 } from "@heroui/react";
-import { searchCultivos } from "../../services/cultivosService";
-import { zonasService, medicionSensorService } from "../../services/zonasService";
 import apiClient from "../../lib/axios/axios";
 import type { Cultivo } from "../../types/cultivos.types";
-import type { Zona } from "../../types/zona.types";
 
-interface SensorData {
-  med_key: string;
-  zonaNombre: string;
+interface CultivoZonaCombination {
+  cultivoId: string;
   cultivoNombre: string;
   variedadNombre: string;
+  tipoCultivoNombre: string;
+  zonaId: string;
+  zonaNombre: string;
+  cvzId: string;
+  estadoCultivo: number;
+  fechaSiembra: string;
 }
 
 interface ExportReportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (selectedData: {
+  onExport: (data: {
     cultivos: string[];
     zonas: string[];
     sensores: string[];
+    startDate: string;
+    endDate: string;
+    groupBy: 'hourly' | 'daily' | 'weekly';
   }) => void;
 }
 
@@ -40,65 +48,69 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({
   onClose,
   onExport,
 }) => {
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Step 1: Search and selection
-  const [cultivoSearch, setCultivoSearch] = useState("");
-  const [zonaSearch, setZonaSearch] = useState("");
-  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
-  const [zonas, setZonas] = useState<Zona[]>([]);
-  const [selectedCultivos, setSelectedCultivos] = useState<string[]>([]);
-  const [selectedZonas, setSelectedZonas] = useState<string[]>([]);
+  // Step 1: Crop-Zone combination selection
+  const [cultivoZonaCombinations, setCultivoZonaCombinations] = useState<CultivoZonaCombination[]>([]);
+  const [selectedCombinations, setSelectedCombinations] = useState<string[]>([]);
+  const [loadingCombinations, setLoadingCombinations] = useState(false);
+  const [errorCombinations, setErrorCombinations] = useState<string | null>(null);
 
-  // Step 2: Sensor selection
-  const [sensors, setSensors] = useState<SensorData[]>([]);
+  // Step 2: Date filtering
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [groupBy, setGroupBy] = useState<'hourly' | 'daily' | 'weekly'>('daily');
+
+  // Step 3: Sensor selection
+  const [availableSensors, setAvailableSensors] = useState<{
+    med_key: string;
+    cultivoNombre: string;
+    variedadNombre: string;
+    zonaNombre: string;
+    hasData: boolean;
+  }[]>([]);
   const [selectedSensors, setSelectedSensors] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingSensors, setLoadingSensors] = useState(false);
+  const [errorSensors, setErrorSensors] = useState<string | null>(null);
 
-  // Fetch initial data
+  // Fetch cultivo-zona combinations on modal open
   useEffect(() => {
     if (isOpen) {
-      fetchInitialData();
+      fetchCultivoZonaCombinations();
     }
   }, [isOpen]);
 
-  const fetchInitialData = async () => {
+  const fetchCultivoZonaCombinations = async () => {
+    setLoadingCombinations(true);
+    setErrorCombinations(null);
     try {
-      const [cultivosData, zonasData] = await Promise.all([
-        searchCultivos({}),
-        zonasService.getAll(),
-      ]);
-      setCultivos(cultivosData);
-      setZonas(zonasData);
+      const response = await apiClient.get('/medicion-sensor/by-cultivos-zonas');
+      // Map backend response to match frontend interface
+      const mappedData = response.data.map((item: any) => ({
+        cultivoId: item.cultivoId,
+        cultivoNombre: item.cultivoNombre,
+        variedadNombre: item.variedadNombre,
+        tipoCultivoNombre: item.tipoCultivoNombre,
+        zonaId: item.zonaId,
+        zonaNombre: item.zonaNombre,
+        cvzId: item.cvzId,
+        estadoCultivo: item.estadoCultivo,
+        fechaSiembra: item.fechaSiembra ? new Date(item.fechaSiembra).toISOString().split('T')[0] : ''
+      }));
+      setCultivoZonaCombinations(mappedData);
     } catch (error) {
-      console.error("Error fetching initial data:", error);
+      console.error("Error fetching cultivo-zona combinations:", error);
+      setErrorCombinations(`Failed to load crop-zone combinations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoadingCombinations(false);
     }
   };
 
-  // Filter data based on search
-  const filteredCultivos = cultivos.filter((cultivo) =>
-    cultivo.nombrecultivo?.toLowerCase().includes(cultivoSearch.toLowerCase()) ||
-    cultivo.tipoCultivo?.nombre?.toLowerCase().includes(cultivoSearch.toLowerCase())
-  );
-
-  const filteredZonas = zonas.filter((zona) =>
-    zona.nombre?.toLowerCase().includes(zonaSearch.toLowerCase())
-  );
-
-  // Handle selection
-  const handleCultivoSelect = (cultivoId: string) => {
-    setSelectedCultivos(prev =>
-      prev.includes(cultivoId)
-        ? prev.filter(id => id !== cultivoId)
-        : [...prev, cultivoId]
-    );
-  };
-
-  const handleZonaSelect = (zonaId: string) => {
-    setSelectedZonas(prev =>
-      prev.includes(zonaId)
-        ? prev.filter(id => id !== zonaId)
-        : [...prev, zonaId]
+  const handleCombinationSelect = (cvzId: string) => {
+    setSelectedCombinations(prev =>
+      prev.includes(cvzId)
+        ? prev.filter(id => id !== cvzId)
+        : [...prev, cvzId]
     );
   };
 
@@ -110,199 +122,366 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({
     );
   };
 
-  // Fetch sensors for selected crops and zones
-  const fetchSensors = async () => {
-    if (selectedCultivos.length === 0 && selectedZonas.length === 0) return;
-
-    setLoading(true);
-    try {
-      // First, get cultivos-zonas data to understand relationships
-      const cultivosZonasResponse = await apiClient.get('/medicion-sensor/by-cultivos-zonas');
-      const cultivosZonasData = cultivosZonasResponse.data;
-
-      // Filter by selected cultivos and zonas
-      const filteredCultivosZonas = cultivosZonasData.filter((item: any) => {
-        const cultivoMatch = selectedCultivos.length === 0 || selectedCultivos.includes(item.cultivoId);
-        const zonaMatch = selectedZonas.length === 0 || selectedZonas.includes(item.zonaId);
-        return cultivoMatch && zonaMatch;
-      });
-
-      // Get unique zones from filtered data
-      const uniqueZonas: string[] = Array.from(new Set(filteredCultivosZonas.map((item: any) => item.zonaId as string)));
-
-      // Fetch sensors for each zone
-      const sensorPromises = uniqueZonas.map(async (zonaId: string) => {
-        try {
-          const sensors = await medicionSensorService.getByZona(zonaId, 100); // Get more sensors to capture different keys
-          return sensors;
-        } catch (error) {
-          console.error(`Error fetching sensors for zone ${zonaId}:`, error);
-          return [];
-        }
-      });
-
-      const sensorResults = await Promise.all(sensorPromises);
-      const allSensors = sensorResults.flat();
-
-      // Group sensors by med_key and associate with cultivos-zonas info
-      const sensorMap = new Map<string, SensorData>();
-
-      allSensors.forEach((sensor: any) => {
-        if (!sensorMap.has(sensor.key)) {
-          // Find the corresponding cultivo-zona info
-          const relatedData = filteredCultivosZonas.find((item: any) => item.zonaId === sensor.zonaMqttConfig?.zona?.pk_id_zona);
-
-          if (relatedData) {
-            sensorMap.set(sensor.key, {
-              med_key: sensor.key,
-              zonaNombre: relatedData.zonaNombre,
-              cultivoNombre: relatedData.cultivoNombre,
-              variedadNombre: relatedData.variedadNombre,
-            });
-          }
-        }
-      });
-
-      const uniqueSensors = Array.from(sensorMap.values());
-      setSensors(uniqueSensors);
-    } catch (error) {
-      console.error("Error fetching sensors:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Navigation
   const handleNext = async () => {
     if (currentStep === 1) {
-      await fetchSensors();
       setCurrentStep(2);
+    } else if (currentStep === 2) {
+      if (!startDate || !endDate) {
+        setErrorSensors("Please select both start and end dates");
+        return;
+      }
+      
+      if (new Date(startDate) >= new Date(endDate)) {
+        setErrorSensors("End date must be after start date");
+        return;
+      }
+      
+      await fetchAvailableSensors();
+      setCurrentStep(3);
     }
   };
 
   const handleBack = () => {
-    setCurrentStep(1);
-    setSensors([]);
-    setSelectedSensors([]);
+    if (currentStep === 3) {
+      setCurrentStep(2);
+      setAvailableSensors([]);
+      setSelectedSensors([]);
+      setErrorSensors(null);
+    } else if (currentStep === 2) {
+      setCurrentStep(1);
+    }
+  };
+
+  const fetchAvailableSensors = async () => {
+    if (selectedCombinations.length === 0) return;
+
+    setLoadingSensors(true);
+    setErrorSensors(null);
+    try {
+      const selectedCombinationData = selectedCombinations.map(cvzId => 
+        cultivoZonaCombinations.find(combo => combo.cvzId === cvzId)
+      ).filter(Boolean);
+
+      const cultivo_ids = [...new Set(selectedCombinationData.map(combo => combo!.cultivoId))];
+      const zona_ids = [...new Set(selectedCombinationData.map(combo => combo!.zonaId))];
+
+      const response = await apiClient.post('/medicion-sensor/report-data', {
+        med_keys: [], // Get all available sensor keys first
+        cultivo_ids,
+        zona_ids,
+        start_date: startDate,
+        end_date: endDate,
+        group_by: groupBy
+      });
+
+      // Process response to get unique sensor keys and their associated data
+      const sensorMap = new Map<string, any>();
+      
+      if (Array.isArray(response.data)) {
+        response.data.forEach((report: any) => {
+          if (report.statistics && Array.isArray(report.statistics)) {
+            report.statistics.forEach((stat: any) => {
+              if (!sensorMap.has(stat.med_key)) {
+                const combo = selectedCombinationData.find(c => 
+                  c!.cultivoId === report.cultivoId && c!.zonaId === report.zonaId
+                );
+                
+                sensorMap.set(stat.med_key, {
+                  med_key: stat.med_key,
+                  cultivoNombre: combo?.cultivoNombre || '',
+                  variedadNombre: combo?.variedadNombre || '',
+                  zonaNombre: combo?.zonaNombre || '',
+                  hasData: stat.count > 0
+                });
+              }
+            });
+          }
+        });
+      }
+
+      const sensorsArray = Array.from(sensorMap.values());
+      setAvailableSensors(sensorsArray);
+      
+      if (sensorsArray.length === 0) {
+        setErrorSensors("No sensors found with data in the selected date range.");
+      }
+    } catch (error) {
+      console.error("Error fetching available sensors:", error);
+      setErrorSensors(`Failed to load available sensors: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoadingSensors(false);
+    }
   };
 
   const handleExport = () => {
+    const selectedCombinationData = selectedCombinations.map(cvzId => 
+      cultivoZonaCombinations.find(combo => combo.cvzId === cvzId)
+    ).filter(Boolean);
+
+    const cultivo_ids = [...new Set(selectedCombinationData.map(combo => combo!.cultivoId))];
+    const zona_ids = [...new Set(selectedCombinationData.map(combo => combo!.zonaId))];
+
     onExport({
-      cultivos: selectedCultivos,
-      zonas: selectedZonas,
+      cultivos: cultivo_ids,
+      zonas: zona_ids,
       sensores: selectedSensors,
+      startDate,
+      endDate,
+      groupBy
     });
+    
     onClose();
-    // Reset state
-    setCurrentStep(1);
-    setSelectedCultivos([]);
-    setSelectedZonas([]);
-    setSelectedSensors([]);
-    setCultivoSearch("");
-    setZonaSearch("");
-    setSensors([]);
+    resetState();
   };
 
-  const canProceedToNext = selectedCultivos.length > 0 || selectedZonas.length > 0;
+  const resetState = () => {
+    setCurrentStep(1);
+    setSelectedCombinations([]);
+    setStartDate("");
+    setEndDate("");
+    setGroupBy('daily');
+    setAvailableSensors([]);
+    setSelectedSensors([]);
+    setErrorCombinations(null);
+    setErrorSensors(null);
+  };
+
+  // Calculate default date range (last 30 days)
+  useEffect(() => {
+    if (isOpen) {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      setEndDate(today.toISOString().split('T')[0]);
+      setStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+    }
+  }, [isOpen]);
+
+  const canProceedToStep2 = selectedCombinations.length > 0;
+  const canProceedToStep3 = startDate && endDate && new Date(startDate) < new Date(endDate) && !loadingSensors;
   const canExport = selectedSensors.length > 0;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="4xl" className="max-h-[90vh]">
+    <Modal 
+      isOpen={isOpen} 
+      onOpenChange={(isOpenState) => {
+        if (!isOpenState) {
+          onClose();
+          resetState();
+        }
+      }} 
+      size="4xl" 
+      className="max-h-[90vh]"
+      closeButton
+    >
       <ModalContent>
         <ModalHeader>
           <h2 className="text-xl font-bold">
-            Export Report - Step {currentStep} of 2
+            Export Sensor Report - Step {currentStep} of 3
           </h2>
         </ModalHeader>
 
         <ModalBody className="max-h-[60vh] overflow-y-auto">
-          {currentStep === 1 ? (
+          {currentStep === 1 && (
             <div className="space-y-6">
-              {/* Crops Selection */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Select Crops</h3>
-                <Input
-                  placeholder="Search crops..."
-                  value={cultivoSearch}
-                  onChange={(e) => setCultivoSearch(e.target.value)}
-                  className="mb-3"
-                />
-                <div className="max-h-40 overflow-y-auto border rounded-lg p-2">
-                  {filteredCultivos.map((cultivo) => (
-                    <div key={cultivo.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50">
-                      <Checkbox
-                        isSelected={selectedCultivos.includes(cultivo.id)}
-                        onValueChange={() => handleCultivoSelect(cultivo.id)}
-                      />
-                      <span className="text-sm">
-                        {cultivo.nombrecultivo} - {cultivo.tipoCultivo?.nombre}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                {selectedCultivos.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Selected: {selectedCultivos.length} crops</p>
-                  </div>
-                )}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Select Crop-Zone Combinations</h3>
+                <p className="text-sm text-gray-600">
+                  Choose the crop-zone combinations you want to include in your report.
+                </p>
               </div>
 
-              {/* Zones Selection */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Select Zones</h3>
-                <Input
-                  placeholder="Search zones..."
-                  value={zonaSearch}
-                  onChange={(e) => setZonaSearch(e.target.value)}
-                  className="mb-3"
-                />
-                <div className="max-h-40 overflow-y-auto border rounded-lg p-2">
-                  {filteredZonas.map((zona) => (
-                    <div key={zona.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50">
-                      <Checkbox
-                        isSelected={selectedZonas.includes(zona.id)}
-                        onValueChange={() => handleZonaSelect(zona.id)}
-                      />
-                      <span className="text-sm">{zona.nombre}</span>
-                    </div>
-                  ))}
+              {loadingCombinations ? (
+                <div className="text-center py-8">
+                  <Spinner size="lg" />
+                  <p className="mt-2 text-gray-600">Loading crop-zone combinations...</p>
                 </div>
-                {selectedZonas.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Selected: {selectedZonas.length} zones</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Select Sensors</h3>
-
-              {loading ? (
-                <div className="text-center py-8">Loading sensors...</div>
-              ) : sensors.length === 0 ? (
+              ) : errorCombinations ? (
+                <div className="text-center py-8">
+                  <div className="text-red-500 mb-4">{errorCombinations}</div>
+                  <Button color="primary" onPress={fetchCultivoZonaCombinations}>
+                    Retry
+                  </Button>
+                </div>
+              ) : cultivoZonaCombinations.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  No sensors found for the selected crops and zones.
+                  No crop-zone combinations found.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sensors.map((sensor) => (
-                    <Card key={sensor.med_key} className="cursor-pointer">
+                  {cultivoZonaCombinations.map((combination) => (
+                    <Card 
+                      key={combination.cvzId} 
+                      className={`cursor-pointer transition-all ${
+                        selectedCombinations.includes(combination.cvzId) 
+                          ? 'ring-2 ring-primary bg-primary/5' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => handleCombinationSelect(combination.cvzId)}
+                    >
+                      <CardBody className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              isSelected={selectedCombinations.includes(combination.cvzId)}
+                              onValueChange={() => handleCombinationSelect(combination.cvzId)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div>
+                              <p className="font-medium">
+                                {combination.cultivoNombre} - {combination.variedadNombre}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Zone: {combination.zonaNombre} | Type: {combination.tipoCultivoNombre}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Planted: {new Date(combination.fechaSiembra).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          {selectedCombinations.includes(combination.cvzId) && (
+                            <Chip color="primary" size="sm">Selected</Chip>
+                          )}
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {selectedCombinations.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Selected {selectedCombinations.length} crop-zone combinations
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Set Date Range and Grouping</h3>
+                <p className="text-sm text-gray-600">
+                  Define the time period for your report and how to group the data.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Date</label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    max={endDate || undefined}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || undefined}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Group Data By</label>
+                <Select
+                  selectedKeys={[groupBy]}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as 'hourly' | 'daily' | 'weekly';
+                    setGroupBy(value);
+                  }}
+                >
+                  <SelectItem key="hourly">Hourly</SelectItem>
+                  <SelectItem key="daily">Daily</SelectItem>
+                  <SelectItem key="weekly">Weekly</SelectItem>
+                </Select>
+              </div>
+
+              {(!startDate || !endDate || new Date(startDate) >= new Date(endDate)) && (
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    {(!startDate || !endDate) 
+                      ? "Please select both start and end dates to continue."
+                      : "End date must be after start date."
+                    }
+                  </p>
+                </div>
+              )}
+
+              {startDate && endDate && new Date(startDate) < new Date(endDate) && (
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Selected {selectedCombinations.length} crop-zone combinations for the period: {startDate} to {endDate}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Select Sensors</h3>
+                <p className="text-sm text-gray-600">
+                  Choose the specific sensors you want to include in your report.
+                </p>
+              </div>
+
+              {loadingSensors ? (
+                <div className="text-center py-8">
+                  <Spinner size="lg" />
+                  <p className="mt-2 text-gray-600">Loading available sensors...</p>
+                </div>
+              ) : errorSensors ? (
+                <div className="text-center py-8">
+                  <div className="text-red-500 mb-4">{errorSensors}</div>
+                  <Button color="primary" onPress={fetchAvailableSensors}>
+                    Retry
+                  </Button>
+                </div>
+              ) : availableSensors.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No sensors found with data in the selected date range.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {availableSensors.map((sensor) => (
+                    <Card 
+                      key={sensor.med_key} 
+                      className={`cursor-pointer transition-all ${
+                        selectedSensors.includes(sensor.med_key) 
+                          ? 'ring-2 ring-primary bg-primary/5' 
+                          : 'hover:bg-gray-50'
+                      } ${!sensor.hasData ? 'opacity-60' : ''}`}
+                      onClick={() => sensor.hasData && handleSensorSelect(sensor.med_key)}
+                    >
                       <CardBody className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Checkbox
                               isSelected={selectedSensors.includes(sensor.med_key)}
-                              onValueChange={() => handleSensorSelect(sensor.med_key)}
+                              onValueChange={() => sensor.hasData && handleSensorSelect(sensor.med_key)}
+                              isDisabled={!sensor.hasData}
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <div>
                               <p className="font-medium">{sensor.med_key}</p>
                               <p className="text-sm text-gray-600">
                                 {sensor.cultivoNombre} - {sensor.variedadNombre} ({sensor.zonaNombre})
                               </p>
+                              {!sensor.hasData && (
+                                <p className="text-xs text-orange-600">No data in selected period</p>
+                              )}
                             </div>
                           </div>
-                          {selectedSensors.includes(sensor.med_key) && (
+                          {selectedSensors.includes(sensor.med_key) && sensor.hasData && (
                             <Chip color="primary" size="sm">Selected</Chip>
                           )}
                         </div>
@@ -315,7 +494,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({
               {selectedSensors.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    Selected {selectedSensors.length} of {sensors.length} sensors
+                    Selected {selectedSensors.length} of {availableSensors.filter(s => s.hasData).length} sensors with data
                   </p>
                 </div>
               )}
@@ -328,7 +507,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({
             Cancel
           </Button>
 
-          {currentStep === 2 && (
+          {currentStep > 1 && (
             <Button variant="light" onPress={handleBack}>
               Back
             </Button>
@@ -338,7 +517,15 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({
             <Button
               color="primary"
               onPress={handleNext}
-              isDisabled={!canProceedToNext}
+              isDisabled={!canProceedToStep2}
+            >
+              Next
+            </Button>
+          ) : currentStep === 2 ? (
+            <Button
+              color="primary"
+              onPress={handleNext}
+              isDisabled={!canProceedToStep3}
             >
               Next
             </Button>

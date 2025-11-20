@@ -11,7 +11,7 @@ async function bootstrap() {
 
   app.use(
     cors({
-      origin: configService.get('FRONTEND_URL'),
+      origin: configService.get('FRONTEND_URL') || 'http://localhost:5173',
       credentials: true,
     }),
   );
@@ -31,5 +31,6 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`Server is running on http://localhost:${port}`);
+  console.log(`WebSocket server should be available at ws://localhost:${port}`);
 }
 bootstrap();
