@@ -23,47 +23,32 @@ export interface ChartConfig {
   unidad?: string;
 }
 
-// Enhanced color palette for professional charts
+// Soft color palette for clean, professional charts
 const colorPalette = [
-  '#2563eb', // Blue
-  '#dc2626', // Red  
-  '#059669', // Green
-  '#d97706', // Orange
-  '#7c3aed', // Purple
-  '#db2777', // Pink
-  '#0891b2', // Cyan
-  '#65a30d', // Lime
-  '#ca8a04', // Yellow
-  '#be123c'  // Rose
+  '#6b7280', // Gray
+  '#374151', // Dark Gray
+  '#4b5563', // Medium Gray
+  '#9ca3af', // Light Gray
+  '#6b7280', // Gray (repeated for consistency)
+  '#374151', // Dark Gray (repeated)
+  '#4b5563', // Medium Gray (repeated)
+  '#9ca3af', // Light Gray (repeated)
+  '#6b7280', // Gray (repeated)
+  '#374151'  // Dark Gray (repeated)
 ];
 
-// Format time labels based on data granularity
-const formatTimeLabel = (value: string, data: any[]) => {
+// Format time labels to always show date and time
+const formatTimeLabel = (value: string, _data: any[]) => {
   if (!value) return '';
   const date = new Date(value);
-  
-  // Check if data has time information beyond just dates
-  const hasTime = data.some(d => {
-    const dTime = new Date(d.time);
-    return dTime.getHours() !== 0 || dTime.getMinutes() !== 0 || dTime.getSeconds() !== 0;
+
+  // Always show date and time for sensor data
+  return date.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   });
-  
-  if (hasTime) {
-    // Show time for hourly data
-    return date.toLocaleDateString([], { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } else {
-    // Show date for daily/weekly data
-    return date.toLocaleDateString([], { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  }
 };
 
 // Custom tooltip component
@@ -305,24 +290,15 @@ export const renderLineChartToCanvas = async (config: ChartConfig): Promise<HTML
             />
             <Tooltip content={<CustomTooltip unidad={unidad} />} />
             {multiLine && <Legend />}
-            {dataKeys.map((key, index) => (
+            {dataKeys.map((key, _index) => (
               <Line
                 key={key}
                 type="monotone"
                 dataKey={key}
-                stroke={colorPalette[index % colorPalette.length]}
-                strokeWidth={2.5}
-                dot={{ 
-                  fill: colorPalette[index % colorPalette.length], 
-                  strokeWidth: 2, 
-                  r: 3 
-                }}
-                activeDot={{ 
-                  r: 5,
-                  stroke: colorPalette[index % colorPalette.length],
-                  strokeWidth: 2,
-                  fill: '#ffffff'
-                }}
+                stroke="#2563eb" // Color azul
+                strokeWidth={2}
+                dot={false} // Sin puntos marcados
+                activeDot={false}
                 name={getLineName(key)}
               />
             ))}
