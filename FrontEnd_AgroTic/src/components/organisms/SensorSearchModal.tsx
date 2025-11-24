@@ -121,20 +121,56 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
     setIsExporting(true);
     try {
       const selectedDetails = Array.from(selectedSensors).map(uniqueKey => {
-        const parts = uniqueKey.split('-');
-        const cultivoId = parts[0];
-        const zonaId = parts[1];
-        const sensorKey = parts[parts.length - 1]; // The type like 'Temperatura'
-        const item = sensorData.find(i => i.cultivoId === cultivoId && i.zonaId === zonaId);
-        const zonaNombre = item?.zonaNombre || '';
-        const cultivoNombre = item?.cultivoNombre || '';
-        const variedadNombre = item?.variedadNombre || '';
-        return { cultivoId, zonaId, sensorKey, zonaNombre, cultivoNombre, variedadNombre };
+        // Find the complete sensor data from the original data structure
+        let sensorInfo: any = null;
+        let cultivoInfo: any = null;
+
+        // Parse the uniqueKey to find the matching data
+        for (const item of sensorData) {
+          for (const sensor of item.uniqueSensorData) {
+            const currentUniqueKey = `${item.cultivoId}-${item.zonaId}-${sensor.key}`;
+            if (currentUniqueKey === uniqueKey) {
+              sensorInfo = sensor;
+              cultivoInfo = item;
+              break;
+            }
+          }
+          if (sensorInfo) break;
+        }
+
+        if (!sensorInfo || !cultivoInfo) {
+          console.warn(`Could not find complete data for sensor key: ${uniqueKey}`);
+          // Fallback parsing
+          const parts = uniqueKey.split('-');
+          return {
+            cultivoId: parts[0],
+            zonaId: parts[1],
+            sensorKey: parts[parts.length - 1],
+            zonaNombre: 'Zona no encontrada',
+            cultivoNombre: 'Cultivo no encontrado',
+            variedadNombre: 'Variedad no encontrada',
+            sensorData: null
+          };
+        }
+
+        return {
+          cultivoId: cultivoInfo.cultivoId,
+          zonaId: cultivoInfo.zonaId,
+          sensorKey: sensorInfo.key,
+          zonaNombre: cultivoInfo.zonaNombre,
+          cultivoNombre: cultivoInfo.cultivoNombre,
+          variedadNombre: cultivoInfo.variedadNombre,
+          tipoCultivoNombre: cultivoInfo.tipoCultivoNombre,
+          sensorData: sensorInfo,
+          cultivoData: cultivoInfo
+        };
       });
+
+      console.log('Selected details for PDF:', selectedDetails);
       await generateSensorSearchPDF(selectedDetails);
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert('Error al exportar PDF');
+      alert('Error al exportar PDF: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setIsExporting(false);
     }
