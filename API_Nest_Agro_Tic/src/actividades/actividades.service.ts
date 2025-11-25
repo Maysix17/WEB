@@ -393,16 +393,16 @@ export class ActividadesService {
     });
 
     // Create a map of DNI to user info
-    const userMap = new Map<number, { nombres: string; apellidos: string }>();
+    const userMap = new Map<string, { nombres: string; apellidos: string }>();
     usuarios.forEach(user => {
-      userMap.set(user.dni, { nombres: user.nombres, apellidos: user.apellidos });
+      userMap.set(user.dni.toString(), { nombres: user.nombres, apellidos: user.apellidos });
     });
 
     // Enrich actividades with responsable info and reorder to show responsable first
     const enriched = actividades.map(actividad => {
-      if (actividad.dniResponsable && userMap.has(actividad.dniResponsable)) {
-        const user = userMap.get(actividad.dniResponsable)!;
-        (actividad as any).responsableNombre = `${user.nombres} ${user.apellidos}`;
+      if (actividad.dniResponsable && userMap.has(actividad.dniResponsable.toString())) {
+        const user = userMap.get(actividad.dniResponsable.toString())!;
+        (actividad as any).nombreResponsable = `${user.nombres} ${user.apellidos}`;
         (actividad as any).responsableDni = actividad.dniResponsable;
       }
       return actividad;

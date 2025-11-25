@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class InitialSchema1762872756376 implements MigrationInterface {
-    name = 'InitialSchema1762872756376'
+export class InitialSchema1763409678592 implements MigrationInterface {
+    name = 'InitialSchema1763409678592'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "cultivos" ("pk_id_cultivo" uuid NOT NULL DEFAULT uuid_generate_v4(), "cul_estado" smallint NOT NULL DEFAULT '1', "cul_siembra" date, CONSTRAINT "PK_bca07ab50918efd3cbfa5d751f9" PRIMARY KEY ("pk_id_cultivo"))`);
@@ -35,10 +35,10 @@ export class InitialSchema1762872756376 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "cosechas_ventas" ("pk_id_cosechas_ventas" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cosecha" uuid NOT NULL, "fk_id_venta" uuid NOT NULL, "cv_cantidad_vendida" numeric(10,2) NOT NULL, CONSTRAINT "PK_d447866486f82a99ef2867f1d38" PRIMARY KEY ("pk_id_cosechas_ventas"))`);
         await queryRunner.query(`CREATE TABLE "cosechas" ("pk_id_cosecha" uuid NOT NULL DEFAULT uuid_generate_v4(), "cos_unidad_medida" character varying(2) NOT NULL, "cos_cantidad" numeric(10,2) NOT NULL, "cos_fecha" date, "cos_rendimiento_por_planta" numeric(10,2), "cos_cantidad_plantas_cosechadas" integer, "cos_cerrado" boolean NOT NULL DEFAULT false, "fk_id_cultivos_variedad_x_zona" uuid NOT NULL, CONSTRAINT "PK_bbbe964394805bbf4b0c03f620e" PRIMARY KEY ("pk_id_cosecha"))`);
         await queryRunner.query(`CREATE TABLE "venta" ("pk_id_venta" uuid NOT NULL DEFAULT uuid_generate_v4(), "ven_cantidad" numeric(10,2) NOT NULL, "ven_fecha" date NOT NULL, "fk_id_cosecha" uuid NOT NULL, "ven_unidad_medida" character varying(2) NOT NULL, "ven_precio_unitario" numeric(10,2) NOT NULL, "ven_precio_kilo" numeric(10,2) NOT NULL, CONSTRAINT "PK_9e09d8f553efa44c3a81f51db78" PRIMARY KEY ("pk_id_venta"))`);
+        await queryRunner.query(`CREATE TABLE "tipos_movimiento" ("id" SERIAL NOT NULL, "nombre" character varying(50) NOT NULL, CONSTRAINT "UQ_8dc34bd609546a65f1702961433" UNIQUE ("nombre"), CONSTRAINT "PK_a006012b08b4c5d1249edfb727e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "cultivos_x_epa" ("pk_id_cultivos_x_epa" uuid NOT NULL DEFAULT uuid_generate_v4(), "cxp_fecha_deteccion" date NOT NULL, "cxp_estado" smallint NOT NULL, "fk_id_cultivos_x_variedad" uuid NOT NULL, "fk_id_epa" uuid NOT NULL, CONSTRAINT "PK_50265e93fa52fa016463f1c1d91" PRIMARY KEY ("pk_id_cultivos_x_epa"))`);
         await queryRunner.query(`CREATE TABLE "epa" ("pk_id_epa" uuid NOT NULL DEFAULT uuid_generate_v4(), "epa_nombre" character varying(100) NOT NULL, "epa_descripcion" text, "epa_img_url" character varying(255), "fk_id_tipo_epa" uuid NOT NULL, CONSTRAINT "PK_9a3b902c7db65928623ec6598a9" PRIMARY KEY ("pk_id_epa"))`);
         await queryRunner.query(`CREATE TABLE "tipo_epa" ("pk_id_tipo_epa" uuid NOT NULL DEFAULT uuid_generate_v4(), "tipo_epa_nombre" character varying(50) NOT NULL, CONSTRAINT "UQ_d9e54d57338afcad4d7c91b0d7c" UNIQUE ("tipo_epa_nombre"), CONSTRAINT "PK_dcc91f7443ac39c48ed98eccdf9" PRIMARY KEY ("pk_id_tipo_epa"))`);
-        await queryRunner.query(`CREATE TABLE "tipos_movimiento" ("id" SERIAL NOT NULL, "nombre" character varying(50) NOT NULL, CONSTRAINT "UQ_8dc34bd609546a65f1702961433" UNIQUE ("nombre"), CONSTRAINT "PK_a006012b08b4c5d1249edfb727e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "movimientos_inventario" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_lote_id" uuid NOT NULL, "fk_reserva_id" uuid, "fk_tipo_movimiento_id" integer NOT NULL, "cantidad" numeric(10,2) NOT NULL, "fecha_movimiento" TIMESTAMP NOT NULL DEFAULT now(), "observacion" text, "responsable" character varying(255), CONSTRAINT "PK_812f6e4f95b017981363c4b9ff9" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "finanzas_cosecha" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_cosecha_id" uuid NOT NULL, "cantidad_cosechada" numeric(10,2) NOT NULL, "precio_por_kilo" numeric(10,2) NOT NULL, "fecha_venta" date, "cantidad_vendida" numeric(10,2) NOT NULL DEFAULT '0', "costo_inventario" numeric(12,2) NOT NULL DEFAULT '0', "costo_mano_obra" numeric(12,2) NOT NULL DEFAULT '0', "costo_total_produccion" numeric(12,2) NOT NULL DEFAULT '0', "ingresos_totales" numeric(12,2) NOT NULL DEFAULT '0', "ganancias" numeric(12,2) NOT NULL DEFAULT '0', "margen_ganancia" numeric(5,2) NOT NULL DEFAULT '0', "fecha_calculo" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_c0bad71ac77052a79a7b242fa0e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "sessions" ("pk_id_session" uuid NOT NULL DEFAULT uuid_generate_v4(), "session_token_hash" character varying(255) NOT NULL, "session_expires_at" TIMESTAMP NOT NULL, "session_is_active" boolean NOT NULL DEFAULT true, "session_created_at" TIMESTAMP NOT NULL DEFAULT now(), "session_updated_at" TIMESTAMP NOT NULL DEFAULT now(), "fk_id_usuario" uuid, CONSTRAINT "PK_854b0cbf57826eeb92786fd61fe" PRIMARY KEY ("pk_id_session"))`);
@@ -144,10 +144,10 @@ export class InitialSchema1762872756376 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "sessions"`);
         await queryRunner.query(`DROP TABLE "finanzas_cosecha"`);
         await queryRunner.query(`DROP TABLE "movimientos_inventario"`);
-        await queryRunner.query(`DROP TABLE "tipos_movimiento"`);
         await queryRunner.query(`DROP TABLE "tipo_epa"`);
         await queryRunner.query(`DROP TABLE "epa"`);
         await queryRunner.query(`DROP TABLE "cultivos_x_epa"`);
+        await queryRunner.query(`DROP TABLE "tipos_movimiento"`);
         await queryRunner.query(`DROP TABLE "venta"`);
         await queryRunner.query(`DROP TABLE "cosechas"`);
         await queryRunner.query(`DROP TABLE "cosechas_ventas"`);

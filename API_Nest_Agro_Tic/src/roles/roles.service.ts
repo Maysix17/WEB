@@ -77,14 +77,7 @@ export class RolesService {
     // 4. Asigna el nuevo permiso al arreglo en memoria.
     rol.permisos.push(permiso);
 
-    // ✅ CAMBIO CLAVE:
-    // Primero, guardamos la relación en la base de datos.
-    // No nos importa lo que devuelva .save() en este momento.
-    await this.rolesRepository.save(rol);
-
-    // Luego, llamamos de nuevo a findOne() para obtener el estado MÁS RECIENTE y COMPLETO
-    // del rol desde la base de datos, con todas las relaciones anidadas cargadas.
-    return this.findOne(roleId);
+    return this.rolesRepository.save(rol);
   }
   async assignMultiplePermissions(
     roleId: string,
@@ -106,9 +99,7 @@ export class RolesService {
     // Asigna los nuevos permisos
     rol.permisos.push(...nuevosPermisos);
 
-    await this.rolesRepository.save(rol);
-
-    return this.findOne(roleId);
+    return this.rolesRepository.save(rol);
   }
 
   async updateRoleWithPermissions(

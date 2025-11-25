@@ -42,7 +42,7 @@ export class CultivosVariedadXZonaController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     console.log(`[DEBUG] Controller findOne called with id: ${id}`);
-    return this.cultivosVariedadXZonaService.findOne(+id);
+    return this.cultivosVariedadXZonaService.findOne(id);
   }
 
   @Patch(':id')
@@ -51,14 +51,14 @@ export class CultivosVariedadXZonaController {
     @Body() updateCultivosVariedadXZonaDto: UpdateCultivosVariedadXZonaDto,
   ) {
     return this.cultivosVariedadXZonaService.update(
-      +id,
+      id,
       updateCultivosVariedadXZonaDto,
     );
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cultivosVariedadXZonaService.remove(+id);
+    return this.cultivosVariedadXZonaService.remove(id);
   }
 
   // Nuevos endpoints para características del cultivo

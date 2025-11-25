@@ -19,7 +19,7 @@ import { PermisosService } from '../permisos/permisos.service';
 @WebSocketGateway({
   namespace: '/permissions',
   cors: {
-    origin: 'http://localhost:5173', // Allow connections from React frontend on port 5173
+    origin: true, // Allow all origins for development
     credentials: true,
   },
 })
