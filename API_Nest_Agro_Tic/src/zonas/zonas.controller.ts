@@ -41,7 +41,7 @@ export class ZonasController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.zonasService.findOne(+id);
+    return this.zonasService.findOne(id);
   }
 
   @Get(':id/cultivos-variedad-zona')
@@ -51,11 +51,11 @@ export class ZonasController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateZonaDto: UpdateZonaDto) {
-    return this.zonasService.update(+id, updateZonaDto);
+    return this.zonasService.update(id, updateZonaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.zonasService.remove(+id);
+    return this.zonasService.remove(id);
   }
 }

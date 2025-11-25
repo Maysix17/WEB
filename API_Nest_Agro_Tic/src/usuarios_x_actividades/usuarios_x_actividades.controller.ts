@@ -34,6 +34,11 @@ export class UsuariosXActividadesController {
     return this.usuariosXActividadesService.findByUser(userId);
   }
 
+  @Get('actividad/:actividadId')
+  findByActividad(@Param('actividadId') actividadId: string) {
+    return this.usuariosXActividadesService.findByActividad(actividadId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usuariosXActividadesService.findOne(id);

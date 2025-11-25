@@ -67,17 +67,22 @@ export class AuthController {
 
     console.log('AuthController: Cookies set successfully, sending response');
     console.log('AuthController: Response headers will include Set-Cookie headers');
-    return { message: result.message };
+    return {
+      message: result.message,
+      access_token: result.access_token,
+      refresh_token: result.refresh_token
+    };
   }
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(
     @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
+    @Body() body?: { refreshToken?: string },
   ) {
-    const refreshToken = req.cookies?.refresh_token;
+    let refreshToken = req.cookies?.refresh_token || body?.refreshToken;
     console.log(
-      'Refresh token from cookie:',
+      'Refresh token from cookie or body:',
       refreshToken ? 'present' : 'missing',
     );
     if (!refreshToken) {
@@ -85,6 +90,7 @@ export class AuthController {
     }
     const result = await this.authService.refreshToken(refreshToken);
     const accessMaxAge = 15 * 60 * 1000; // 15 min
+    const refreshMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
     const isProduction = process.env.NODE_ENV === 'production';
     console.log('Setting new access_token cookie on refresh');
     response.cookie('access_token', result.access_token, {
@@ -93,7 +99,18 @@ export class AuthController {
       sameSite: isProduction ? 'strict' : 'lax',
       maxAge: accessMaxAge,
     });
-    return { message: result.message };
+    console.log('Setting new refresh_token cookie on refresh');
+    response.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: refreshMaxAge,
+    });
+    return {
+      message: result.message,
+      access_token: result.access_token,
+      refresh_token: result.refresh_token
+    };
   }
 
   // En una aplicación real, este endpoint debería estar protegido.
