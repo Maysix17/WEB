@@ -1,11 +1,13 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class InitialSchema1763993951603 implements MigrationInterface {
-    name = 'InitialSchema1763993951603'
+export class InitialSchema1764202231957 implements MigrationInterface {
+    name = 'InitialSchema1764202231957'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "tipo_cultivo" ("pk_id_tipo_cultivo" uuid NOT NULL DEFAULT uuid_generate_v4(), "tpc_nombre" character varying(50) NOT NULL, "tpc_es_perenne" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_587358c5f6b5c8b443435ab7e7a" PRIMARY KEY ("pk_id_tipo_cultivo"))`);
         await queryRunner.query(`CREATE TABLE "cultivos" ("pk_id_cultivo" uuid NOT NULL DEFAULT uuid_generate_v4(), "cul_estado" smallint NOT NULL DEFAULT '1', "cul_siembra" date, CONSTRAINT "PK_bca07ab50918efd3cbfa5d751f9" PRIMARY KEY ("pk_id_cultivo"))`);
+        await queryRunner.query(`CREATE TABLE "tipo_cultivo" ("pk_id_tipo_cultivo" uuid NOT NULL DEFAULT uuid_generate_v4(), "tpc_nombre" character varying(50) NOT NULL, "tpc_es_perenne" boolean NOT NULL DEFAULT false, CONSTRAINT "PK_587358c5f6b5c8b443435ab7e7a" PRIMARY KEY ("pk_id_tipo_cultivo"))`);
+        await queryRunner.query(`CREATE TABLE "variedad" ("pk_id_variedad" uuid NOT NULL DEFAULT uuid_generate_v4(), "var_nombre" character varying(50) NOT NULL, "fk_id_tipo_cultivo" uuid, CONSTRAINT "PK_969ecd3cd1b6413cddb77780f29" PRIMARY KEY ("pk_id_variedad"))`);
+        await queryRunner.query(`CREATE TABLE "cultivos_x_variedad" ("pk_id_cultivos_x_variedad" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cultivo" uuid NOT NULL, "fk_id_variedad" uuid NOT NULL, CONSTRAINT "PK_08252ea88874d61f1b3e9061574" PRIMARY KEY ("pk_id_cultivos_x_variedad"))`);
         await queryRunner.query(`CREATE TABLE "tipo_sensor" ("pk_id_tipo_sensor" uuid NOT NULL DEFAULT uuid_generate_v4(), "tps_nombre" character varying(50) NOT NULL, "tps_descripcion" text, "tps_unidad_medida" character varying(20) NOT NULL, CONSTRAINT "PK_cd37a52a5c0b91ac14da63b4ce7" PRIMARY KEY ("pk_id_tipo_sensor"))`);
         await queryRunner.query(`CREATE TABLE "mqtt_config" ("pk_id_mqtt_config" uuid NOT NULL DEFAULT uuid_generate_v4(), "mc_nombre" character varying(100) NOT NULL, "mc_host" character varying(255) NOT NULL, "mc_port" integer NOT NULL, "mc_protocol" character varying(10) NOT NULL, "mc_topic_base" character varying(255) NOT NULL, "mc_activa" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_8c821100a5c36655ac2c5010f10" PRIMARY KEY ("pk_id_mqtt_config"))`);
         await queryRunner.query(`CREATE TABLE "zona_mqtt_config" ("pk_id_zona_mqtt_config" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_mqtt_config" uuid NOT NULL, "fk_id_zona" uuid NOT NULL, "zmc_estado" boolean NOT NULL DEFAULT true, "zmc_umbrales" jsonb NOT NULL DEFAULT '{}', "zmc_created_at" TIMESTAMP NOT NULL DEFAULT now(), "zmc_updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_764b7bca78c91fb0737c627eba4" PRIMARY KEY ("pk_id_zona_mqtt_config"))`);
@@ -28,13 +30,11 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "estados_reserva" ("id" SERIAL NOT NULL, "nombre" character varying(50) NOT NULL, CONSTRAINT "UQ_23c6cbdee88a8bbe1b1e383c46d" UNIQUE ("nombre"), CONSTRAINT "PK_86d5fa4092e03881e284db998f5" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "reservas_x_actividad" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_actividad_id" uuid NOT NULL, "fk_lote_id" uuid NOT NULL, "fk_estado_id" integer NOT NULL, "cantidad_reservada" numeric(10,2) NOT NULL, "cantidad_usada" numeric(10,2), "cantidad_devuelta" numeric(10,2), "capacidad_presentacion_producto" numeric(10,2) NOT NULL, "precio_producto" numeric(12,2) NOT NULL, CONSTRAINT "PK_fe5573623a0c475c374ba2c6e89" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "actividades" ("pk_id_actividad" uuid NOT NULL DEFAULT uuid_generate_v4(), "act_descripcion" text NOT NULL, "act_fecha_asignacion" date NOT NULL, "act_horas_dedicadas" numeric, "act_precio_hora" numeric, "act_observacion" character varying(255), "act_estado" boolean DEFAULT true, "act_fecha_finalizacion" TIMESTAMP, "act_img_url" character varying(255), "fk_id_cultivo_variedad_x_zona" uuid NOT NULL, "fk_id_categoria_actividad" uuid NOT NULL, "act_dni_responsable" bigint NOT NULL, CONSTRAINT "PK_0da23a7b5690826fcc0853856ad" PRIMARY KEY ("pk_id_actividad"))`);
-        await queryRunner.query(`CREATE TABLE "cosechas_ventas" ("pk_id_cosechas_ventas" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cosecha" uuid NOT NULL, "fk_id_venta" uuid NOT NULL, "cv_cantidad_vendida" numeric(10,2) NOT NULL, CONSTRAINT "PK_d447866486f82a99ef2867f1d38" PRIMARY KEY ("pk_id_cosechas_ventas"))`);
-        await queryRunner.query(`CREATE TABLE "venta" ("pk_id_venta" uuid NOT NULL DEFAULT uuid_generate_v4(), "ven_cantidad" numeric(10,2) NOT NULL, "ven_fecha" date NOT NULL, "fk_id_cosecha" uuid NOT NULL, "ven_unidad_medida" character varying(2) NOT NULL, "ven_precio_unitario" numeric(10,2) NOT NULL, "ven_precio_kilo" numeric(10,2) NOT NULL, CONSTRAINT "PK_9e09d8f553efa44c3a81f51db78" PRIMARY KEY ("pk_id_venta"))`);
-        await queryRunner.query(`CREATE TABLE "cosechas" ("pk_id_cosecha" uuid NOT NULL DEFAULT uuid_generate_v4(), "cos_unidad_medida" character varying(2) NOT NULL, "cos_cantidad" numeric(10,2) NOT NULL, "cos_fecha" date, "cos_rendimiento_por_planta" numeric(10,2), "cos_cantidad_plantas_cosechadas" integer, "cos_cerrado" boolean NOT NULL DEFAULT false, "fk_id_cultivos_variedad_x_zona" uuid NOT NULL, CONSTRAINT "PK_bbbe964394805bbf4b0c03f620e" PRIMARY KEY ("pk_id_cosecha"))`);
         await queryRunner.query(`CREATE TABLE "estados_fenologicos" ("id" SERIAL NOT NULL, "nombre" character varying(50) NOT NULL, "descripcion" text, "orden" integer NOT NULL, CONSTRAINT "UQ_fe1ec40c26cebf2476203bb4b54" UNIQUE ("nombre"), CONSTRAINT "PK_2dfc94837481f30efa5e7adcda1" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "cultivos_variedad_x_zona" ("pk_id_cv_zona" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cultivos_x_variedad" uuid NOT NULL, "fk_id_zona" uuid NOT NULL, "cvz_cantidad_plantas_inicial" integer NOT NULL DEFAULT '0', "cvz_cantidad_plantas_actual" integer NOT NULL DEFAULT '0', "fk_estado_fenologico" integer, "cvz_fecha_actualizacion" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_26b6aa02204bf2010c4120ee902" PRIMARY KEY ("pk_id_cv_zona"))`);
-        await queryRunner.query(`CREATE TABLE "cultivos_x_variedad" ("pk_id_cultivos_x_variedad" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cultivo" uuid NOT NULL, "fk_id_variedad" uuid NOT NULL, CONSTRAINT "PK_08252ea88874d61f1b3e9061574" PRIMARY KEY ("pk_id_cultivos_x_variedad"))`);
-        await queryRunner.query(`CREATE TABLE "variedad" ("pk_id_variedad" uuid NOT NULL DEFAULT uuid_generate_v4(), "var_nombre" character varying(50) NOT NULL, "fk_id_tipo_cultivo" uuid, CONSTRAINT "PK_969ecd3cd1b6413cddb77780f29" PRIMARY KEY ("pk_id_variedad"))`);
+        await queryRunner.query(`CREATE TABLE "cosechas_ventas" ("pk_id_cosechas_ventas" uuid NOT NULL DEFAULT uuid_generate_v4(), "fk_id_cosecha" uuid NOT NULL, "fk_id_venta" uuid NOT NULL, "cv_cantidad_vendida" numeric(10,2) NOT NULL, CONSTRAINT "PK_d447866486f82a99ef2867f1d38" PRIMARY KEY ("pk_id_cosechas_ventas"))`);
+        await queryRunner.query(`CREATE TABLE "cosechas" ("pk_id_cosecha" uuid NOT NULL DEFAULT uuid_generate_v4(), "cos_unidad_medida" character varying(2) NOT NULL, "cos_cantidad" numeric(10,2) NOT NULL, "cos_fecha" date, "cos_rendimiento_por_planta" numeric(10,2), "cos_cantidad_plantas_cosechadas" integer, "cos_cerrado" boolean NOT NULL DEFAULT false, "fk_id_cultivos_variedad_x_zona" uuid NOT NULL, CONSTRAINT "PK_bbbe964394805bbf4b0c03f620e" PRIMARY KEY ("pk_id_cosecha"))`);
+        await queryRunner.query(`CREATE TABLE "venta" ("pk_id_venta" uuid NOT NULL DEFAULT uuid_generate_v4(), "ven_cantidad" numeric(10,2) NOT NULL, "ven_fecha" date NOT NULL, "fk_id_cosecha" uuid NOT NULL, "ven_unidad_medida" character varying(2) NOT NULL, "ven_precio_unitario" numeric(10,2) NOT NULL, "ven_precio_kilo" numeric(10,2) NOT NULL, CONSTRAINT "PK_9e09d8f553efa44c3a81f51db78" PRIMARY KEY ("pk_id_venta"))`);
         await queryRunner.query(`CREATE TABLE "tipos_movimiento" ("id" SERIAL NOT NULL, "nombre" character varying(50) NOT NULL, CONSTRAINT "UQ_8dc34bd609546a65f1702961433" UNIQUE ("nombre"), CONSTRAINT "PK_a006012b08b4c5d1249edfb727e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "cultivos_x_epa" ("pk_id_cultivos_x_epa" uuid NOT NULL DEFAULT uuid_generate_v4(), "cxp_fecha_deteccion" date NOT NULL, "cxp_estado" smallint NOT NULL, "fk_id_cultivos_x_variedad" uuid NOT NULL, "fk_id_epa" uuid NOT NULL, CONSTRAINT "PK_50265e93fa52fa016463f1c1d91" PRIMARY KEY ("pk_id_cultivos_x_epa"))`);
         await queryRunner.query(`CREATE TABLE "epa" ("pk_id_epa" uuid NOT NULL DEFAULT uuid_generate_v4(), "epa_nombre" character varying(100) NOT NULL, "epa_descripcion" text, "epa_img_url" character varying(255), "fk_id_tipo_epa" uuid NOT NULL, CONSTRAINT "PK_9a3b902c7db65928623ec6598a9" PRIMARY KEY ("pk_id_epa"))`);
@@ -47,6 +47,9 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "rol_creacion_jerarquia" ("rol_creador_id" uuid NOT NULL, "rol_creable_id" uuid NOT NULL, CONSTRAINT "PK_9a6a7f47a3cf5c9bb058133556a" PRIMARY KEY ("rol_creador_id", "rol_creable_id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_1b25d18dffadb2e4dbbf66c901" ON "rol_creacion_jerarquia" ("rol_creador_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_06907d494f397996a2d85c0eb6" ON "rol_creacion_jerarquia" ("rol_creable_id") `);
+        await queryRunner.query(`ALTER TABLE "variedad" ADD CONSTRAINT "FK_32531335d0482591eae661efcbf" FOREIGN KEY ("fk_id_tipo_cultivo") REFERENCES "tipo_cultivo"("pk_id_tipo_cultivo") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" ADD CONSTRAINT "FK_3869d84e502689591c987724be9" FOREIGN KEY ("fk_id_cultivo") REFERENCES "cultivos"("pk_id_cultivo") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" ADD CONSTRAINT "FK_f625a8d56b4c1e1f18fa2ad8bc7" FOREIGN KEY ("fk_id_variedad") REFERENCES "variedad"("pk_id_variedad") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "zona_mqtt_config" ADD CONSTRAINT "FK_3ae20521bac657fa2aab70ea611" FOREIGN KEY ("fk_id_mqtt_config") REFERENCES "mqtt_config"("pk_id_mqtt_config") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "zona_mqtt_config" ADD CONSTRAINT "FK_6f9527f65f4d638fef8bfe33e8f" FOREIGN KEY ("fk_id_zona") REFERENCES "zonas"("pk_id_zona") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "medicion_sensor" ADD CONSTRAINT "FK_a02dcc38c6502973912168b35b4" FOREIGN KEY ("fk_id_zona_mqtt_config") REFERENCES "zona_mqtt_config"("pk_id_zona_mqtt_config") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -67,16 +70,13 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "reservas_x_actividad" ADD CONSTRAINT "FK_48e34f436100b175050202792d5" FOREIGN KEY ("fk_estado_id") REFERENCES "estados_reserva"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "actividades" ADD CONSTRAINT "FK_4ff147ed17e8bdeb0a22232cf5b" FOREIGN KEY ("fk_id_cultivo_variedad_x_zona") REFERENCES "cultivos_variedad_x_zona"("pk_id_cv_zona") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "actividades" ADD CONSTRAINT "FK_40f52a18a6b1e8efd9a4938bfec" FOREIGN KEY ("fk_id_categoria_actividad") REFERENCES "categoria_actividad"("pk_id_categoria_actividad") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cosechas_ventas" ADD CONSTRAINT "FK_bade37bec1231cf147fbcac413e" FOREIGN KEY ("fk_id_cosecha") REFERENCES "cosechas"("pk_id_cosecha") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cosechas_ventas" ADD CONSTRAINT "FK_5563c73e32fef530f3a140ce3bd" FOREIGN KEY ("fk_id_venta") REFERENCES "venta"("pk_id_venta") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "venta" ADD CONSTRAINT "FK_1b5df15fa07acae8d18b095d5dc" FOREIGN KEY ("fk_id_cosecha") REFERENCES "cosechas"("pk_id_cosecha") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cosechas" ADD CONSTRAINT "FK_07c03f265c04076ea27e439632d" FOREIGN KEY ("fk_id_cultivos_variedad_x_zona") REFERENCES "cultivos_variedad_x_zona"("pk_id_cv_zona") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" ADD CONSTRAINT "FK_bedc232cd8a0b1aba926d53af68" FOREIGN KEY ("fk_id_cultivos_x_variedad") REFERENCES "cultivos_x_variedad"("pk_id_cultivos_x_variedad") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" ADD CONSTRAINT "FK_959fe9d6787940b232ff5442540" FOREIGN KEY ("fk_id_zona") REFERENCES "zonas"("pk_id_zona") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" ADD CONSTRAINT "FK_df819fa89f42a3fb674de12574e" FOREIGN KEY ("fk_estado_fenologico") REFERENCES "estados_fenologicos"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" ADD CONSTRAINT "FK_3869d84e502689591c987724be9" FOREIGN KEY ("fk_id_cultivo") REFERENCES "cultivos"("pk_id_cultivo") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" ADD CONSTRAINT "FK_f625a8d56b4c1e1f18fa2ad8bc7" FOREIGN KEY ("fk_id_variedad") REFERENCES "variedad"("pk_id_variedad") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "variedad" ADD CONSTRAINT "FK_32531335d0482591eae661efcbf" FOREIGN KEY ("fk_id_tipo_cultivo") REFERENCES "tipo_cultivo"("pk_id_tipo_cultivo") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "cosechas_ventas" ADD CONSTRAINT "FK_bade37bec1231cf147fbcac413e" FOREIGN KEY ("fk_id_cosecha") REFERENCES "cosechas"("pk_id_cosecha") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "cosechas_ventas" ADD CONSTRAINT "FK_5563c73e32fef530f3a140ce3bd" FOREIGN KEY ("fk_id_venta") REFERENCES "venta"("pk_id_venta") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "cosechas" ADD CONSTRAINT "FK_07c03f265c04076ea27e439632d" FOREIGN KEY ("fk_id_cultivos_variedad_x_zona") REFERENCES "cultivos_variedad_x_zona"("pk_id_cv_zona") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "venta" ADD CONSTRAINT "FK_1b5df15fa07acae8d18b095d5dc" FOREIGN KEY ("fk_id_cosecha") REFERENCES "cosechas"("pk_id_cosecha") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cultivos_x_epa" ADD CONSTRAINT "FK_62ec7f2dad568439e62f7896b73" FOREIGN KEY ("fk_id_cultivos_x_variedad") REFERENCES "cultivos_x_variedad"("pk_id_cultivos_x_variedad") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cultivos_x_epa" ADD CONSTRAINT "FK_e93725ad163564397db9100ca2d" FOREIGN KEY ("fk_id_epa") REFERENCES "epa"("pk_id_epa") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "epa" ADD CONSTRAINT "FK_25cd948e2b067f238871a478ce7" FOREIGN KEY ("fk_id_tipo_epa") REFERENCES "tipo_epa"("pk_id_tipo_epa") ON DELETE NO ACTION ON UPDATE NO ACTION`);
@@ -102,16 +102,13 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "epa" DROP CONSTRAINT "FK_25cd948e2b067f238871a478ce7"`);
         await queryRunner.query(`ALTER TABLE "cultivos_x_epa" DROP CONSTRAINT "FK_e93725ad163564397db9100ca2d"`);
         await queryRunner.query(`ALTER TABLE "cultivos_x_epa" DROP CONSTRAINT "FK_62ec7f2dad568439e62f7896b73"`);
-        await queryRunner.query(`ALTER TABLE "variedad" DROP CONSTRAINT "FK_32531335d0482591eae661efcbf"`);
-        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" DROP CONSTRAINT "FK_f625a8d56b4c1e1f18fa2ad8bc7"`);
-        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" DROP CONSTRAINT "FK_3869d84e502689591c987724be9"`);
+        await queryRunner.query(`ALTER TABLE "venta" DROP CONSTRAINT "FK_1b5df15fa07acae8d18b095d5dc"`);
+        await queryRunner.query(`ALTER TABLE "cosechas" DROP CONSTRAINT "FK_07c03f265c04076ea27e439632d"`);
+        await queryRunner.query(`ALTER TABLE "cosechas_ventas" DROP CONSTRAINT "FK_5563c73e32fef530f3a140ce3bd"`);
+        await queryRunner.query(`ALTER TABLE "cosechas_ventas" DROP CONSTRAINT "FK_bade37bec1231cf147fbcac413e"`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" DROP CONSTRAINT "FK_df819fa89f42a3fb674de12574e"`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" DROP CONSTRAINT "FK_959fe9d6787940b232ff5442540"`);
         await queryRunner.query(`ALTER TABLE "cultivos_variedad_x_zona" DROP CONSTRAINT "FK_bedc232cd8a0b1aba926d53af68"`);
-        await queryRunner.query(`ALTER TABLE "cosechas" DROP CONSTRAINT "FK_07c03f265c04076ea27e439632d"`);
-        await queryRunner.query(`ALTER TABLE "venta" DROP CONSTRAINT "FK_1b5df15fa07acae8d18b095d5dc"`);
-        await queryRunner.query(`ALTER TABLE "cosechas_ventas" DROP CONSTRAINT "FK_5563c73e32fef530f3a140ce3bd"`);
-        await queryRunner.query(`ALTER TABLE "cosechas_ventas" DROP CONSTRAINT "FK_bade37bec1231cf147fbcac413e"`);
         await queryRunner.query(`ALTER TABLE "actividades" DROP CONSTRAINT "FK_40f52a18a6b1e8efd9a4938bfec"`);
         await queryRunner.query(`ALTER TABLE "actividades" DROP CONSTRAINT "FK_4ff147ed17e8bdeb0a22232cf5b"`);
         await queryRunner.query(`ALTER TABLE "reservas_x_actividad" DROP CONSTRAINT "FK_48e34f436100b175050202792d5"`);
@@ -132,6 +129,9 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "medicion_sensor" DROP CONSTRAINT "FK_a02dcc38c6502973912168b35b4"`);
         await queryRunner.query(`ALTER TABLE "zona_mqtt_config" DROP CONSTRAINT "FK_6f9527f65f4d638fef8bfe33e8f"`);
         await queryRunner.query(`ALTER TABLE "zona_mqtt_config" DROP CONSTRAINT "FK_3ae20521bac657fa2aab70ea611"`);
+        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" DROP CONSTRAINT "FK_f625a8d56b4c1e1f18fa2ad8bc7"`);
+        await queryRunner.query(`ALTER TABLE "cultivos_x_variedad" DROP CONSTRAINT "FK_3869d84e502689591c987724be9"`);
+        await queryRunner.query(`ALTER TABLE "variedad" DROP CONSTRAINT "FK_32531335d0482591eae661efcbf"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_06907d494f397996a2d85c0eb6"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_1b25d18dffadb2e4dbbf66c901"`);
         await queryRunner.query(`DROP TABLE "rol_creacion_jerarquia"`);
@@ -144,13 +144,11 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "epa"`);
         await queryRunner.query(`DROP TABLE "cultivos_x_epa"`);
         await queryRunner.query(`DROP TABLE "tipos_movimiento"`);
-        await queryRunner.query(`DROP TABLE "variedad"`);
-        await queryRunner.query(`DROP TABLE "cultivos_x_variedad"`);
+        await queryRunner.query(`DROP TABLE "venta"`);
+        await queryRunner.query(`DROP TABLE "cosechas"`);
+        await queryRunner.query(`DROP TABLE "cosechas_ventas"`);
         await queryRunner.query(`DROP TABLE "cultivos_variedad_x_zona"`);
         await queryRunner.query(`DROP TABLE "estados_fenologicos"`);
-        await queryRunner.query(`DROP TABLE "cosechas"`);
-        await queryRunner.query(`DROP TABLE "venta"`);
-        await queryRunner.query(`DROP TABLE "cosechas_ventas"`);
         await queryRunner.query(`DROP TABLE "actividades"`);
         await queryRunner.query(`DROP TABLE "reservas_x_actividad"`);
         await queryRunner.query(`DROP TABLE "estados_reserva"`);
@@ -173,8 +171,10 @@ export class InitialSchema1763993951603 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "zona_mqtt_config"`);
         await queryRunner.query(`DROP TABLE "mqtt_config"`);
         await queryRunner.query(`DROP TABLE "tipo_sensor"`);
-        await queryRunner.query(`DROP TABLE "cultivos"`);
+        await queryRunner.query(`DROP TABLE "cultivos_x_variedad"`);
+        await queryRunner.query(`DROP TABLE "variedad"`);
         await queryRunner.query(`DROP TABLE "tipo_cultivo"`);
+        await queryRunner.query(`DROP TABLE "cultivos"`);
     }
 
 }

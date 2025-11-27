@@ -47,7 +47,7 @@ export class AppController {
   getTestImage() {
     return {
       message: 'Test image endpoint',
-      imageUrl: '/uploads/imgUrl-1761829728566-kaz7l8kcxe.jpg'
+      imageUrl: '/uploads/imgUrl-1761829728566-kaz7l8kcxe.jpg',
     };
   }
 }
