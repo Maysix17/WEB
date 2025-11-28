@@ -79,9 +79,9 @@ export class ZonasService {
     return await this.zonaRepository.find({ where: { nombre } });
   }
 
-  async findOne(id: number): Promise<Zona> {
+  async findOne(id: string): Promise<Zona> {
     const zona = await this.zonaRepository.findOne({
-      where: { id: id.toString() },
+      where: { id },
     });
     if (!zona) {
       throw new NotFoundException(`Zona con id ${id} no encontrada`);
@@ -89,13 +89,13 @@ export class ZonasService {
     return zona;
   }
 
-  async update(id: number, updateZonaDto: UpdateZonaDto): Promise<Zona> {
+  async update(id: string, updateZonaDto: UpdateZonaDto): Promise<Zona> {
     const zona = await this.findOne(id);
     Object.assign(zona, updateZonaDto);
     return await this.zonaRepository.save(zona);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const zona = await this.findOne(id);
     await this.zonaRepository.remove(zona);
   }

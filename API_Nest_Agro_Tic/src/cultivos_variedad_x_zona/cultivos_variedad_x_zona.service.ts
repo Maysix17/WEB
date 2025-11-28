@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CultivosVariedadXZona } from './entities/cultivos_variedad_x_zona.entity';
 import { CreateCultivosVariedadXZonaDto } from './dto/create-cultivos_variedad_x_zona.dto';
 import { UpdateCultivosVariedadXZonaDto } from './dto/update-cultivos_variedad_x_zona.dto';
@@ -13,7 +12,6 @@ export class CultivosVariedadXZonaService {
   constructor(
     @InjectRepository(CultivosVariedadXZona)
     private readonly cvzRepository: Repository<CultivosVariedadXZona>,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -47,10 +45,10 @@ export class CultivosVariedadXZonaService {
     });
   }
 
-  async findOne(id: number): Promise<CultivosVariedadXZona> {
+  async findOne(id: string): Promise<CultivosVariedadXZona> {
     console.log(`[DEBUG] findOne called for id: ${id}`);
     const cvz = await this.cvzRepository.findOne({
-      where: { id: id.toString() },
+      where: { id: id },
       relations: [
         'cultivoXVariedad',
         'cultivoXVariedad.variedad',
@@ -112,7 +110,7 @@ export class CultivosVariedadXZonaService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateCultivosVariedadXZonaDto: UpdateCultivosVariedadXZonaDto,
   ): Promise<CultivosVariedadXZona> {
     const cvz = await this.findOne(id);
@@ -120,7 +118,7 @@ export class CultivosVariedadXZonaService {
     return await this.cvzRepository.save(cvz);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const cvz = await this.findOne(id);
     await this.cvzRepository.remove(cvz);
   }

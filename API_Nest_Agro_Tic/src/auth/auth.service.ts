@@ -60,14 +60,16 @@ export class AuthService {
       throw new ConflictException('El DNI o el correo ya están registrados.');
     }
 
-    const rolInvitado = await this.rolRepository.findOne({
+    let rolInvitado = await this.rolRepository.findOne({
       where: { nombre: 'INVITADO' },
     });
 
     if (!rolInvitado) {
-      throw new InternalServerErrorException(
-        'El rol por defecto "INVITADO" no se encuentra configurado.',
-      );
+      // Create the default role if it doesn't exist
+      rolInvitado = this.rolRepository.create({
+        nombre: 'INVITADO',
+      });
+      await this.rolRepository.save(rolInvitado);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -294,14 +296,36 @@ export class AuthService {
         rol: usuario.rol?.nombre,
       };
 
-      const newAccessToken = await this.jwtService.signAsync(newPayload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_EXPIRATION_TIME'),
-      });
+      const [newAccessToken, newRefreshToken] = await Promise.all([
+        this.jwtService.signAsync(newPayload, {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_EXPIRATION_TIME'),
+        }),
+        this.jwtService.signAsync(newPayload, {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME'),
+        }),
+      ]);
+
+      // Generate new refresh token hash and update session
+      const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
+      session.tokenHash = newRefreshTokenHash;
+      session.expiresAt = new Date();
+      session.expiresAt.setSeconds(session.expiresAt.getSeconds() + 30 * 24 * 60 * 60); // Reset to 30 days from now
+      await this.sessionRepository.save(session);
+
+      // Update Redis cache with new token hash
+      try {
+        const ttl = 30 * 24 * 60 * 60;
+        await this.cacheManager.set(`session:${usuario.id}`, newRefreshTokenHash, ttl);
+      } catch (redisError) {
+        this.logger.warn(`Failed to update session in Redis for user ${usuario.id}:`, redisError.message);
+      }
 
       return {
         message: 'Token actualizado',
         access_token: newAccessToken,
+        refresh_token: newRefreshToken,
       };
     } catch (error) {
       throw new UnauthorizedException(

@@ -34,7 +34,7 @@ export class MqttService implements OnModuleInit {
     private readonly medicionSensorService: MedicionSensorService,
     private readonly mqttGateway: MqttGateway,
   ) {}
-
+//El método onModuleInit() se ejecuta automáticamente cuando NestJS inicia el módulo, llamando a initializeConnections() que obtiene todas las configuraciones activas y crea las conexiones MQTT correspondientes.
   async onModuleInit() {
     await this.initializeConnections();
   }
