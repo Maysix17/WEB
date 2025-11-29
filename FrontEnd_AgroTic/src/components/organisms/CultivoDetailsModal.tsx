@@ -17,13 +17,18 @@ interface CultivoDetailsModalProps {
  }
 
 const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
-   isOpen,
-   onClose,
-   cultivo
- }) => {
-  console.log('CultivoDetailsModal - isOpen:', isOpen, 'cultivo:', cultivo);
+    isOpen,
+    onClose,
+    cultivo
+  }) => {
+   console.log('CultivoDetailsModal - isOpen:', isOpen, 'cultivo:', cultivo);
 
-  const [currentCultivo, setCurrentCultivo] = useState<Cultivo | null>(cultivo);
+   const [currentCultivo, setCurrentCultivo] = useState<Cultivo | null>(cultivo);
+
+   // Estado para filtros de exportación
+   const [fechaInicio, setFechaInicio] = useState<string>('');
+   const [fechaFin, setFechaFin] = useState<string>('');
+   const [exportarTodo, setExportarTodo] = useState<boolean>(false);
 
   // Update local state when cultivo prop changes
   useEffect(() => {
@@ -34,7 +39,7 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
 
   if (!currentCultivo) return null;
 
-  const exportToExcel = async () => {
+  const exportToExcel = async (fechaInicio?: string, fechaFin?: string, exportarTodo: boolean = false) => {
     if (!currentCultivo) return;
 
     try {
@@ -46,9 +51,41 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
       ]);
 
       // Filter ventas related to this cultivo's cosechas
-      const cultivoVentas = ventas.filter(venta =>
+      let cultivoVentas = ventas.filter(venta =>
         cosechas.some(cosecha => cosecha.id === venta.fkCosechaId)
       );
+
+      // Aplicar filtros por fecha si no se exporta todo
+      let filteredActividades = actividades;
+      let filteredCosechas = cosechas;
+      let filteredVentas = cultivoVentas;
+
+      if (!exportarTodo && fechaInicio && fechaFin) {
+        // Crear fechas de comparación sin problemas de zona horaria
+        const startDate = new Date(fechaInicio + 'T00:00:00.000Z'); // Inicio del día en UTC
+        const endDate = new Date(fechaFin + 'T23:59:59.999Z'); // Fin del día en UTC
+
+        // Filtrar actividades por fechaFinalizacion
+        filteredActividades = actividades.filter(actividad => {
+          if (!(actividad as any).fechaFinalizacion) return false;
+          const actividadDate = new Date((actividad as any).fechaFinalizacion);
+          return actividadDate >= startDate && actividadDate <= endDate;
+        });
+
+        // Filtrar cosechas por fecha
+        filteredCosechas = cosechas.filter(cosecha => {
+          if (!cosecha.fecha) return false;
+          const cosechaDate = new Date(cosecha.fecha + 'T12:00:00.000Z'); // Mediodía para evitar problemas de zona horaria
+          return cosechaDate >= startDate && cosechaDate <= endDate;
+        });
+
+        // Filtrar ventas por fecha
+        filteredVentas = cultivoVentas.filter(venta => {
+          if (!venta.fecha) return false;
+          const ventaDate = new Date(venta.fecha + 'T12:00:00.000Z'); // Mediodía para evitar problemas de zona horaria
+          return ventaDate >= startDate && ventaDate <= endDate;
+        });
+      }
 
       // Fetch financial data for the cultivo
       let finanzas = null;
@@ -97,12 +134,35 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         return total;
       };
 
-      const costoTotalProduccion = actividades
-        .filter(act => act.estado === false) // Only finalized activities
-        .reduce((sum, act) => sum + calculateCostoManoObra(act) + calculateCostoInventario(act), 0);
 
       // Create workbook
       const wb = XLSX.utils.book_new();
+
+      // Calculate dynamic financial data from filtered data
+      const cantidadCosechada = filteredCosechas.reduce((sum, cosecha) => sum + (Number(cosecha.cantidad) || 0), 0);
+      const cantidadVendida = filteredVentas.reduce((sum, venta) => sum + (Number(venta.cantidad) || 0), 0);
+      const ingresosTotales = filteredVentas.reduce((sum, venta) => sum + (Number(venta.precioUnitario) || 0) * (Number(venta.cantidad) || 0), 0);
+      const precioPromedioPorKilo = cantidadVendida > 0 ? ingresosTotales / cantidadVendida : 0;
+
+      // Filter finalized activities for the activity sheets
+      const finalizedActivities = filteredActividades.filter(act => act.estado === false);
+
+      const costoManoObra = finalizedActivities.reduce((sum, act) => sum + calculateCostoManoObra(act), 0);
+      const costoInventario = finalizedActivities.reduce((sum, act) => sum + calculateCostoInventario(act), 0);
+      const costoTotalProduccion = costoManoObra + costoInventario;
+      const ganancias = ingresosTotales - costoTotalProduccion;
+      const margenGanancia = costoTotalProduccion > 0 ? (ganancias / costoTotalProduccion) * 100 : 0;
+
+      // Determinar el rango de fechas del reporte
+      let rangoFechasTexto = "Toda la trazabilidad";
+      if (!exportarTodo && fechaInicio && fechaFin) {
+        // Formatear fechas manualmente para evitar problemas de zona horaria
+        const formatDate = (dateStr: string) => {
+          const [year, month, day] = dateStr.split('-');
+          return `${day}/${month}/${year}`;
+        };
+        rangoFechasTexto = `Del ${formatDate(fechaInicio)} al ${formatDate(fechaFin)}`;
+      }
 
       // Sheet 1: Resumen del Cultivo (with added total production cost)
       const resumenData = [
@@ -120,10 +180,11 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         ["Área del Terreno", currentCultivo.area_terreno ? `${currentCultivo.area_terreno} m²` : "N/A"],
         ["Rendimiento Promedio", currentCultivo.rendimiento_promedio ? `${currentCultivo.rendimiento_promedio.toFixed(2)} kg/planta` : "Sin datos"],
         ["Estado", currentCultivo.estado === 1 ? "En Curso" : "Finalizado"],
-        ["Total Actividades", actividades.length],
-        ["Total Cosechas", cosechas.length],
-        ["Total Ventas", cultivoVentas.length],
-        ["Ingresos Totales", cultivoVentas.reduce((sum, venta) => sum + (venta.precioUnitario || 0) * venta.cantidad, 0).toFixed(2)],
+        ["Rango de Fechas del Reporte", rangoFechasTexto],
+        ["Total Actividades", filteredActividades.length],
+        ["Total Cosechas", filteredCosechas.length],
+        ["Total Ventas", filteredVentas.length],
+        ["Ingresos Totales", filteredVentas.reduce((sum, venta) => sum + (Number(venta.precioUnitario) || 0) * (Number(venta.cantidad) || 0), 0).toFixed(2)],
         ["Costo Total de Producción", costoTotalProduccion.toFixed(2)],
         ["Fecha de Exportación", new Date().toLocaleDateString('es-CO')]
       ];
@@ -134,12 +195,10 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
       ];
       XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen del Cultivo");
 
-      // Filter finalized activities for the activity sheets
-      const finalizedActivities = actividades.filter(act => act.estado === false);
 
       // Sheet 2: Historial de Actividades
       const actividadesData = [
-        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
+        ["ID", "Fecha Asignación", "Fecha de Finalización", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
       ];
 
       finalizedActivities.forEach((activity: Actividad) => {
@@ -148,6 +207,7 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         actividadesData.push([
           activity.id,
           activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
+          (activity as any).fechaFinalizacion ? new Date((activity as any).fechaFinalizacion).toLocaleDateString('es-CO') : "N/A",
           (activity as any).categoriaActividad?.nombre || 'Sin categoría',
           (activity as any).nombreResponsable || 'Sin responsable',
           (activity as any).reservas && (activity as any).reservas.length > 0
@@ -166,6 +226,7 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
       wsActividades['!cols'] = [
         { wch: 15 }, // ID
         { wch: 15 }, // Fecha Asignación
+        { wch: 15 }, // Fecha de Finalización
         { wch: 20 }, // Categoría
         { wch: 25 }, // Usuario Responsable
         { wch: 40 }, // Inventario Utilizado
@@ -285,66 +346,125 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         { wch: 15 }, // Zona
         { wch: 12 }  // Estado
       ];
-      XLSX.utils.book_append_sheet(wb, wsCostos, "Análisis de Costos");
+      XLSX.utils.book_append_sheet(wb, wsCostos, "Costos Producción");
 
-      // Financial sheets (only if financial data is available)
-      if (finanzas) {
-        // Sheet 5: Resumen Financiero
-        const resumenFinancieroData = [
-          ["Concepto", "Valor"],
-          ["Cantidad Cosechada", finanzas.cantidadCosechada.toString() + " KG"],
-          ["Precio por Kilo", `$${finanzas.precioPorKilo.toFixed(2)}`],
-          ["Fecha de Venta", finanzas.fechaVenta ? new Date(finanzas.fechaVenta).toLocaleDateString('es-CO') : "N/A"],
-          ["Cantidad Vendida", finanzas.cantidadVendida.toString() + " KG"],
-          ["Costo Inventario", `$${finanzas.costoInventario.toFixed(2)}`],
-          ["Costo Mano de Obra", `$${finanzas.costoManoObra.toFixed(2)}`],
-          ["Costo Total de Producción", `$${finanzas.costoTotalProduccion.toFixed(2)}`],
-          ["Ingresos Totales", `$${finanzas.ingresosTotales.toFixed(2)}`],
-          ["Ganancias", `$${finanzas.ganancias.toFixed(2)}`],
-          ["Margen de Ganancia", `${(finanzas.margenGanancia * 100).toFixed(2)}%`],
-          ["Fecha de Cálculo", new Date(finanzas.fechaCalculo).toLocaleDateString('es-CO')],
-          ["Fecha de Exportación", new Date().toLocaleDateString('es-CO')]
-        ];
-        const wsResumenFinanciero = XLSX.utils.aoa_to_sheet(resumenFinancieroData);
-        wsResumenFinanciero['!cols'] = [
-          { wch: 30 }, // Concepto
-          { wch: 25 }  // Valor
-        ];
-        XLSX.utils.book_append_sheet(wb, wsResumenFinanciero, "Resumen Financiero");
+      // Sheet 5: Cosechas
+      const cosechasData = [
+        ["ID", "Fecha", "Cantidad (KG)", "Unidad de Medida", "Rendimiento por Planta", "Plantas Cosechadas", "Cerrada"]
+      ];
 
-        // Sheet 6: Detalle de Costos
-        const detalleCostosData = [
-          ["Categoría", "Descripción", "Monto"],
-          ["Producción", "Costo total de producción", finanzas.costoTotalProduccion.toString()],
-          ["Inventario", "Costo de insumos y materiales", finanzas.costoInventario.toString()],
-          ["Mano de Obra", "Costo de mano de obra", finanzas.costoManoObra.toString()],
-          ["Total Costos", "Suma de todos los costos", finanzas.costoTotalProduccion.toString()]
-        ];
-        const wsDetalleCostos = XLSX.utils.aoa_to_sheet(detalleCostosData);
-        wsDetalleCostos['!cols'] = [
-          { wch: 15 }, // Categoría
-          { wch: 35 }, // Descripción
-          { wch: 20 }  // Monto
-        ];
-        XLSX.utils.book_append_sheet(wb, wsDetalleCostos, "Detalle de Costos");
+      filteredCosechas.forEach((cosecha) => {
+        cosechasData.push([
+          cosecha.id,
+          cosecha.fecha ? new Date(cosecha.fecha + 'T12:00:00.000Z').toLocaleDateString('es-CO') : "N/A",
+          cosecha.cantidad || 0,
+          cosecha.unidadMedida || "N/A",
+          (cosecha as any).rendimiento_por_planta || 0,
+          (cosecha as any).cantidad_plantas_cosechadas || 0,
+          cosecha.cerrado ? "Sí" : "No"
+        ]);
+      });
 
-        // Sheet 7: Ingresos y Rentabilidad
-        const ingresosRentabilidadData = [
-          ["Concepto", "Cantidad", "Precio Unitario", "Total"],
-          ["Producción Total", finanzas.cantidadCosechada.toString() + " KG", `$${finanzas.precioPorKilo.toFixed(2)}`, `$${finanzas.cantidadCosechada * finanzas.precioPorKilo}`],
-          ["Ventas Realizadas", finanzas.cantidadVendida.toString() + " KG", `$${finanzas.precioPorKilo.toFixed(2)}`, `$${finanzas.ingresosTotales.toFixed(2)}`],
-          ["Eficiencia de Ventas", `${((finanzas.cantidadVendida / finanzas.cantidadCosechada) * 100).toFixed(2)}%`, "", ""],
-          ["Resultado Final", "", "", `$${finanzas.ganancias.toFixed(2)}`]
-        ];
-        const wsIngresosRentabilidad = XLSX.utils.aoa_to_sheet(ingresosRentabilidadData);
-        wsIngresosRentabilidad['!cols'] = [
-          { wch: 25 }, // Concepto
-          { wch: 20 }, // Cantidad
-          { wch: 20 }, // Precio Unitario
-          { wch: 20 }  // Total
-        ];
-        XLSX.utils.book_append_sheet(wb, wsIngresosRentabilidad, "Ingresos y Rentabilidad");
-      }
+      const wsCosechas = XLSX.utils.aoa_to_sheet(cosechasData);
+      wsCosechas['!cols'] = [
+        { wch: 15 }, // ID
+        { wch: 12 }, // Fecha
+        { wch: 15 }, // Cantidad (KG)
+        { wch: 18 }, // Unidad de Medida
+        { wch: 20 }, // Rendimiento por Planta
+        { wch: 18 }, // Plantas Cosechadas
+        { wch: 10 }  // Cerrada
+      ];
+      XLSX.utils.book_append_sheet(wb, wsCosechas, "Cosechas");
+
+      // Sheet 6: Ventas
+      const ventasData = [
+        ["ID", "Fecha", "Cantidad", "Unidad de Medida", "Precio Unitario", "Precio por Kilo", "Total"]
+      ];
+
+      filteredVentas.forEach((venta) => {
+        const precioUnitario = Number(venta.precioUnitario) || 0;
+        const precioKilo = Number(venta.precioKilo) || 0;
+        const cantidad = Number(venta.cantidad) || 0;
+        const total = precioUnitario * cantidad;
+        ventasData.push([
+          venta.id,
+          venta.fecha ? new Date(venta.fecha + 'T12:00:00.000Z').toLocaleDateString('es-CO') : "N/A",
+          cantidad.toString(),
+          venta.unidadMedida || "N/A",
+          precioUnitario > 0 ? `$${precioUnitario.toFixed(2)}` : "$0.00",
+          precioKilo > 0 ? `$${precioKilo.toFixed(2)}` : "$0.00",
+          `$${total.toFixed(2)}`
+        ]);
+      });
+
+      const wsVentas = XLSX.utils.aoa_to_sheet(ventasData);
+      wsVentas['!cols'] = [
+        { wch: 15 }, // ID
+        { wch: 12 }, // Fecha
+        { wch: 12 }, // Cantidad
+        { wch: 18 }, // Unidad de Medida
+        { wch: 15 }, // Precio Unitario
+        { wch: 15 }, // Precio por Kilo
+        { wch: 12 }  // Total
+      ];
+      XLSX.utils.book_append_sheet(wb, wsVentas, "Ventas");
+
+
+      // Sheet 7: Resumen Financiero (calculated from filtered data)
+      const resumenFinancieroData = [
+        ["Concepto", "Valor"],
+        ["Cantidad Cosechada", cantidadCosechada.toFixed(2) + " KG"],
+        ["Precio por Kilo (Promedio)", `$${precioPromedioPorKilo.toFixed(2)}`],
+        ["Cantidad Vendida", cantidadVendida.toFixed(2) + " KG"],
+        ["Costo Inventario", `$${costoInventario.toFixed(2)}`],
+        ["Costo Mano de Obra", `$${costoManoObra.toFixed(2)}`],
+        ["Costo Total de Producción", `$${costoTotalProduccion.toFixed(2)}`],
+        ["Ingresos Totales", `$${ingresosTotales.toFixed(2)}`],
+        ["Ganancias", `$${ganancias.toFixed(2)}`],
+        ["Margen de Ganancia", `${margenGanancia.toFixed(2)}%`],
+        ["Fecha de Exportación", new Date().toLocaleDateString('es-CO')]
+      ];
+      const wsResumenFinanciero = XLSX.utils.aoa_to_sheet(resumenFinancieroData);
+      wsResumenFinanciero['!cols'] = [
+        { wch: 30 }, // Concepto
+        { wch: 25 }  // Valor
+      ];
+      XLSX.utils.book_append_sheet(wb, wsResumenFinanciero, "Resumen Financiero");
+
+      // Sheet 8: Detalle de Costos
+      const detalleCostosData = [
+        ["Categoría", "Descripción", "Monto"],
+        ["Producción", "Costo total de producción", costoTotalProduccion.toFixed(2)],
+        ["Inventario", "Costo de insumos y materiales", costoInventario.toFixed(2)],
+        ["Mano de Obra", "Costo de mano de obra", costoManoObra.toFixed(2)],
+        ["Total Costos", "Suma de todos los costos", costoTotalProduccion.toFixed(2)]
+      ];
+      const wsDetalleCostos = XLSX.utils.aoa_to_sheet(detalleCostosData);
+      wsDetalleCostos['!cols'] = [
+        { wch: 15 }, // Categoría
+        { wch: 35 }, // Descripción
+        { wch: 20 }  // Monto
+      ];
+      XLSX.utils.book_append_sheet(wb, wsDetalleCostos, "Detalle de Costos");
+
+      // Sheet 9: Ingresos y Rentabilidad
+      const eficienciaVentas = cantidadCosechada > 0 ? (cantidadVendida / cantidadCosechada) * 100 : 0;
+      const ingresosRentabilidadData = [
+        ["Concepto", "Cantidad", "Precio Unitario", "Total"],
+        ["Producción Total", cantidadCosechada.toFixed(2) + " KG", `$${precioPromedioPorKilo.toFixed(2)}`, `$${(cantidadCosechada * precioPromedioPorKilo).toFixed(2)}`],
+        ["Ventas Realizadas", cantidadVendida.toFixed(2) + " KG", `$${precioPromedioPorKilo.toFixed(2)}`, `$${ingresosTotales.toFixed(2)}`],
+        ["Eficiencia de Ventas", `${eficienciaVentas.toFixed(2)}%`, "", ""],
+        ["Resultado Final", "", "", `$${ganancias.toFixed(2)}`]
+      ];
+      const wsIngresosRentabilidad = XLSX.utils.aoa_to_sheet(ingresosRentabilidadData);
+      wsIngresosRentabilidad['!cols'] = [
+        { wch: 25 }, // Concepto
+        { wch: 20 }, // Cantidad
+        { wch: 20 }, // Precio Unitario
+        { wch: 20 }  // Total
+      ];
+      XLSX.utils.book_append_sheet(wb, wsIngresosRentabilidad, "Ingresos y Rentabilidad");
 
       // Generate and download file
       const fileName = `Informe_Completo_Cultivo_${currentCultivo.ficha}_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -440,16 +560,69 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
           </div>
         </ModalBody>
 
-        <ModalFooter className="flex justify-between">
-          <CustomButton onClick={onClose} variant="bordered">
-            Cerrar
-          </CustomButton>
+        <ModalFooter className="flex flex-col gap-4">
+           {/* Contenedor de filtros de exportación */}
+           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg w-full">
+             <div className="flex items-center gap-2">
+               <input
+                 type="checkbox"
+                 id="exportarTodo"
+                 checked={exportarTodo}
+                 onChange={(e) => setExportarTodo(e.target.checked)}
+                 className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+               />
+               <label htmlFor="exportarTodo" className="text-sm font-medium text-gray-700">
+                 Exportar toda la trazabilidad
+               </label>
+             </div>
 
-          {/* BOTÓN DE INFORMACIÓN EN ESQUINA DERECHA */}
-          <CustomButton onClick={exportToExcel} variant="solid" color="success">
-            Exportar Excel
-          </CustomButton>
-        </ModalFooter>
+             {!exportarTodo && (
+               <>
+                 <div className="flex items-center gap-2">
+                   <label htmlFor="fechaInicio" className="text-sm font-medium text-gray-700">
+                     Fecha inicio:
+                   </label>
+                   <input
+                     type="date"
+                     id="fechaInicio"
+                     value={fechaInicio}
+                     onChange={(e) => setFechaInicio(e.target.value)}
+                     className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
+                   />
+                 </div>
+
+                 <div className="flex items-center gap-2">
+                   <label htmlFor="fechaFin" className="text-sm font-medium text-gray-700">
+                     Fecha fin:
+                   </label>
+                   <input
+                     type="date"
+                     id="fechaFin"
+                     value={fechaFin}
+                     onChange={(e) => setFechaFin(e.target.value)}
+                     className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
+                   />
+                 </div>
+               </>
+             )}
+           </div>
+
+           {/* Botones de acción */}
+           <div className="flex justify-between w-full">
+             <CustomButton onClick={onClose} variant="bordered">
+               Cerrar
+             </CustomButton>
+
+             <CustomButton
+               onClick={() => exportToExcel(fechaInicio, fechaFin, exportarTodo)}
+               variant="solid"
+               color="success"
+               disabled={!exportarTodo && (!fechaInicio || !fechaFin)}
+             >
+               Exportar Excel
+             </CustomButton>
+           </div>
+         </ModalFooter>
       </ModalContent>
 
     </Modal>
