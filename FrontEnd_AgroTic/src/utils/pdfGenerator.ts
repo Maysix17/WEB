@@ -657,7 +657,7 @@ const generateCultivoTrazabilidad = async (
                 ).toLocaleDateString("es-CO")
               : "N/A",
             (activity as any).categoriaActividad?.nombre || "Sin categoría",
-            (activity as any).responsableNombre || "Sin responsable",
+            (activity as any).nombreResponsable || "Sin responsable",
             "Finalizada",
             `$${costoManoObra.toFixed(2)}`,
             `$${costoTotal.toFixed(2)}`,
