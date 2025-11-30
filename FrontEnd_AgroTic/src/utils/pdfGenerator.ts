@@ -298,9 +298,8 @@ export const generatePDFReport = async (
 
         // Header del sensor
         pdf.setFillColor(241, 245, 249);
-        pdf.rect(15, yPosition - 3, 180, 12, "F");
         pdf.setDrawColor(176, 190, 197);
-        pdf.rect(15, yPosition - 3, 180, 12);
+        pdf.roundedRect(15, yPosition - 3, 180, 12, 3, 3, "FD");
 
         pdf.setFontSize(12);
         pdf.setFont("helvetica", "bold");
@@ -308,53 +307,34 @@ export const generatePDFReport = async (
         pdf.text(`Sensor: ${sensorKey}`, 20, yPosition + 5);
         yPosition += 15;
 
-        // Tabla de franjas horarias
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "bold");
-
-        const headers = [
-          "Franja Horaria",
-          "Mínimo",
-          "Máximo",
-          "Promedio",
-          "Conteo",
-        ];
-        const colWidths = [40, 25, 25, 25, 25];
-        let xPosition = 20;
-
-        headers.forEach((header, index) => {
-          pdf.text(header, xPosition, yPosition);
-          xPosition += colWidths[index];
-        });
-
-        yPosition += 3;
-        pdf.line(20, yPosition, 190, yPosition);
-        yPosition += 5;
-
-        // Filas de datos
-        pdf.setFont("helvetica", "normal");
+        // Preparar datos para la tabla
         const slotNames = ["6am-12pm", "12pm-6pm", "6pm-12am", "12am-6am"];
+        const tableData = [
+          ["Franja Horaria", "Mínimo", "Máximo", "Promedio", "Conteo"],
+        ];
 
         [0, 1, 2, 3].forEach((slot) => {
-          xPosition = 20;
           const slotData = slots[slot];
-
-          const rowData = [
+          tableData.push([
             slotNames[slot],
             slotData ? slotData.min.toFixed(2) : "N/A",
             slotData ? slotData.max.toFixed(2) : "N/A",
             slotData ? slotData.avg.toFixed(2) : "N/A",
             slotData ? slotData.count.toString() : "0",
-          ];
-
-          rowData.forEach((data, index) => {
-            pdf.text(data, xPosition, yPosition);
-            xPosition += colWidths[index];
-          });
-          yPosition += 6;
+          ]);
         });
 
-        yPosition += 10;
+        // Crear tabla con autoTable
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [tableData[0]],
+          body: tableData.slice(1),
+          theme: "grid",
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [34, 197, 94] },
+        });
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 10;
       });
     }
 
