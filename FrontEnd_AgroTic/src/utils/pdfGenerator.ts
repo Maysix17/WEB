@@ -101,13 +101,17 @@ const formatGroupBy = (groupBy: string): string => {
 };
 
 export const generatePDFReport = async (
-  selectedData: SelectedData
+  selectedData: SelectedData,
+  onProgress?: (progress: number) => void
 ): Promise<jsPDF> => {
   try {
     const pdf = new jsPDF();
     let yPosition = 20;
 
     // Make API call to get report data
+    onProgress?.(5);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
     const reportRequest = {
       med_keys: selectedData.sensores,
       cultivo_ids:
@@ -119,11 +123,17 @@ export const generatePDFReport = async (
       time_ranges: selectedData.timeRanges,
     };
 
+    onProgress?.(15);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
     const reportResponse = await apiClient.post(
       "/medicion-sensor/report-data",
       reportRequest
     );
     const reportData: ReportDataResponse[] = reportResponse.data;
+
+    onProgress?.(25);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
     // ===== HEADER PROFESIONAL =====
     // Background header
@@ -160,6 +170,12 @@ export const generatePDFReport = async (
     pdf.setTextColor(0, 0, 0); // Reset to black
 
     yPosition = 45;
+    onProgress?.(35);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
+    // Calculate statistics
+    onProgress?.(40);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
     // ===== INFORMACIÓN DEL REPORTE =====
     // Calculate some basic statistics for the introduction
@@ -462,8 +478,12 @@ export const generatePDFReport = async (
         yPosition = (pdf as any).lastAutoTable.finalY + 10;
       });
     }
+    onProgress?.(50);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
     // ===== ANÁLISIS DE TENDENCIAS =====
+    onProgress?.(60);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
     if (selectedData.sensores.length > 0 && reportData.length > 0) {
       pdf.addPage();
       yPosition = 20;
@@ -515,6 +535,9 @@ export const generatePDFReport = async (
             }
           });
 
+          onProgress?.(65);
+          await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
           // Preparar datos para gráfica
           const chartData = Object.entries(dateSlotData)
             .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
@@ -533,6 +556,9 @@ export const generatePDFReport = async (
             "";
           const subtitle = `${firstItem.zonaNombre} | ${firstItem.cultivoNombre}`;
 
+          onProgress?.(70);
+          await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
           try {
             // Generar gráfica multi-línea
             const canvas = await renderLineChartToCanvas({
@@ -550,9 +576,15 @@ export const generatePDFReport = async (
               unidad: unidad,
             });
 
+            onProgress?.(75);
+            await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
             const imgData = canvas.toDataURL("image/png");
             pdf.addImage(imgData, "PNG", 20, yPosition, 170, 114); // 500x400 escalado
             yPosition += 130;
+
+            onProgress?.(79);
+            await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
             // Leyenda de colores
             pdf.setFontSize(8);
@@ -599,6 +631,7 @@ export const generatePDFReport = async (
         }
       }
     }
+    onProgress?.(80);
 
     // ===== FOOTER PROFESIONAL =====
     const totalPages = pdf.getNumberOfPages();
@@ -653,7 +686,8 @@ const generateCultivoTrazabilidad = async (
   yPosition: number,
   fechaInicio?: string,
   fechaFin?: string,
-  exportarTodo: boolean = false
+  exportarTodo: boolean = false,
+  onProgress?: (progress: number) => void
 ): Promise<number> => {
   try {
     console.log("🔍 PDF TRAZABILIDAD: Starting with cultivoData:", cultivoData);
@@ -688,6 +722,9 @@ const generateCultivoTrazabilidad = async (
 
     // Fetch all related data
     console.log("🔍 PDF TRAZABILIDAD: Fetching data for cvzId:", cvzId);
+    onProgress?.(81);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
     const [actividades, cosechas, ventas] = await Promise.all([
       getActividadesByCultivoVariedadZonaId(cvzId),
       getCosechasByCultivo(cvzId),
@@ -709,6 +746,9 @@ const generateCultivoTrazabilidad = async (
       cultivoVentas.length,
       "items"
     );
+
+    onProgress?.(83);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
     // Aplicar filtros por fecha si no se exporta todo
     let filteredActividades = actividades;
@@ -769,6 +809,9 @@ const generateCultivoTrazabilidad = async (
       );
     }
 
+    onProgress?.(85);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
     // Calcular totales
     const finalizedActivities = filteredActividades.filter(
       (act) => act.estado === false
@@ -807,9 +850,15 @@ const generateCultivoTrazabilidad = async (
     console.log("  - Costo total producción:", costoTotalProduccion);
     console.log("  - Ganancias:", ganancias);
 
+    onProgress?.(88);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
     // ===== PÁGINA 1: RESUMEN DEL CULTIVO =====
     pdf.addPage();
     yPosition = 20;
+
+    onProgress?.(90);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
     pdf.setFontSize(16);
     pdf.setFont("helvetica", "bold");
@@ -1269,7 +1318,8 @@ const calculateCostoInventario = (activity: Actividad) => {
 };
 
 export const generateSensorSearchPDF = async (
-  selectedDetails: SelectedSensorDetail[]
+  selectedDetails: SelectedSensorDetail[],
+  onProgress?: (progress: number) => void
 ): Promise<void> => {
   try {
     console.log(
@@ -1301,6 +1351,9 @@ export const generateSensorSearchPDF = async (
 
     if (hasFilters) {
       // Use report-data endpoint with filters
+      onProgress?.(1);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
       const firstDetail = selectedDetails.find(
         (detail) =>
           detail.startDate &&
@@ -1334,7 +1387,10 @@ export const generateSensorSearchPDF = async (
           timeRanges: timeRangesToSend,
         };
 
-        const pdf = await generatePDFReport(selectedData);
+        onProgress?.(2);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
+        const pdf = await generatePDFReport(selectedData, onProgress);
 
         // ===== INTEGRAR SECCIÓN DE TRAZABILIDAD =====
         // Get the first cultivo data for trazabilidad
@@ -1351,10 +1407,14 @@ export const generateSensorSearchPDF = async (
           0,
           firstDetail.startDate,
           firstDetail.endDate,
-          false
+          false,
+          onProgress
         );
 
         // Update footer with new page count
+        onProgress?.(96);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
         const totalPages = pdf.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           pdf.setPage(i);
@@ -1391,10 +1451,14 @@ export const generateSensorSearchPDF = async (
         }
 
         // Save the complete PDF
+        onProgress?.(95);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
         const fileName = `reporte-completo-cultivo-agrotic-${
           new Date().toISOString().split("T")[0]
         }.pdf`;
         pdf.save(fileName);
+        onProgress?.(100);
 
         return;
       }

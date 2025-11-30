@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   ModalContent,
@@ -16,6 +16,7 @@ import {
   Checkbox,
   Select,
   SelectItem,
+  Progress,
 } from '@heroui/react';
 import { MagnifyingGlassIcon, XMarkIcon, DocumentArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { medicionSensorService } from '../../services/zonasService';
@@ -70,8 +71,18 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSensors, setSelectedSensors] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
   const [cardFilters, setCardFilters] = useState<Map<string, CardFilters>>(new Map());
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+
+  // Progress manager to ensure progress only increases
+  const progressRef = useRef(0);
+  const updateProgress = useCallback((newProgress: number) => {
+    if (newProgress > progressRef.current) {
+      progressRef.current = newProgress;
+      setExportProgress(newProgress);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -159,6 +170,8 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
     }
 
     setIsExporting(true);
+    progressRef.current = 0;
+    setExportProgress(0);
     try {
       const selectedDetails = Array.from(selectedSensors).map(uniqueKey => {
         // Find the complete sensor data from the original data structure
@@ -214,7 +227,7 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
 
       console.log('🎯 FRONTEND: Selected details for PDF:', selectedDetails);
       console.log('🎯 FRONTEND: About to call generateSensorSearchPDF with individual filters applied');
-      await generateSensorSearchPDF(selectedDetails);
+      await generateSensorSearchPDF(selectedDetails, updateProgress);
     } catch (error) {
       console.error('Error exporting PDF:', error);
       await Swal.fire({
@@ -455,10 +468,22 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
               <span>{selectedSensors.size} sensor(es) seleccionado(s)</span>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="light" onClick={onClose}>
-              Cerrar
-            </Button>
+          <div className="flex gap-2 items-center">
+            {isExporting && (
+              <div className="flex items-center gap-2 mr-4">
+                <Progress
+                  size="sm"
+                  value={exportProgress}
+                  color="success"
+                  className="w-32 transition-all duration-300 ease-in-out"
+                  showValueLabel={false}
+                  aria-label="Export progress"
+                />
+                <span className="text-sm text-gray-600 min-w-[3rem] font-medium">
+                  {exportProgress}%
+                </span>
+              </div>
+            )}
             <Button
               className="bg-[#15A55A] hover:bg-[#15A55A]/80 text-white"
               onClick={handleExportPDF}
