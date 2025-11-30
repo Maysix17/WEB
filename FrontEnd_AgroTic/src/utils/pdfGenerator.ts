@@ -10,6 +10,7 @@ import type { Actividad } from "../services/actividadesService";
 import { calcularEdadCultivo } from "../services/cultivosVariedadZonaService";
 import AgroTicNormal from "../assets/AgroTic_normal.png";
 import AgroTic from "../assets/AgroTic.png";
+import logoSena from "../assets/logoSena.png";
 
 interface SelectedData {
   cultivos: string[];
@@ -157,35 +158,85 @@ export const generatePDFReport = async (
     );
 
     pdf.setTextColor(0, 0, 0); // Reset to black
+
     yPosition = 45;
 
     // ===== INFORMACIÓN DEL REPORTE =====
-    pdf.setFillColor(248, 250, 252);
-    pdf.rect(15, yPosition - 5, 180, 40, "F");
-    pdf.setDrawColor(226, 232, 240);
-    pdf.rect(15, yPosition - 5, 180, 40);
+    // Calculate some basic statistics for the introduction
+    const totalDataPoints = reportData.reduce(
+      (sum, item) =>
+        sum +
+        item.statistics.reduce((statSum, stat) => statSum + stat.count, 0),
+      0
+    );
+    const uniqueSensors = new Set(
+      reportData.flatMap((item) => item.statistics.map((stat) => stat.med_key))
+    ).size;
 
-    pdf.setFontSize(14);
+    // Extract unique zones and crop-variety combinations
+    const uniqueZones = [...new Set(reportData.map((item) => item.zonaNombre))];
+    const uniqueCropVarieties = [
+      ...new Set(
+        reportData.map(
+          (item) => `${item.cultivoNombre} - ${item.variedadNombre}`
+        )
+      ),
+    ];
+
+    // Main information area - expanded height (no background or border)
+
+    // Title
+    pdf.setFontSize(16);
     pdf.setFont("helvetica", "bold");
     pdf.text("Información del Reporte", 20, yPosition);
+    yPosition += 12;
+
+    // Introduction text
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "italic");
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(
+      "Este reporte proporciona un análisis completo del monitoreo IoT del cultivo,",
+      20,
+      yPosition
+    );
+    yPosition += 5;
+    pdf.text(
+      "incluyendo datos de sensores, tendencias y métricas de rendimiento.",
+      20,
+      yPosition
+    );
     yPosition += 10;
 
+    // Reset to black
+    pdf.setTextColor(0, 0, 0);
+
+    // ===== SECCIÓN: ALCANCE DEL ANÁLISIS =====
+    pdf.setFillColor(241, 245, 249);
+    pdf.rect(20, yPosition - 2, 165, 45, "F");
+    pdf.setDrawColor(176, 190, 197);
+    pdf.roundedRect(20, yPosition - 2, 165, 45, 2, 2);
+
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Alcance del Análisis", 25, yPosition + 6);
+    yPosition += 12;
+
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
+    pdf.setFontSize(9);
 
     const dateRange = formatDateRange(
       selectedData.startDate,
       selectedData.endDate
     );
-    pdf.text(`Período Analizado: ${dateRange}`, 20, yPosition);
-    yPosition += 6;
-
+    pdf.text(`Período: ${dateRange}`, 25, yPosition);
+    yPosition += 5;
     pdf.text(
       `Agrupamiento: ${formatGroupBy(selectedData.groupBy)}`,
-      20,
+      25,
       yPosition
     );
-    yPosition += 6;
+    yPosition += 5;
 
     if (selectedData.timeRanges && selectedData.timeRanges.length > 0) {
       const timeRangeLabels = {
@@ -197,18 +248,92 @@ export const generatePDFReport = async (
       const selectedLabels = selectedData.timeRanges
         .map((range) => timeRangeLabels[range as keyof typeof timeRangeLabels])
         .join(", ");
-      pdf.text(`Franjas Horarias: ${selectedLabels}`, 20, yPosition);
-      yPosition += 6;
+      pdf.text(`Franjas: ${selectedLabels}`, 25, yPosition);
+      yPosition += 5;
     }
 
     pdf.text(
-      `Sensores: ${selectedData.sensores.length} | Zonas: ${selectedData.zonas.length} | Cultivos: ${selectedData.cultivos.length}`,
-      20,
+      `Tipo: Análisis completo de trazabilidad del cultivo`,
+      25,
       yPosition
     );
     yPosition += 15;
 
+    // ===== SECCIÓN: ELEMENTOS ANALIZADOS =====
+    pdf.setFillColor(241, 245, 249);
+    pdf.rect(20, yPosition - 2, 165, 50, "F");
+    pdf.setDrawColor(176, 190, 197);
+    pdf.roundedRect(20, yPosition - 2, 165, 50, 2, 2);
+
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Elementos Analizados", 25, yPosition + 6);
+    yPosition += 12;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+
+    pdf.text(`Zonas: ${uniqueZones.join(", ")}`, 25, yPosition);
+    yPosition += 5;
+
+    // Split crop varieties if too long
+    const cropText = `Cultivos: ${uniqueCropVarieties.join(", ")}`;
+    if (cropText.length > 60) {
+      const words = cropText.split(", ");
+      let line = "Cultivos: ";
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + (i > 0 ? ", " : "") + words[i];
+        if (testLine.length > 55 && i > 0) {
+          pdf.text(line, 25, yPosition);
+          yPosition += 5;
+          line = "  " + words[i];
+        } else {
+          line = testLine;
+        }
+      }
+      pdf.text(line, 25, yPosition);
+      yPosition += 5;
+    } else {
+      pdf.text(cropText, 25, yPosition);
+      yPosition += 5;
+    }
+
+    pdf.text(
+      `Sensores: ${selectedData.sensores.length} | Zonas: ${selectedData.zonas.length} | Cultivos: ${selectedData.cultivos.length}`,
+      25,
+      yPosition
+    );
+    yPosition += 10;
+
+    // ===== SECCIÓN: MÉTRICAS RESUMEN =====
+    pdf.setFillColor(241, 245, 249);
+    pdf.rect(20, yPosition - 2, 165, 35, "F");
+    pdf.setDrawColor(176, 190, 197);
+    pdf.roundedRect(20, yPosition - 2, 165, 35, 2, 2);
+
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Métricas Clave", 25, yPosition + 6);
+    yPosition += 12;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+
+    pdf.text(
+      `Total de puntos de datos: ${totalDataPoints.toLocaleString()}`,
+      25,
+      yPosition
+    );
+    yPosition += 5;
+    pdf.text(`Sensores únicos analizados: ${uniqueSensors}`, 25, yPosition);
+    yPosition += 5;
+    pdf.text(`Períodos reportados: ${reportData.length}`, 25, yPosition);
+    yPosition += 15;
+
     // ===== RESUMEN ESTADÍSTICO =====
+    pdf.addPage();
+    yPosition = 20;
+
     if (reportData.length > 0) {
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
@@ -486,11 +611,12 @@ export const generatePDFReport = async (
       pdf.setDrawColor(226, 232, 240);
       pdf.line(0, 280, 210, 280);
 
-      // Add small logo to footer
+      // Add logos to footer
       try {
-        pdf.addImage(AgroTic, "PNG", 10, 282, 10, 10);
+        pdf.addImage(logoSena, "PNG", 10, 282, 10, 10);
+        pdf.addImage(AgroTic, "PNG", 25, 282, 10, 10);
       } catch (imageError) {
-        console.warn("Error adding footer logo to PDF:", imageError);
+        console.warn("Error adding footer logos to PDF:", imageError);
       }
 
       pdf.setFontSize(8);
@@ -503,7 +629,7 @@ export const generatePDFReport = async (
           hour: "2-digit",
           minute: "2-digit",
         })}`,
-        25,
+        40,
         288
       );
       pdf.text(`Página ${i} de ${totalPages}`, 170, 288);
@@ -1239,11 +1365,12 @@ export const generateSensorSearchPDF = async (
           pdf.setDrawColor(226, 232, 240);
           pdf.line(0, 280, 210, 280);
 
-          // Add small logo to footer
+          // Add logos to footer
           try {
-            pdf.addImage(AgroTic, "PNG", 10, 282, 10, 10);
+            pdf.addImage(logoSena, "PNG", 10, 282, 10, 10);
+            pdf.addImage(AgroTic, "PNG", 25, 282, 10, 10);
           } catch (imageError) {
-            console.warn("Error adding footer logo to PDF:", imageError);
+            console.warn("Error adding footer logos to PDF:", imageError);
           }
 
           pdf.setFontSize(8);
@@ -1256,7 +1383,7 @@ export const generateSensorSearchPDF = async (
               hour: "2-digit",
               minute: "2-digit",
             })}`,
-            25,
+            40,
             288
           );
           pdf.text(`Página ${i} de ${totalPages}`, 170, 288);
