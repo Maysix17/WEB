@@ -851,7 +851,6 @@ const generateCultivoTrazabilidad = async (
     yPosition += 15;
 
     const costosData = finalizedActivities.map((act) => [
-      act.id,
       act.fechaAsignacion
         ? new Date(act.fechaAsignacion + "T00:00:00").toLocaleDateString(
             "es-CO"
@@ -872,7 +871,6 @@ const generateCultivoTrazabilidad = async (
       startY: yPosition,
       head: [
         [
-          "ID Actividad",
           "Fecha Asignación",
           "Categoría",
           "Usuario Responsable",
@@ -947,7 +945,6 @@ const generateCultivoTrazabilidad = async (
     yPosition += 15;
 
     const ventasData = filteredVentas.map((ven) => [
-      ven.id,
       ven.fecha
         ? new Date(ven.fecha + "T12:00:00.000Z").toLocaleDateString("es-CO")
         : "N/A",
@@ -964,7 +961,6 @@ const generateCultivoTrazabilidad = async (
       startY: yPosition,
       head: [
         [
-          "ID",
           "Fecha",
           "Cantidad",
           "Unidad de Medida",
