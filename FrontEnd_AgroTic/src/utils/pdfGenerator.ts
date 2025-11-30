@@ -732,6 +732,21 @@ const generateCultivoTrazabilidad = async (
     pdf.text("2.2 Historial de Actividades", 20, yPosition);
     yPosition += 15;
 
+    const getAssignedUsersPDF = (activity: Actividad) => {
+      if (
+        !(activity as any).usuariosAsignados ||
+        (activity as any).usuariosAsignados.length === 0
+      ) {
+        return "Sin usuarios asignados";
+      }
+      return (activity as any).usuariosAsignados
+        .map(
+          (uxa: any) =>
+            `${uxa.usuario.nombres} ${uxa.usuario.apellidos} (${uxa.usuario.dni})`
+        )
+        .join(", ");
+    };
+
     const actividadesData = finalizedActivities.map((act) => [
       act.fechaAsignacion
         ? new Date(act.fechaAsignacion + "T00:00:00").toLocaleDateString(
@@ -743,6 +758,7 @@ const generateCultivoTrazabilidad = async (
         : "N/A",
       (act as any).categoriaActividad?.nombre || "Sin categoría",
       (act as any).nombreResponsable || "Sin responsable",
+      getAssignedUsersPDF(act),
       zonaNombre || "Sin zona",
       act.observacion || "",
       (act.horasDedicadas || 0).toString(),
@@ -760,6 +776,7 @@ const generateCultivoTrazabilidad = async (
           "Fecha Finalización",
           "Categoría",
           "Responsable",
+          "Usuarios Asignados",
           "Zona",
           "Observación",
           "Horas",
@@ -892,8 +909,7 @@ const generateCultivoTrazabilidad = async (
       cos.fecha
         ? new Date(cos.fecha + "T12:00:00.000Z").toLocaleDateString("es-CO")
         : "N/A",
-      (Number(cos.cantidad) || 0).toString(),
-      cos.unidadMedida || "N/A",
+      `${Number(cos.cantidad) || 0} ${cos.unidadMedida || "N/A"}`,
       (
         Number(
           (cos as any).rendimientoPorPlanta ||
@@ -906,20 +922,12 @@ const generateCultivoTrazabilidad = async (
             (cos as any).cos_cantidad_plantas_cosechadas
         ) || 0
       ).toString(),
-      cos.cerrado ? "Sí" : "No",
     ]);
 
     autoTable(pdf, {
       startY: yPosition,
       head: [
-        [
-          "Fecha",
-          "Cantidad (KG)",
-          "Unidad de Medida",
-          "Rendimiento por Planta",
-          "Plantas Cosechadas",
-          "Cerrada",
-        ],
+        ["Fecha", "Cantidad", "Rendimiento por Planta", "Plantas Cosechadas"],
       ],
       body: cosechasData,
       theme: "grid",
@@ -940,8 +948,7 @@ const generateCultivoTrazabilidad = async (
       ven.fecha
         ? new Date(ven.fecha + "T12:00:00.000Z").toLocaleDateString("es-CO")
         : "N/A",
-      (Number(ven.cantidad) || 0).toString(),
-      ven.unidadMedida || "N/A",
+      `${Number(ven.cantidad) || 0} ${ven.unidadMedida || "N/A"}`,
       `$${(Number(ven.precioUnitario) || 0).toFixed(2)}`,
       `$${(Number(ven.precioKilo) || 0).toFixed(2)}`,
       `$${(
@@ -952,14 +959,7 @@ const generateCultivoTrazabilidad = async (
     autoTable(pdf, {
       startY: yPosition,
       head: [
-        [
-          "Fecha",
-          "Cantidad",
-          "Unidad de Medida",
-          "Precio Unitario",
-          "Precio por Kilo",
-          "Total",
-        ],
+        ["Fecha", "Cantidad", "Precio Unitario", "Precio por Kilo", "Total"],
       ],
       body: ventasData,
       theme: "grid",
@@ -1065,7 +1065,7 @@ const generateCultivoTrazabilidad = async (
       cantidadVendida > 0 ? ingresosTotales / cantidadVendida : 0;
 
     const ingresosRentabilidadData = [
-      ["Concepto", "Cantidad", "Precio Unitario", "Total"],
+      ["Concepto", "Cantidad", "Precio de Venta", "Total"],
       [
         "Producción Total",
         `${cantidadCosechada.toFixed(2)} KG`,

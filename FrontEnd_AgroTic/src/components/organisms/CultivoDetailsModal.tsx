@@ -128,6 +128,15 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         return (activity.horasDedicadas || 0) * ((activity as any).precioHora || 0);
       };
 
+      const getAssignedUsers = (activity: Actividad) => {
+        if (!(activity as any).usuariosAsignados || (activity as any).usuariosAsignados.length === 0) {
+          return 'Sin usuarios asignados';
+        }
+        return (activity as any).usuariosAsignados
+          .map((uxa: any) => `${uxa.usuario.nombres} ${uxa.usuario.apellidos} (${uxa.usuario.dni})`)
+          .join(', ');
+      };
+
       const calculateCostoInventario = (activity: Actividad) => {
         if (!(activity as any).reservas || (activity as any).reservas.length === 0) return 0;
         let total = 0;
@@ -228,18 +237,20 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
 
       // Sheet 2: Historial de Actividades
       const actividadesData = [
-        ["ID", "Fecha Asignación", "Fecha de Finalización", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
+        ["ID", "Fecha Asignación", "Fecha de Finalización", "Categoría", "Usuario Responsable", "Usuarios Asignados", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
       ];
 
       finalizedActivities.forEach((activity: Actividad) => {
         const costoManoObra = calculateCostoManoObra(activity);
         const costoTotal = costoManoObra + calculateCostoInventario(activity);
+        const assignedUsers = getAssignedUsers(activity);
         actividadesData.push([
           activity.id,
           activity.fechaAsignacion ? new Date(activity.fechaAsignacion + 'T00:00:00').toLocaleDateString('es-CO') : "N/A",
           (activity as any).fechaFinalizacion ? new Date((activity as any).fechaFinalizacion).toLocaleDateString('es-CO') : "N/A",
           (activity as any).categoriaActividad?.nombre || 'Sin categoría',
           (activity as any).nombreResponsable || 'Sin responsable',
+          assignedUsers,
           (activity as any).reservas && (activity as any).reservas.length > 0
             ? (activity as any).reservas.map((r: any) => `${r.lote?.producto?.nombre} (${r.cantidadUsada || 0} ${r.lote?.producto?.unidadMedida?.abreviatura})`).join(', ')
             : 'Sin inventario',
@@ -259,6 +270,7 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
         { wch: 15 }, // Fecha de Finalización
         { wch: 20 }, // Categoría
         { wch: 25 }, // Usuario Responsable
+        { wch: 40 }, // Usuarios Asignados
         { wch: 40 }, // Inventario Utilizado
         { wch: 15 }, // Zona
         { wch: 12 }, // Estado

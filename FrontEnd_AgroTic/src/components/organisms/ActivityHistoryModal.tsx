@@ -15,7 +15,7 @@ interface ExtendedActividad extends Actividad {
     zona: { nombre: string };
   };
   usuariosAsignados?: {
-    usuario: { nombres: string; apellidos: string };
+    usuario: { nombres: string; apellidos: string; dni: number };
     activo: boolean;
   }[];
   reservas?: {
@@ -178,17 +178,19 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
 
       // Sheet: Historial de Actividades
       const actividadesData = [
-        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
+        ["ID", "Fecha Asignación", "Categoría", "Usuario Responsable", "Usuarios Asignados", "Inventario Utilizado", "Zona", "Estado", "Observación", "Horas Dedicadas", "Costo de Mano de Obra", "Costo Total de la Actividad"]
       ];
 
       filteredActivities.forEach((activity: ExtendedActividad) => {
         const costoManoObra = calculateCostoManoObra(activity);
         const costoTotal = calculateCostoTotalActividad(activity);
+        const assignedUsers = getAssignedUsers(activity);
         actividadesData.push([
           activity.id,
           formatDate(activity.fechaAsignacion),
           activity.categoriaActividad?.nombre || 'Sin categoría',
           getResponsibleUser(activity),
+          assignedUsers,
           getInventoryUsed(activity),
           activity.cultivoVariedadZona?.zona?.nombre || 'Sin zona',
           activity.estado === false ? 'Finalizada' : 'En Progreso',
@@ -207,6 +209,7 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
         { wch: 15 }, // Fecha Asignación
         { wch: 20 }, // Categoría
         { wch: 25 }, // Usuario Responsable
+        { wch: 40 }, // Usuarios Asignados
         { wch: 40 }, // Inventario Utilizado
         { wch: 15 }, // Zona
         { wch: 12 }, // Estado
@@ -356,6 +359,14 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
     return 'Sin responsable';
   };
 
+  const getAssignedUsers = (activity: ExtendedActividad) => {
+    if (!activity.usuariosAsignados || activity.usuariosAsignados.length === 0) {
+      return 'Sin usuarios asignados';
+    }
+    return activity.usuariosAsignados
+      .map(uxa => `${uxa.usuario.nombres} ${uxa.usuario.apellidos} (${uxa.usuario.dni})`)
+      .join(', ');
+  };
 
   const getInventoryUsed = (activity: ExtendedActividad) => {
     if (!activity.reservas || activity.reservas.length === 0) return 'Sin inventario';
