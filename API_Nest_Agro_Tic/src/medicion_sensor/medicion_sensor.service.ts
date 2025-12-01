@@ -402,7 +402,7 @@ export class MedicionSensorService {
       });
     }
 
-    // Add time range filter
+    // Add time range filter (adjusted to Bogotá timezone)
     if (time_ranges && time_ranges.length > 0) {
       const hourConditions: string[] = [];
       const hourParams: any = {};
@@ -431,7 +431,7 @@ export class MedicionSensorService {
             hourEnd = 24;
         }
         hourConditions.push(
-          `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+          `((EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart${index} AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd${index})`,
         );
         hourParams[`hourStart${index}`] = hourStart;
         hourParams[`hourEnd${index}`] = hourEnd;
@@ -439,7 +439,7 @@ export class MedicionSensorService {
 
       query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
       console.log(
-        `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+        `Filtro de rangos horarios aplicado (Bogotá time): ${time_ranges.join(', ')}`,
       );
     } else if (time_range) {
       // Backward compatibility
@@ -466,14 +466,14 @@ export class MedicionSensorService {
           hourEnd = 24;
       }
       query = query.andWhere(
-        'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+        '(EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd',
         {
           hourStart,
           hourEnd,
         },
       );
       console.log(
-        `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+        `Filtro de rango horario aplicado (legacy, Bogotá time): ${hourStart}:00 - ${hourEnd}:00`,
       );
     }
 
@@ -489,7 +489,7 @@ export class MedicionSensorService {
         break;
       case 'time_slot':
         dateFormat =
-          "TO_CHAR(ms.fechaMedicion, 'YYYY-MM-DD') || '-' || CASE WHEN EXTRACT(hour from ms.fechaMedicion) < 6 THEN '0' WHEN EXTRACT(hour from ms.fechaMedicion) < 12 THEN '1' WHEN EXTRACT(hour from ms.fechaMedicion) < 18 THEN '2' ELSE '3' END";
+          "TO_CHAR(ms.fechaMedicion, 'YYYY-MM-DD') || '-' || CASE WHEN (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < 6 THEN '0' WHEN (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < 12 THEN '1' WHEN (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < 18 THEN '2' ELSE '3' END";
         break;
       case 'daily':
       default:
@@ -638,7 +638,7 @@ export class MedicionSensorService {
       });
     }
 
-    // Add time range filter
+    // Add time range filter (adjusted to Bogotá timezone)
     if (time_ranges && time_ranges.length > 0) {
       const hourConditions: string[] = [];
       const hourParams: any = {};
@@ -667,7 +667,7 @@ export class MedicionSensorService {
             hourEnd = 24;
         }
         hourConditions.push(
-          `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+          `((EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart${index} AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd${index})`,
         );
         hourParams[`hourStart${index}`] = hourStart;
         hourParams[`hourEnd${index}`] = hourEnd;
@@ -675,7 +675,7 @@ export class MedicionSensorService {
 
       query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
       console.log(
-        `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+        `Filtro de rangos horarios aplicado (Bogotá time): ${time_ranges.join(', ')}`,
       );
     } else if (time_range) {
       // Backward compatibility
@@ -702,14 +702,14 @@ export class MedicionSensorService {
           hourEnd = 24;
       }
       query = query.andWhere(
-        'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+        '(EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd',
         {
           hourStart,
           hourEnd,
         },
       );
       console.log(
-        `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+        `Filtro de rango horario aplicado (legacy, Bogotá time): ${hourStart}:00 - ${hourEnd}:00`,
       );
     }
 
@@ -869,7 +869,7 @@ export class MedicionSensorService {
         });
       }
 
-      // Add time range filter
+      // Add time range filter (adjusted to Bogotá timezone)
       if (time_ranges && time_ranges.length > 0) {
         const hourConditions: string[] = [];
         const hourParams: any = {};
@@ -898,7 +898,7 @@ export class MedicionSensorService {
               hourEnd = 24;
           }
           hourConditions.push(
-            `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+            `((EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart${index} AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd${index})`,
           );
           hourParams[`hourStart${index}`] = hourStart;
           hourParams[`hourEnd${index}`] = hourEnd;
@@ -906,7 +906,7 @@ export class MedicionSensorService {
 
         query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
         console.log(
-          `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+          `Filtro de rangos horarios aplicado (Bogotá time): ${time_ranges.join(', ')}`,
         );
       } else if (time_range) {
         // Backward compatibility
@@ -933,14 +933,14 @@ export class MedicionSensorService {
             hourEnd = 24;
         }
         query = query.andWhere(
-          'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+          '(EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 >= :hourStart AND (EXTRACT(hour from ms.fechaMedicion) - 5 + 24) % 24 < :hourEnd',
           {
             hourStart,
             hourEnd,
           },
         );
         console.log(
-          `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+          `Filtro de rango horario aplicado (legacy, Bogotá time): ${hourStart}:00 - ${hourEnd}:00`,
         );
       }
 

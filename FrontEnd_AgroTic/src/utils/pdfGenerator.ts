@@ -499,14 +499,43 @@ export const generatePDFReport = async (
             }
           });
 
+          // Log del rango de fechas procesado para las gráficas
+          const dates = Object.keys(dateSlotData).sort();
+          if (dates.length > 0) {
+            console.log(
+              `📊 PDF GRÁFICAS: Rango de fechas para sensor ${sensorKey}: ${
+                dates[0]
+              } a ${dates[dates.length - 1]}`
+            );
+            console.log(`📊 PDF GRÁFICAS: Fechas procesadas:`, dates);
+            console.log(
+              `📊 PDF GRÁFICAS: Datos por slot para ${sensorKey}:`,
+              dateSlotData
+            );
+          } else {
+            console.log(
+              `📊 PDF GRÁFICAS: No hay datos para sensor ${sensorKey}`
+            );
+          }
+
           onProgress?.(65);
           await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
-          // Preparar datos para gráfica
+          // Preparar datos para gráfica (interpretar fechas como Bogotá time)
           const chartData = Object.entries(dateSlotData)
-            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+            .sort(([a], [b]) => {
+              // Interpret dates as Bogotá time for correct sorting
+              const dateA = new Date(
+                a.split("-").slice(0, 3).join("-") + "T12:00:00-05:00"
+              );
+              const dateB = new Date(
+                b.split("-").slice(0, 3).join("-") + "T12:00:00-05:00"
+              );
+              return dateA.getTime() - dateB.getTime();
+            })
             .map(([date, slots]) => ({
-              time: date,
+              time: new Date(date + "T12:00:00-05:00").getTime(), // Convert to timestamp for proper X-axis
+              date: date, // Keep original date for reference
               "6am-12pm": slots[0] || null,
               "12pm-6pm": slots[1] || null,
               "6pm-12am": slots[2] || null,

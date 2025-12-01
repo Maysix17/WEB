@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, AreaChart, Area, Tooltip, Legend } from 'recharts';
 
 export interface ChartDataPoint {
-  time: string;
+  time: string | number;
   value?: number;
   [key: string]: any;
 }
@@ -46,7 +46,7 @@ const colorPalette = [
 ];
 
 // Format time labels to show only date (no time)
-const formatTimeLabel = (value: string, _data: any[]) => {
+const formatTimeLabel = (value: string | number, _data: any[]) => {
   if (!value) return '';
   const date = new Date(value);
 
@@ -100,12 +100,10 @@ const CustomTooltip = ({ active, payload, label, unidad }: any) => {
     return (
       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
         <p className="font-semibold text-gray-800 mb-2">
-          {date.toLocaleDateString([], { 
+          {date.toLocaleDateString([], {
             year: 'numeric',
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'long',
+            day: 'numeric'
           })}
         </p>
         {payload.map((entry: any, index: number) => (
