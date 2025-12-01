@@ -17,6 +17,7 @@ import { ReportDataRequestDto } from './dto/report-data-request.dto';
 import { ReportDataResponseDto } from './dto/report-data-response.dto';
 import { CsvExportResponseDto } from './dto/csv-export-response.dto';
 import { CultivosZonasResponseDto } from './dto/cultivos-zonas-response.dto';
+import { SensorAlertsResponseDto } from './dto/sensor-alerts-response.dto';
 
 @Controller('medicion-sensor')
 export class MedicionSensorController {
@@ -55,7 +56,12 @@ export class MedicionSensorController {
 
   @Post('historical-data')
   getHistoricalSensorData(
-    @Body() body: { sensorKeys: string[]; startDate?: string; endDate?: string },
+    @Body()
+    body: {
+      sensorKeys: string[];
+      startDate?: string;
+      endDate?: string;
+    },
   ): Promise<HistoricalSensorDataResponseDto> {
     const { sensorKeys, startDate, endDate } = body;
     return this.medicionSensorService.getHistoricalSensorData(
@@ -77,6 +83,13 @@ export class MedicionSensorController {
     @Body() request: ReportDataRequestDto,
   ): Promise<CsvExportResponseDto> {
     return this.medicionSensorService.getCsvExportData(request);
+  }
+
+  @Post('alerts')
+  getSensorAlerts(
+    @Body() request: ReportDataRequestDto,
+  ): Promise<SensorAlertsResponseDto> {
+    return this.medicionSensorService.getSensorAlerts(request);
   }
 
   @Get('by-cultivos-zonas')

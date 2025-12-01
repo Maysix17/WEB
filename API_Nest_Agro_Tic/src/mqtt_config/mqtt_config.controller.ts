@@ -315,9 +315,39 @@ export class MqttConfigController {
   }
 
   /**
-   * Obtener umbrales de una configuración zona-mqtt específica
+   * Actualizar umbrales de una zona específica (usando la configuración activa)
    */
-  @Get('zona-mqtt/:id/umbrales')
+  @Put('zona/:zonaId/umbrales')
+  async updateUmbralesByZona(
+    @Param('zonaId') zonaId: string,
+    @Body() updateUmbralesDto: UpdateUmbralesDto,
+  ) {
+    try {
+      // Get the active zona mqtt config for this zona
+      const zonaMqttConfig =
+        await this.mqttConfigService.getActiveZonaMqttConfig(zonaId);
+      if (!zonaMqttConfig || !zonaMqttConfig.mqttConfig) {
+        throw new NotFoundException(
+          `No se encontró configuración activa para la zona con ID ${zonaId}`,
+        );
+      }
+
+      return await this.mqttConfigService.updateUmbrales(
+        zonaMqttConfig.mqttConfig.id,
+        updateUmbralesDto,
+      );
+    } catch (error: any) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener umbrales de una configuración MQTT específica
+   */
+  @Get('mqtt-config/:id/umbrales')
   async getUmbrales(@Param('id') id: string) {
     try {
       return await this.mqttConfigService.getUmbrales(id);
@@ -330,9 +360,9 @@ export class MqttConfigController {
   }
 
   /**
-   * Actualizar umbrales de una configuración zona-mqtt específica
+   * Actualizar umbrales de una configuración MQTT específica
    */
-  @Put('zona-mqtt/:id/umbrales')
+  @Put('mqtt-config/:id/umbrales')
   async updateUmbrales(
     @Param('id') id: string,
     @Body() updateUmbralesDto: UpdateUmbralesDto,
@@ -348,9 +378,24 @@ export class MqttConfigController {
   }
 
   /**
+   * Obtener sensores para una configuración MQTT específica
+   */
+  @Get('mqtt-config/:id/sensors')
+  async getSensorsForMqttConfig(@Param('id') id: string) {
+    try {
+      return await this.mqttConfigService.getSensorsForMqttConfig(id);
+    } catch (error: any) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Validar si un valor excede los umbrales establecidos
    */
-  @Post('zona-mqtt/:id/validate-threshold')
+  @Post('mqtt-config/:id/validate-threshold')
   async validateThreshold(
     @Param('id') id: string,
     @Body() validateThresholdDto: ValidateThresholdDto,

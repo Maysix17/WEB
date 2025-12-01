@@ -24,6 +24,7 @@ export class ZonasService {
     return await this.zonaRepository.find({
       relations: [
         'zonaMqttConfigs',
+        'zonaMqttConfigs.mqttConfig',
         'cultivosVariedad',
         'cultivosVariedad.cultivoXVariedad',
         'cultivosVariedad.cultivoXVariedad.variedad',

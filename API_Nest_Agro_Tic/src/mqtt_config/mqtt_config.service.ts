@@ -61,6 +61,14 @@ export class MqttConfigService {
     return await this.zonaMqttConfigRepository.find({
       where: { estado: true },
       relations: ['mqttConfig', 'zona'],
+      select: [
+        'id',
+        'fkZonaId',
+        'fkMqttConfigId',
+        'estado',
+        'createdAt',
+        'updatedAt',
+      ],
     });
   }
 
@@ -203,16 +211,18 @@ export class MqttConfigService {
       relations: ['mqttConfig', 'zona'],
     });
 
-    if (!zonaMqttConfig) {
+    if (!zonaMqttConfig || !zonaMqttConfig.mqttConfig) {
       throw new NotFoundException(
         `No se encontró configuración activa para la zona con ID ${zonaId}`,
       );
     }
 
+    const mqttConfig = zonaMqttConfig.mqttConfig;
+
     // Transformar los umbrales a formato DTO
     const umbrales: Record<string, any> = {};
-    if (zonaMqttConfig.umbrales) {
-      Object.entries(zonaMqttConfig.umbrales).forEach(([key, value]) => {
+    if (mqttConfig.umbrales) {
+      Object.entries(mqttConfig.umbrales).forEach(([key, value]) => {
         umbrales[key] = {
           minimo: value.minimo,
           maximo: value.maximo,
@@ -228,31 +238,31 @@ export class MqttConfigService {
       createdAt: zonaMqttConfig.createdAt,
       updatedAt: zonaMqttConfig.updatedAt,
       zonaNombre: zonaMqttConfig.zona?.nombre,
-      mqttConfigNombre: zonaMqttConfig.mqttConfig?.nombre,
-      mqttConfigHost: zonaMqttConfig.mqttConfig?.host,
-      mqttConfigPort: zonaMqttConfig.mqttConfig?.port,
+      mqttConfigNombre: mqttConfig.nombre,
+      mqttConfigHost: mqttConfig.host,
+      mqttConfigPort: mqttConfig.port,
     };
   }
 
   /**
-   * Obtener umbrales de una configuración zona-mqtt específica
+   * Obtener umbrales de una configuración MQTT específica
    */
-  async getUmbrales(zonaMqttConfigId: string): Promise<UmbralesResponseDto> {
-    const zonaMqttConfig = await this.zonaMqttConfigRepository.findOne({
-      where: { id: zonaMqttConfigId },
-      relations: ['mqttConfig', 'zona'],
+  async getUmbrales(mqttConfigId: string): Promise<UmbralesResponseDto> {
+    const mqttConfig = await this.mqttConfigRepository.findOne({
+      where: { id: mqttConfigId },
+      relations: ['zonaMqttConfigs', 'zonaMqttConfigs.zona'],
     });
 
-    if (!zonaMqttConfig) {
+    if (!mqttConfig) {
       throw new NotFoundException(
-        `Configuración zona-mqtt con ID ${zonaMqttConfigId} no encontrada`,
+        `Configuración MQTT con ID ${mqttConfigId} no encontrada`,
       );
     }
 
     // Transformar los umbrales a formato DTO
     const umbrales: Record<string, any> = {};
-    if (zonaMqttConfig.umbrales) {
-      Object.entries(zonaMqttConfig.umbrales).forEach(([key, value]) => {
+    if (mqttConfig.umbrales) {
+      Object.entries(mqttConfig.umbrales).forEach(([key, value]) => {
         umbrales[key] = {
           minimo: value.minimo,
           maximo: value.maximo,
@@ -260,45 +270,50 @@ export class MqttConfigService {
       });
     }
 
+    // Get the first active zona for display purposes
+    const activeZona = mqttConfig.zonaMqttConfigs?.find(
+      (zmc) => zmc.estado,
+    )?.zona;
+
     return {
-      id: zonaMqttConfig.id,
-      fkZonaMqttConfigId: zonaMqttConfig.id,
+      id: mqttConfig.id,
+      fkZonaMqttConfigId: mqttConfig.id, // For compatibility
       umbrales,
-      estado: zonaMqttConfig.estado,
-      createdAt: zonaMqttConfig.createdAt,
-      updatedAt: zonaMqttConfig.updatedAt,
-      zonaNombre: zonaMqttConfig.zona?.nombre,
-      mqttConfigNombre: zonaMqttConfig.mqttConfig?.nombre,
-      mqttConfigHost: zonaMqttConfig.mqttConfig?.host,
-      mqttConfigPort: zonaMqttConfig.mqttConfig?.port,
+      estado: mqttConfig.activa,
+      createdAt: mqttConfig.zonaMqttConfigs?.[0]?.createdAt || new Date(),
+      updatedAt: mqttConfig.zonaMqttConfigs?.[0]?.updatedAt || new Date(),
+      zonaNombre: activeZona?.nombre || 'Sin zona activa',
+      mqttConfigNombre: mqttConfig.nombre,
+      mqttConfigHost: mqttConfig.host,
+      mqttConfigPort: mqttConfig.port,
     };
   }
 
   /**
-   * Actualizar umbrales de una configuración zona-mqtt específica
+   * Actualizar umbrales de una configuración MQTT específica
    */
   async updateUmbrales(
-    zonaMqttConfigId: string,
+    mqttConfigId: string,
     updateUmbralesDto: UpdateUmbralesDto,
   ): Promise<UpdateUmbralesResponseDto> {
-    const zonaMqttConfig = await this.zonaMqttConfigRepository.findOne({
-      where: { id: zonaMqttConfigId },
-      relations: ['mqttConfig', 'zona'],
+    const mqttConfig = await this.mqttConfigRepository.findOne({
+      where: { id: mqttConfigId },
+      relations: ['zonaMqttConfigs', 'zonaMqttConfigs.zona'],
     });
 
-    if (!zonaMqttConfig) {
+    if (!mqttConfig) {
       throw new NotFoundException(
-        `Configuración zona-mqtt con ID ${zonaMqttConfigId} no encontrada`,
+        `Configuración MQTT con ID ${mqttConfigId} no encontrada`,
       );
     }
 
     // Actualizar los umbrales
-    await this.zonaMqttConfigRepository.update(zonaMqttConfigId, {
+    await this.mqttConfigRepository.update(mqttConfigId, {
       umbrales: updateUmbralesDto.umbrales,
     });
 
     // Obtener la configuración actualizada
-    const updatedConfig = await this.getUmbrales(zonaMqttConfigId);
+    const updatedConfig = await this.getUmbrales(mqttConfigId);
 
     return {
       success: true,
@@ -311,8 +326,26 @@ export class MqttConfigService {
   /**
    * Validar si un valor excede los umbrales establecidos
    */
+  async getSensorsForMqttConfig(mqttConfigId: string): Promise<string[]> {
+    // Find all zonaMqttConfigs for this mqttConfig
+    const zonaMqttConfigs = await this.zonaMqttConfigRepository.find({
+      where: { fkMqttConfigId: mqttConfigId },
+      relations: ['mediciones'],
+    });
+
+    // Collect unique sensor keys from all measurements
+    const sensorKeys = new Set<string>();
+    zonaMqttConfigs.forEach((zmc) => {
+      zmc.mediciones?.forEach((medicion) => {
+        sensorKeys.add(medicion.key);
+      });
+    });
+
+    return Array.from(sensorKeys).sort();
+  }
+
   async validateThreshold(
-    zonaMqttConfigId: string,
+    mqttConfigId: string,
     sensorType: string,
     value: number,
   ): Promise<{
@@ -320,17 +353,17 @@ export class MqttConfigService {
     threshold?: { minimo: number; maximo: number };
     message: string;
   }> {
-    const zonaMqttConfig = await this.zonaMqttConfigRepository.findOne({
-      where: { id: zonaMqttConfigId },
+    const mqttConfig = await this.mqttConfigRepository.findOne({
+      where: { id: mqttConfigId },
     });
 
-    if (!zonaMqttConfig) {
+    if (!mqttConfig) {
       throw new NotFoundException(
-        `Configuración zona-mqtt con ID ${zonaMqttConfigId} no encontrada`,
+        `Configuración MQTT con ID ${mqttConfigId} no encontrada`,
       );
     }
 
-    const umbrales = zonaMqttConfig.umbrales || {};
+    const umbrales = mqttConfig.umbrales || {};
     const threshold = umbrales[sensorType];
 
     if (!threshold) {

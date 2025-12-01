@@ -26,6 +26,10 @@ import {
   CsvSensorDataPointDto,
 } from './dto/csv-export-response.dto';
 import { CultivosZonasResponseDto } from './dto/cultivos-zonas-response.dto';
+import {
+  SensorAlertsResponseDto,
+  SensorAlertDto,
+} from './dto/sensor-alerts-response.dto';
 
 @Injectable()
 export class MedicionSensorService {
@@ -409,13 +413,17 @@ export class MedicionSensorService {
             hourStart = 0;
             hourEnd = 24;
         }
-        hourConditions.push(`(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`);
+        hourConditions.push(
+          `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+        );
         hourParams[`hourStart${index}`] = hourStart;
         hourParams[`hourEnd${index}`] = hourEnd;
       });
 
       query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
-      console.log(`Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`);
+      console.log(
+        `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+      );
     } else if (time_range) {
       // Backward compatibility
       let hourStart: number, hourEnd: number;
@@ -440,11 +448,16 @@ export class MedicionSensorService {
           hourStart = 0;
           hourEnd = 24;
       }
-      query = query.andWhere('EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd', {
-        hourStart,
-        hourEnd,
-      });
-      console.log(`Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`);
+      query = query.andWhere(
+        'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+        {
+          hourStart,
+          hourEnd,
+        },
+      );
+      console.log(
+        `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+      );
     }
 
     // Determine date format for grouping
@@ -458,7 +471,8 @@ export class MedicionSensorService {
           "TO_CHAR(DATE_TRUNC('week', ms.fechaMedicion), 'YYYY-MM-DD')";
         break;
       case 'time_slot':
-        dateFormat = "TO_CHAR(ms.fechaMedicion, 'YYYY-MM-DD') || '-' || CASE WHEN EXTRACT(hour from ms.fechaMedicion) < 6 THEN '0' WHEN EXTRACT(hour from ms.fechaMedicion) < 12 THEN '1' WHEN EXTRACT(hour from ms.fechaMedicion) < 18 THEN '2' ELSE '3' END";
+        dateFormat =
+          "TO_CHAR(ms.fechaMedicion, 'YYYY-MM-DD') || '-' || CASE WHEN EXTRACT(hour from ms.fechaMedicion) < 6 THEN '0' WHEN EXTRACT(hour from ms.fechaMedicion) < 12 THEN '1' WHEN EXTRACT(hour from ms.fechaMedicion) < 18 THEN '2' ELSE '3' END";
         break;
       case 'daily':
       default:
@@ -635,13 +649,17 @@ export class MedicionSensorService {
             hourStart = 0;
             hourEnd = 24;
         }
-        hourConditions.push(`(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`);
+        hourConditions.push(
+          `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+        );
         hourParams[`hourStart${index}`] = hourStart;
         hourParams[`hourEnd${index}`] = hourEnd;
       });
 
       query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
-      console.log(`Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`);
+      console.log(
+        `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+      );
     } else if (time_range) {
       // Backward compatibility
       let hourStart: number, hourEnd: number;
@@ -666,11 +684,16 @@ export class MedicionSensorService {
           hourStart = 0;
           hourEnd = 24;
       }
-      query = query.andWhere('EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd', {
-        hourStart,
-        hourEnd,
-      });
-      console.log(`Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`);
+      query = query.andWhere(
+        'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+        {
+          hourStart,
+          hourEnd,
+        },
+      );
+      console.log(
+        `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+      );
     }
 
     // Execute the query to get raw measurements
@@ -692,7 +715,7 @@ export class MedicionSensorService {
     const data: CsvSensorDataPointDto[] = measurements.map((measurement) => {
       // Convert UTC timestamp to Bogotá time (UTC-5)
       const utcDate = new Date(measurement.fechamedicion);
-      const bogotaDate = new Date(utcDate.getTime() - (5 * 60 * 60 * 1000)); // Subtract 5 hours
+      const bogotaDate = new Date(utcDate.getTime() - 5 * 60 * 60 * 1000); // Subtract 5 hours
 
       // Format timestamp as ISO string but in Bogotá timezone
       const timestamp = bogotaDate.toISOString().replace('Z', '-05:00');
@@ -758,5 +781,237 @@ export class MedicionSensorService {
       estadoCultivo: row.estadocultivo,
       fechaSiembra: row.fechasiembra,
     }));
+  }
+
+  async getSensorAlerts(
+    request: ReportDataRequestDto,
+  ): Promise<SensorAlertsResponseDto> {
+    const {
+      med_keys,
+      cultivo_ids,
+      zona_ids,
+      start_date,
+      end_date,
+      group_by = 'daily',
+      time_range,
+      time_ranges,
+    } = request;
+
+    console.log('=== SENSOR ALERTS REQUEST ===');
+    console.log('Fecha y hora actual:', new Date().toISOString());
+    console.log('Parámetros recibidos:', {
+      med_keys,
+      cultivo_ids,
+      zona_ids,
+      start_date,
+      end_date,
+      group_by,
+      time_range,
+      time_ranges,
+    });
+
+    // Build the query with joins
+    let query = this.medicionSensorRepository
+      .createQueryBuilder('ms')
+      .innerJoin('ms.zonaMqttConfig', 'zmc')
+      .innerJoin('zmc.zona', 'z')
+      .leftJoin('z.cultivosVariedad', 'cvz')
+      .leftJoin('cvz.cultivoXVariedad', 'cxv')
+      .leftJoin('cxv.variedad', 'v')
+      .leftJoin('v.tipoCultivo', 'tc');
+
+    // Only filter by med_keys if provided and not empty
+    if (med_keys && med_keys.length > 0) {
+      query = query.andWhere('ms.key IN (:...med_keys)', { med_keys });
+    }
+
+    // Add optional filters
+    if (cultivo_ids && cultivo_ids.length > 0) {
+      query = query.andWhere('cxv.id IN (:...cultivo_ids)', { cultivo_ids });
+    }
+
+    if (zona_ids && zona_ids.length > 0) {
+      query = query.andWhere('z.id IN (:...zona_ids)', { zona_ids });
+    }
+
+    // Add date filters
+    if (start_date) {
+      query = query.andWhere('ms.fechaMedicion >= :start_date', {
+        start_date: new Date(start_date),
+      });
+    }
+
+    if (end_date) {
+      query = query.andWhere('ms.fechaMedicion <= :end_date', {
+        end_date: new Date(end_date),
+      });
+    }
+
+    // Add time range filter
+    if (time_ranges && time_ranges.length > 0) {
+      const hourConditions: string[] = [];
+      const hourParams: any = {};
+
+      time_ranges.forEach((range, index) => {
+        let hourStart: number, hourEnd: number;
+        switch (range) {
+          case 'morning':
+            hourStart = 6;
+            hourEnd = 12;
+            break;
+          case 'afternoon':
+            hourStart = 12;
+            hourEnd = 18;
+            break;
+          case 'evening':
+            hourStart = 18;
+            hourEnd = 24;
+            break;
+          case 'night':
+            hourStart = 0;
+            hourEnd = 6;
+            break;
+          default:
+            hourStart = 0;
+            hourEnd = 24;
+        }
+        hourConditions.push(
+          `(EXTRACT(hour from ms.fechaMedicion) >= :hourStart${index} AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd${index})`,
+        );
+        hourParams[`hourStart${index}`] = hourStart;
+        hourParams[`hourEnd${index}`] = hourEnd;
+      });
+
+      query = query.andWhere(`(${hourConditions.join(' OR ')})`, hourParams);
+      console.log(
+        `Filtro de rangos horarios aplicado: ${time_ranges.join(', ')}`,
+      );
+    } else if (time_range) {
+      // Backward compatibility
+      let hourStart: number, hourEnd: number;
+      switch (time_range) {
+        case 'morning':
+          hourStart = 6;
+          hourEnd = 12;
+          break;
+        case 'afternoon':
+          hourStart = 12;
+          hourEnd = 18;
+          break;
+        case 'evening':
+          hourStart = 18;
+          hourEnd = 24;
+          break;
+        case 'night':
+          hourStart = 0;
+          hourEnd = 6;
+          break;
+        default:
+          hourStart = 0;
+          hourEnd = 24;
+      }
+      query = query.andWhere(
+        'EXTRACT(hour from ms.fechaMedicion) >= :hourStart AND EXTRACT(hour from ms.fechaMedicion) < :hourEnd',
+        {
+          hourStart,
+          hourEnd,
+        },
+      );
+      console.log(
+        `Filtro de rango horario aplicado (legacy): ${hourStart}:00 - ${hourEnd}:00`,
+      );
+    }
+
+    // Get measurements with threshold data
+    const measurements = await query
+      .select([
+        'ms.fechaMedicion as fechaMedicion',
+        'ms.key as sensorKey',
+        'ms.valor as value',
+        'zmc.umbrales as thresholds',
+        'tc.nombre as cropTypeName',
+        'v.nombre as varietyName',
+        'z.nombre as zoneName',
+      ])
+      .orderBy('ms.fechaMedicion', 'ASC')
+      .getRawMany();
+
+    // Process alerts
+    const alerts: SensorAlertDto[] = [];
+
+    for (const measurement of measurements) {
+      const sensorKey = measurement.sensorkey;
+      const value = parseFloat(measurement.value);
+      const thresholds = measurement.thresholds as Record<
+        string,
+        { minimo: number; maximo: number }
+      >;
+
+      if (!thresholds || !thresholds[sensorKey]) continue;
+
+      const { minimo, maximo } = thresholds[sensorKey];
+      let umbralSobrepasado: 'máximo' | 'mínimo' | null = null;
+      let descripcion = '';
+
+      // Check if value exceeds thresholds
+      if (value > maximo) {
+        umbralSobrepasado = 'máximo';
+      } else if (value < minimo) {
+        umbralSobrepasado = 'mínimo';
+      }
+
+      if (umbralSobrepasado) {
+        // Generate custom description based on sensor
+        switch (sensorKey) {
+          case 'Gas':
+            descripcion =
+              'Alerta: Nivel de gas fuera del rango óptimo (máximo: 50, mínimo: 10).';
+            break;
+          case 'Luz':
+            descripcion =
+              'Alerta: Intensidad de luz fuera del rango óptimo (máximo: 1000, mínimo: 20).';
+            break;
+          case 'Humedad':
+            descripcion =
+              'Alerta: Nivel de humedad fuera del rango óptimo (máximo: 5, mínimo: 1).';
+            break;
+          case 'Temperatura':
+            descripcion =
+              'Alerta: Temperatura fuera del rango óptimo (máximo: 15, mínimo: 5).';
+            break;
+          case 'HumedadSuelo':
+            if (umbralSobrepasado === 'máximo') {
+              descripcion =
+                'Alerta: Humedad del suelo alta, bomba de agua desactivada.';
+            } else {
+              descripcion =
+                'Alerta: Humedad del suelo baja, bomba de agua activada.';
+            }
+            break;
+          default:
+            descripcion = `Alerta: Valor ${sensorKey} fuera del rango óptimo.`;
+        }
+
+        alerts.push({
+          fechaMedicion: measurement.fechamedicion.toISOString(),
+          sensor: sensorKey,
+          valorMedido: value,
+          umbralSobrepasado,
+          descripcion,
+          zonaNombre: measurement.zonename || 'Sin zona',
+          cultivoNombre: measurement.croptypename || 'Sin cultivo',
+          variedadNombre: measurement.varietyname || 'Sin variedad',
+        });
+      }
+    }
+
+    console.log(`Total de alertas encontradas: ${alerts.length}`);
+    console.log('Primeras 3 alertas:', alerts.slice(0, 3));
+    console.log('=== FIN SENSOR ALERTS REQUEST ===\n');
+
+    return {
+      alerts,
+      totalAlerts: alerts.length,
+    };
   }
 }

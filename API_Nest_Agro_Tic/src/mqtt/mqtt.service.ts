@@ -19,6 +19,7 @@ interface BufferedReading {
   unidad: string;
   fechaMedicion: Date;
   fkZonaMqttConfigId: string;
+  tipo?: string;
 }
 
 @Injectable()
@@ -27,14 +28,14 @@ export class MqttService implements OnModuleInit {
   private logger = new Logger(MqttService.name);
   private readingBuffers = new Map<string, BufferedReading[]>(); // zonaMqttConfigId -> readings
   private lastSaveTimes = new Map<string, Date>(); // zonaMqttConfigId -> last save time
-  private readonly SAVE_INTERVAL = 30 * 1000; // 30 seconds in milliseconds
+  private readonly SAVE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
   constructor(
     private readonly mqttConfigService: MqttConfigService,
     private readonly medicionSensorService: MedicionSensorService,
     private readonly mqttGateway: MqttGateway,
   ) {}
-//El método onModuleInit() se ejecuta automáticamente cuando NestJS inicia el módulo, llamando a initializeConnections() que obtiene todas las configuraciones activas y crea las conexiones MQTT correspondientes.
+  //El método onModuleInit() se ejecuta automáticamente cuando NestJS inicia el módulo, llamando a initializeConnections() que obtiene todas las configuraciones activas y crea las conexiones MQTT correspondientes.
   async onModuleInit() {
     await this.initializeConnections();
   }
@@ -264,6 +265,9 @@ export class MqttService implements OnModuleInit {
     zonaMqttConfig?: any,
   ) {
     try {
+      this.logger.debug(`📡 Procesando datos MQTT para zona ${zonaId}`);
+      this.logger.debug(`📡 Payload recibido:`, payload);
+
       // Verificar que la zona MQTT config esté activa antes de procesar
       const isActive =
         await this.mqttConfigService.isZonaMqttConfigActive(zonaMqttConfigId);
@@ -275,12 +279,17 @@ export class MqttService implements OnModuleInit {
       }
 
       const realTimeMediciones: any[] = [];
+      const alertMediciones: BufferedReading[] = [];
 
       // Convertir cada key del payload en una medición
       Object.entries(payload).forEach(([key, value]) => {
+        this.logger.debug(`🔄 Procesando sensor ${key} con valor: ${value}`);
         if (typeof value === 'string' || typeof value === 'number') {
           // Extraer valor numérico y unidad si es posible
           const parsed = this.parseValueWithUnit(String(value));
+          this.logger.debug(
+            `🔄 Valor parseado para ${key}: ${parsed.n} ${parsed.unit}`,
+          );
 
           const medicion = {
             key,
@@ -288,24 +297,49 @@ export class MqttService implements OnModuleInit {
             unidad: parsed.unit,
             fechaMedicion: new Date(),
             fkZonaMqttConfigId: zonaMqttConfigId,
+            tipo: 'regular',
           };
 
           realTimeMediciones.push(medicion);
 
-          // Agregar al buffer para guardado periódico
+          // Agregar TODOS los datos al buffer para guardado periódico
           this.addToBuffer(zonaMqttConfigId, medicion);
+
+          // Verificar si el valor excede los umbrales
+          if (this.checkThresholdBreach(key, parsed.n, zonaMqttConfig)) {
+            this.logger.warn(
+              `🚨 ALERTA: Umbral excedido para sensor ${key} en zona ${zonaId}: valor ${parsed.n}`,
+            );
+            // Agregar a mediciones de alerta para guardado inmediato
+            alertMediciones.push({
+              ...medicion,
+              tipo: 'alerta',
+            });
+          }
+        } else {
+          this.logger.warn(
+            `⚠️ Valor no válido para sensor ${key}: ${value} (tipo: ${typeof value})`,
+          );
         }
       });
 
       if (realTimeMediciones.length > 0) {
-        // Emitir lecturas en tiempo real inmediatamente
+        // Emitir lecturas en tiempo real inmediatamente (todos los datos)
         this.mqttGateway.emitNuevaLectura({
           zonaId,
           mediciones: realTimeMediciones,
           timestamp: new Date(),
         });
 
-        // Verificar si es tiempo de guardar en BD
+        // Guardar inmediatamente si hay alertas
+        if (alertMediciones.length > 0) {
+          await this.saveAlertReadingsImmediately(
+            zonaMqttConfigId,
+            alertMediciones,
+          );
+        }
+
+        // Verificar guardado periódico (cada hora)
         await this.checkAndSaveBufferedReadings(zonaMqttConfigId);
       }
     } catch (error) {
@@ -318,29 +352,6 @@ export class MqttService implements OnModuleInit {
       this.readingBuffers.set(zonaMqttConfigId, []);
     }
     this.readingBuffers.get(zonaMqttConfigId)!.push(medicion);
-  }
-
-  private async checkAndSaveBufferedReadings(zonaMqttConfigId: string) {
-    const lastSave = this.lastSaveTimes.get(zonaMqttConfigId);
-    const now = new Date();
-
-    if (!lastSave || now.getTime() - lastSave.getTime() >= this.SAVE_INTERVAL) {
-      const buffer = this.readingBuffers.get(zonaMqttConfigId);
-      if (buffer && buffer.length > 0) {
-        try {
-          const saved = await this.medicionSensorService.saveBatch(buffer);
-          this.logger.log(
-            `Guardadas ${saved.length} mediciones en BD para zonaMqttConfig ${zonaMqttConfigId}`,
-          );
-
-          // Limpiar buffer y actualizar tiempo de último guardado
-          this.readingBuffers.set(zonaMqttConfigId, []);
-          this.lastSaveTimes.set(zonaMqttConfigId, now);
-        } catch (error) {
-          this.logger.error('Error guardando mediciones en BD:', error);
-        }
-      }
-    }
   }
 
   private parseValueWithUnit(raw: string) {
@@ -385,5 +396,96 @@ export class MqttService implements OnModuleInit {
       }
     }
     return false;
+  }
+
+  private checkThresholdBreach(
+    sensorKey: string,
+    value: number,
+    zonaMqttConfig: any,
+  ): boolean {
+    try {
+      this.logger.debug(
+        `🔍 Verificando umbral para sensor ${sensorKey}, valor: ${value}`,
+      );
+      this.logger.debug(`🔍 ZonaMqttConfig ID: ${zonaMqttConfig?.id}`);
+      this.logger.debug(
+        `🔍 MqttConfig umbrales:`,
+        zonaMqttConfig?.mqttConfig?.umbrales,
+      );
+
+      const thresholds = zonaMqttConfig.mqttConfig?.umbrales as Record<
+        string,
+        { minimo: number; maximo: number }
+      >;
+
+      if (!thresholds) {
+        this.logger.warn(`⚠️ No hay umbrales definidos en mqttConfig`);
+        return false;
+      }
+
+      if (!thresholds[sensorKey]) {
+        this.logger.warn(`⚠️ No hay umbral definido para sensor ${sensorKey}`);
+        return false;
+      }
+
+      const { minimo, maximo } = thresholds[sensorKey];
+      this.logger.debug(
+        `🔍 Umbral para ${sensorKey}: min=${minimo}, max=${maximo}`,
+      );
+
+      const exceeds = value < minimo || value > maximo;
+      this.logger.debug(`🔍 ¿Excede umbral? ${exceeds} (valor: ${value})`);
+
+      return exceeds;
+    } catch (error) {
+      this.logger.error(
+        `❌ Error verificando umbral para sensor ${sensorKey}:`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  private async checkAndSaveBufferedReadings(zonaMqttConfigId: string) {
+    const lastSave = this.lastSaveTimes.get(zonaMqttConfigId);
+    const now = new Date();
+
+    if (!lastSave || now.getTime() - lastSave.getTime() >= this.SAVE_INTERVAL) {
+      const buffer = this.readingBuffers.get(zonaMqttConfigId);
+      if (buffer && buffer.length > 0) {
+        try {
+          const saved = await this.medicionSensorService.saveBatch(buffer);
+          this.logger.log(
+            `Guardadas ${saved.length} mediciones periódicas en BD para zonaMqttConfig ${zonaMqttConfigId}`,
+          );
+
+          // Limpiar buffer y actualizar tiempo de último guardado
+          this.readingBuffers.set(zonaMqttConfigId, []);
+          this.lastSaveTimes.set(zonaMqttConfigId, now);
+        } catch (error) {
+          this.logger.error(
+            'Error guardando mediciones periódicas en BD:',
+            error,
+          );
+        }
+      }
+    }
+  }
+
+  private async saveAlertReadingsImmediately(
+    zonaMqttConfigId: string,
+    alertMediciones: BufferedReading[],
+  ) {
+    if (alertMediciones.length > 0) {
+      try {
+        const saved =
+          await this.medicionSensorService.saveBatch(alertMediciones);
+        this.logger.log(
+          `Guardadas ${saved.length} mediciones de alerta en BD para zonaMqttConfig ${zonaMqttConfigId}`,
+        );
+      } catch (error) {
+        this.logger.error('Error guardando mediciones de alerta en BD:', error);
+      }
+    }
   }
 }

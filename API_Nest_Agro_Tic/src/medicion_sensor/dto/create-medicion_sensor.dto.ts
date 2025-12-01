@@ -25,6 +25,10 @@ export class CreateMedicionSensorDto {
   @IsString()
   unidad?: string;
 
+  @IsOptional()
+  @IsString()
+  tipo?: string;
+
   @IsString()
   @IsNotEmpty()
   fkZonaMqttConfigId: string;

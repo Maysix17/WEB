@@ -1,15 +1,14 @@
 console.log('ThresholdConfigModal: Component starting');
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
-import { umbralesService, type UmbralesConfig, type SensorThreshold } from '../../services/zonasService';
+import { umbralesService, mqttConfigService, type UmbralesConfig, type SensorThreshold } from '../../services/zonasService';
 import TextInput from '../atoms/TextInput';
 import CustomButton from '../atoms/Boton';
 
 interface ThresholdConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
-  zonaMqttConfigId: string;
-  availableSensors: string[];
+  mqttConfigId: string;
   cultivoNombre?: string;
   onSave?: () => void;
 }
@@ -17,15 +16,13 @@ interface ThresholdConfigModalProps {
 const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
   isOpen,
   onClose,
-  zonaMqttConfigId,
-  availableSensors,
+  mqttConfigId: initialMqttConfigId,
   cultivoNombre,
   onSave,
 }) => {
-  console.log('ThresholdConfigModal: Component starting, props:', { 
-    isOpen, 
-    zonaMqttConfigId, 
-    availableSensors: availableSensors?.length || 0 
+  console.log('ThresholdConfigModal: Component starting, props:', {
+    isOpen,
+    mqttConfigId: initialMqttConfigId
   });
 
   const [umbrales, setUmbrales] = useState<UmbralesConfig>({});
@@ -34,16 +31,17 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{[sensorKey: string]: string}>({});
+  const [availableSensorsForConfig, setAvailableSensorsForConfig] = useState<string[]>([]);
 
   console.log('ThresholdConfigModal: Rendering with umbrales:', umbrales);
   console.log('ThresholdConfigModal: isOpen:', isOpen, 'isLoading:', isLoading, 'error:', error);
 
   // Cargar umbrales existentes al abrir el modal
   useEffect(() => {
-    if (isOpen && zonaMqttConfigId) {
+    if (isOpen && initialMqttConfigId) {
       loadExistingThresholds();
     }
-  }, [isOpen, zonaMqttConfigId]);
+  }, [isOpen, initialMqttConfigId]);
 
   // Limpiar errores cuando se cierra el modal
   useEffect(() => {
@@ -55,14 +53,22 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
   }, [isOpen]);
 
   const loadExistingThresholds = async () => {
-    console.log('ThresholdConfigModal: Loading existing thresholds for zonaMqttConfigId:', zonaMqttConfigId);
+    console.log('ThresholdConfigModal: Loading existing thresholds for mqttConfigId:', initialMqttConfigId);
     setIsLoadingThresholds(true);
     setError('');
 
     try {
-      const existingUmbrales = await umbralesService.getUmbrales(zonaMqttConfigId);
+      // Load both thresholds and available sensors for this config
+      const [existingUmbrales, sensors] = await Promise.all([
+        umbralesService.getUmbrales(initialMqttConfigId),
+        umbralesService.getSensorsForMqttConfig(initialMqttConfigId)
+      ]);
+
       console.log('ThresholdConfigModal: Loaded thresholds:', existingUmbrales);
+      console.log('ThresholdConfigModal: Loaded sensors:', sensors);
+
       setUmbrales(existingUmbrales);
+      setAvailableSensorsForConfig(sensors);
     } catch (err: any) {
       console.error('ThresholdConfigModal: Error loading thresholds:', err);
       setError('Error al cargar umbrales existentes: ' + (err.message || 'Error desconocido'));
@@ -119,7 +125,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
     const errors: {[sensorKey: string]: string} = {};
     let hasErrors = false;
 
-    availableSensors.forEach(sensorKey => {
+    availableSensorsForConfig.forEach(sensorKey => {
       const threshold = umbrales[sensorKey];
       if (threshold) {
         const error = validateThreshold(sensorKey, threshold.minimo, threshold.maximo);
@@ -159,7 +165,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
 
       console.log('ThresholdConfigModal: Thresholds to save:', thresholdsToSave);
 
-      await umbralesService.updateUmbrales(zonaMqttConfigId, thresholdsToSave);
+      await umbralesService.updateUmbrales(initialMqttConfigId, thresholdsToSave);
       
       setSuccessMessage('Umbrales actualizados exitosamente.');
       
@@ -253,7 +259,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
             Configuración de Umbrales de Sensores
             {cultivoNombre && (
               <span className="text-base font-normal text-gray-600 block mt-1">
-                {cultivoNombre}
+                Configuración: {cultivoNombre}
               </span>
             )}
           </h2>
@@ -264,10 +270,10 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
             {/* Información de la zona MQTT config */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
-                <strong>ID de Configuración:</strong> {zonaMqttConfigId}
+                <strong>ID de Configuración MQTT:</strong> {initialMqttConfigId}
               </p>
               <p className="text-sm text-blue-700">
-                <strong>Sensores disponibles:</strong> {availableSensors.length}
+                <strong>Sensores disponibles:</strong> {availableSensorsForConfig.length}
               </p>
             </div>
 
@@ -277,9 +283,10 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
                 Configurar Umbrales por Sensor
               </h3>
               
-              {availableSensors.length === 0 ? (
+              {availableSensorsForConfig.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No hay sensores disponibles para configurar.</p>
+                  <p>No hay sensores disponibles para esta configuración MQTT.</p>
+                  <p className="text-sm mt-2">Asegúrate de que la configuración haya recibido datos de sensores.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -289,9 +296,9 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
                     <div className="text-sm font-medium text-gray-700">Mínimo</div>
                     <div className="text-sm font-medium text-gray-700">Máximo</div>
                   </div>
-                  
+
                   {/* Sensor rows */}
-                  {availableSensors.map(sensorKey => renderSensorRow(sensorKey))}
+                  {availableSensorsForConfig.map(sensorKey => renderSensorRow(sensorKey))}
                 </div>
               )}
             </div>

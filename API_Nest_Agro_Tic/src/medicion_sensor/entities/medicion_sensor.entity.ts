@@ -25,6 +25,9 @@ export class MedicionSensor {
   @Column({ name: 'med_unidad', type: 'varchar', length: 20, nullable: true })
   unidad: string;
 
+  @Column({ name: 'med_tipo', type: 'varchar', length: 20, default: 'regular' })
+  tipo: string; // 'regular' o 'alerta'
+
   @Column({ name: 'fk_id_zona_mqtt_config' })
   fkZonaMqttConfigId: string;
 

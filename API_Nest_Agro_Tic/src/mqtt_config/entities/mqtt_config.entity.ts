@@ -25,6 +25,19 @@ export class MqttConfig {
   @Column({ name: 'mc_activa', type: 'boolean', default: true })
   activa: boolean;
 
+  @Column({
+    name: 'mc_umbrales',
+    type: 'jsonb',
+    default: {} as any,
+  })
+  umbrales: Record<
+    string,
+    {
+      minimo: number;
+      maximo: number;
+    }
+  >;
+
   @OneToMany(() => ZonaMqttConfig, (zmc) => zmc.mqttConfig)
   zonaMqttConfigs?: ZonaMqttConfig[];
 }

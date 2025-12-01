@@ -43,6 +43,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
   const [isLoadingThresholds, setIsLoadingThresholds] = useState(false);
   const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [selectedZonaMqttConfigId, setSelectedZonaMqttConfigId] = useState<string>('');
+  const [selectedMqttConfigId, setSelectedMqttConfigId] = useState<string>('');
   const [selectedCultivo, setSelectedCultivo] = useState<string>('');
   const [selectedZonaNombre, setSelectedZonaNombre] = useState<string>('');
 
@@ -191,9 +192,9 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
       const zonaMqttConfigPromises = zonasData.map(async (zona) => {
         if (zona.zonaMqttConfigs && zona.zonaMqttConfigs.length > 0) {
           for (const zonaMqttConfig of zona.zonaMqttConfigs) {
-            if (zonaMqttConfig.estado) { // Only active configs
+            if (zonaMqttConfig.estado && zonaMqttConfig.mqttConfig) { // Only active configs with mqtt config
               try {
-                const umbrales = await umbralesService.getUmbrales(zonaMqttConfig.id);
+                const umbrales = await umbralesService.getUmbrales(zonaMqttConfig.mqttConfig.id);
                 umbralesMap[zonaMqttConfig.id] = umbrales;
               } catch (error) {
                 console.warn(`Error loading umbrales for config ${zonaMqttConfig.id}:`, error);
@@ -294,72 +295,71 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
 
 
-  const getAllAvailableCrops = () => {
-    const crops: Array<{
+  const getAllAvailableMqttConfigs = () => {
+    const configs: Array<{
       id: string;
-      cultivoNombre: string;
-      variedadNombre?: string;
+      nombre: string;
       zonaNombre: string;
       zonaMqttConfigId: string;
-      ubicacion: string;
+      mqttConfigId: string;
     }> = [];
 
     zonas.forEach(zona => {
-      const activeZonaMqttConfig = zona.zonaMqttConfigs?.find((zm: any) => zm.estado);
-      if (!activeZonaMqttConfig || !zona.cultivosVariedad) return;
-
-      zona.cultivosVariedad.forEach((cv: any) => {
-        const cultivoNombre = cv.cultivoXVariedad?.variedad?.tipoCultivo?.nombre;
-        const variedadNombre = cv.cultivoXVariedad?.variedad?.nombre;
-        
-        if (!cultivoNombre) return;
-
-        crops.push({
-          id: `${zona.id}-${cv.cultivoXVariedad?.variedad?.id || cultivoNombre}`,
-          cultivoNombre,
-          variedadNombre: variedadNombre !== cultivoNombre ? variedadNombre : undefined,
-          zonaNombre: zona.nombre,
-          zonaMqttConfigId: activeZonaMqttConfig.id,
-          ubicacion: `${zona.nombre}${cv.ubicacion ? ` - ${cv.ubicacion}` : ''}`
-        });
+      zona.zonaMqttConfigs?.forEach((zm: any) => {
+        if (zm.estado && zm.mqttConfig) {
+          configs.push({
+            id: zm.mqttConfig.id,
+            nombre: zm.mqttConfig.nombre,
+            zonaNombre: zona.nombre,
+            zonaMqttConfigId: zm.id,
+            mqttConfigId: zm.mqttConfig.id,
+          });
+        }
       });
     });
 
-    return crops;
+    // Remove duplicates (same config assigned to multiple zones)
+    const uniqueConfigs = configs.filter((config, index, self) =>
+      index === self.findIndex(c => c.mqttConfigId === config.mqttConfigId)
+    );
+
+    return uniqueConfigs;
   };
 
   const handleThresholdConfigClick = () => {
-    const availableCrops = getAllAvailableCrops();
-    
-    if (availableCrops.length === 0) {
-      setThresholdError('No hay cultivos disponibles para configurar umbrales.');
+    const availableConfigs = getAllAvailableMqttConfigs();
+
+    if (availableConfigs.length === 0) {
+      setThresholdError('No hay configuraciones MQTT disponibles para configurar umbrales.');
       return;
     }
-    
-    if (availableCrops.length === 1) {
-      // If only one crop, open threshold modal directly
-      const crop = availableCrops[0];
-      setSelectedZonaMqttConfigId(crop.zonaMqttConfigId);
-      setSelectedZonaNombre(crop.zonaNombre);
-      setSelectedCultivo(crop.cultivoNombre + (crop.variedadNombre ? ` - ${crop.variedadNombre}` : ''));
+
+    if (availableConfigs.length === 1) {
+      // If only one config, open threshold modal directly
+      const config = availableConfigs[0];
+      setSelectedZonaMqttConfigId(config.zonaMqttConfigId);
+      setSelectedMqttConfigId(config.mqttConfigId);
+      setSelectedZonaNombre(config.zonaNombre);
+      setSelectedCultivo(config.nombre);
       setShowThresholdConfigModal(true);
     } else {
-      // If multiple crops, show crop selection
+      // If multiple configs, show config selection
       setShowCultivoSelection(true);
     }
   };
 
 
 
-  const handleCultivoSelect = (cropIndex: number) => {
-    const availableCrops = getAllAvailableCrops();
-    const selectedCrop = availableCrops[cropIndex];
-    
-    if (!selectedCrop) return;
-    
-    setSelectedZonaMqttConfigId(selectedCrop.zonaMqttConfigId);
-    setSelectedZonaNombre(selectedCrop.zonaNombre);
-    setSelectedCultivo(selectedCrop.cultivoNombre + (selectedCrop.variedadNombre ? ` - ${selectedCrop.variedadNombre}` : ''));
+  const handleCultivoSelect = (configIndex: number) => {
+    const availableConfigs = getAllAvailableMqttConfigs();
+    const selectedConfig = availableConfigs[configIndex];
+
+    if (!selectedConfig) return;
+
+    setSelectedZonaMqttConfigId(selectedConfig.zonaMqttConfigId);
+    setSelectedMqttConfigId(selectedConfig.mqttConfigId);
+    setSelectedZonaNombre(selectedConfig.zonaNombre);
+    setSelectedCultivo(selectedConfig.nombre);
     setShowCultivoSelection(false);
     setShowThresholdConfigModal(true);
   };
@@ -796,17 +796,17 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         />
       )}
 
-      {showThresholdConfigModal && selectedZonaMqttConfigId && (
+      {showThresholdConfigModal && selectedMqttConfigId && (
         <ThresholdConfigModal
           isOpen={showThresholdConfigModal}
           onClose={() => {
             setShowThresholdConfigModal(false);
             setSelectedZonaMqttConfigId('');
+            setSelectedMqttConfigId('');
             setSelectedCultivo('');
             setSelectedZonaNombre('');
           }}
-          zonaMqttConfigId={selectedZonaMqttConfigId}
-          availableSensors={getAvailableSensors()}
+          mqttConfigId={selectedMqttConfigId}
           cultivoNombre={selectedCultivo || undefined}
           onSave={handleThresholdConfigSave}
         />
@@ -819,15 +819,15 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           <ModalContent>
             <ModalHeader>
               <h2 className="text-lg font-semibold">
-                Alertas de cultivo
+                Configuraciones MQTT
               </h2>
             </ModalHeader>
             <ModalBody className="p-6">
               <div className="space-y-3">
                 <p className="text-sm text-gray-600 mb-4">
-                  Selecciona el cultivo específico para configurar sus umbrales:
+                  Selecciona la configuración MQTT para configurar sus umbrales:
                 </p>
-                {getAllAvailableCrops().map((crop, index) => (
+                {getAllAvailableMqttConfigs().map((config, index) => (
                   <div
                     key={index}
                     onClick={() => handleCultivoSelect(index)}
@@ -836,14 +836,13 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {crop.cultivoNombre}
-                          {crop.variedadNombre && ` - ${crop.variedadNombre}`}
+                          {config.nombre}
                         </h3>
                         <p className="text-sm text-gray-600">
-                          📍 {crop.ubicacion}
+                          📍 Zona: {config.zonaNombre}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Zona: {crop.zonaNombre}
+                          ID: {config.mqttConfigId}
                         </p>
                       </div>
                       <div className="text-green-500">

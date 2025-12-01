@@ -2,12 +2,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import apiClient from "../lib/axios/axios";
 import { renderLineChartToCanvas } from "./chartRenderer";
-import Swal from "sweetalert2";
 import { getActividadesByCultivoVariedadZonaId } from "../services/actividadesService";
 import { getCosechasByCultivo } from "../services/cosechasService";
 import { getVentas } from "../services/ventaService";
 import type { Actividad } from "../services/actividadesService";
-import { calcularEdadCultivo } from "../services/cultivosVariedadZonaService";
 import AgroTicNormal from "../assets/AgroTic_normal.png";
 import AgroTic from "../assets/AgroTic.png";
 import logoSena from "../assets/logoSena.png";
@@ -60,11 +58,6 @@ interface SelectedSensorDetail {
   timeRanges?: string[];
   startDate?: string;
   endDate?: string;
-}
-
-interface ThresholdData {
-  minimo: number;
-  maximo: number;
 }
 
 // Utility function to format date ranges
@@ -601,7 +594,133 @@ export const generatePDFReport = async (
         }
       }
     }
-    onProgress?.(80);
+
+    // ===== SECCIÓN: ALERTAS DE SENSORES =====
+    onProgress?.(81);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
+    // Get alerts data
+    const alertsRequest = {
+      med_keys: selectedData.sensores,
+      cultivo_ids:
+        selectedData.cultivos.length > 0 ? selectedData.cultivos : undefined,
+      zona_ids: selectedData.zonas.length > 0 ? selectedData.zonas : undefined,
+      start_date: selectedData.startDate,
+      end_date: selectedData.endDate,
+      group_by: selectedData.groupBy,
+      time_ranges: selectedData.timeRanges,
+    };
+
+    const alertsResponse = await apiClient.post(
+      "/medicion-sensor/alerts",
+      alertsRequest
+    );
+    const alertsData = alertsResponse.data.alerts || [];
+
+    onProgress?.(85);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
+    if (alertsData.length > 0) {
+      pdf.addPage();
+      yPosition = 20;
+
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(255, 140, 0); // Orange color for alerts
+      pdf.text("Alertas de Sensores", 20, yPosition);
+      pdf.setTextColor(0, 0, 0); // Reset to black
+      yPosition += 15;
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(
+        `Se encontraron ${alertsData.length} alerta(s) de sensores fuera de los rangos óptimos durante el período analizado.`,
+        20,
+        yPosition
+      );
+      yPosition += 10;
+      pdf.setTextColor(0, 0, 0);
+
+      // Group alerts by sensor
+      const alertsBySensor: { [sensor: string]: typeof alertsData } = {};
+      alertsData.forEach((alert: any) => {
+        if (!alertsBySensor[alert.sensor]) {
+          alertsBySensor[alert.sensor] = [];
+        }
+        alertsBySensor[alert.sensor].push(alert);
+      });
+
+      // Create table for each sensor with alerts
+      Object.entries(alertsBySensor).forEach(([sensorKey, sensorAlerts]) => {
+        // Check if we need a new page
+        if (yPosition > 200) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+
+        // Sensor header
+        pdf.setFillColor(255, 235, 204); // Light orange background
+        pdf.setDrawColor(255, 140, 0);
+        pdf.roundedRect(15, yPosition - 3, 180, 12, 3, 3, "FD");
+
+        pdf.setFontSize(12);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(255, 140, 0);
+        pdf.text(`Sensor: ${sensorKey}`, 20, yPosition + 5);
+        pdf.setTextColor(0, 0, 0);
+        yPosition += 15;
+
+        // Prepare table data
+        const tableData = [
+          ["Fecha y Hora", "Valor Medido", "Umbral Sobrepasado", "Descripción"],
+        ];
+
+        sensorAlerts.forEach((alert: any) => {
+          const fechaHora = new Date(alert.fechaMedicion).toLocaleString(
+            "es-ES",
+            {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          );
+
+          tableData.push([
+            fechaHora,
+            alert.valorMedido.toString(),
+            alert.umbralSobrepasado,
+            alert.descripcion,
+          ]);
+        });
+
+        // Create table
+        autoTable(pdf, {
+          startY: yPosition,
+          head: [tableData[0]],
+          body: tableData.slice(1),
+          theme: "grid",
+          styles: {
+            fontSize: 8,
+            cellPadding: 3,
+          },
+          headStyles: {
+            fillColor: [255, 140, 0], // Orange header
+            textColor: 255,
+            fontStyle: "bold",
+          },
+          alternateRowStyles: {
+            fillColor: [255, 248, 240], // Very light orange for alternate rows
+          },
+        });
+
+        yPosition = (pdf as any).lastAutoTable.finalY + 15;
+      });
+    }
+
+    onProgress?.(90);
 
     // ===== FOOTER PROFESIONAL =====
     const totalPages = pdf.getNumberOfPages();
@@ -673,7 +792,6 @@ const generateCultivoTrazabilidad = async (
     const {
       cultivoId,
       zonaNombre,
-      cultivoNombre,
       variedadNombre,
       tipoCultivoNombre,
       cvzId: providedCvzId,
@@ -1370,6 +1488,137 @@ export const generateSensorSearchPDF = async (
           cultivoData.cultivoId
         );
 
+        // Generate alerts section
+        const alertsRequest = {
+          med_keys: selectedDetails.map((d) => d.sensorKey),
+          cultivo_ids: selectedDetails.map((d) => d.cultivoId),
+          zona_ids: selectedDetails.map((d) => d.zonaId),
+          start_date: firstDetail.startDate,
+          end_date: firstDetail.endDate,
+          group_by: "time_slot" as const,
+          time_ranges: timeRangesToSend,
+        };
+
+        const alertsResponse = await apiClient.post(
+          "/medicion-sensor/alerts",
+          alertsRequest
+        );
+        const alertsData = alertsResponse.data.alerts || [];
+
+        onProgress?.(85);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
+        if (alertsData.length > 0) {
+          // Add alerts page
+          pdf.addPage();
+          let alertYPosition = 20;
+
+          pdf.setFontSize(16);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(255, 140, 0); // Orange color for alerts
+          pdf.text("Alertas de Sensores", 20, alertYPosition);
+          pdf.setTextColor(0, 0, 0); // Reset to black
+          alertYPosition += 15;
+
+          pdf.setFontSize(10);
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(
+            `Se encontraron ${alertsData.length} alerta(s) de sensores fuera de los rangos óptimos.`,
+            20,
+            alertYPosition
+          );
+          alertYPosition += 10;
+          pdf.setTextColor(0, 0, 0);
+
+          // Group alerts by sensor
+          const alertsBySensor: { [sensor: string]: typeof alertsData } = {};
+          alertsData.forEach((alert: any) => {
+            if (!alertsBySensor[alert.sensor]) {
+              alertsBySensor[alert.sensor] = [];
+            }
+            alertsBySensor[alert.sensor].push(alert);
+          });
+
+          // Create table for each sensor with alerts
+          Object.entries(alertsBySensor).forEach(
+            ([sensorKey, sensorAlerts]) => {
+              // Check if we need a new page
+              if (alertYPosition > 200) {
+                pdf.addPage();
+                alertYPosition = 20;
+              }
+
+              // Sensor header
+              pdf.setFillColor(255, 235, 204); // Light orange background
+              pdf.setDrawColor(255, 140, 0);
+              pdf.roundedRect(15, alertYPosition - 3, 180, 12, 3, 3, "FD");
+
+              pdf.setFontSize(12);
+              pdf.setFont("helvetica", "bold");
+              pdf.setTextColor(255, 140, 0);
+              pdf.text(`Sensor: ${sensorKey}`, 20, alertYPosition + 5);
+              pdf.setTextColor(0, 0, 0);
+              alertYPosition += 15;
+
+              // Prepare table data
+              const tableData = [
+                [
+                  "Fecha y Hora",
+                  "Valor Medido",
+                  "Umbral Sobrepasado",
+                  "Descripción",
+                ],
+              ];
+
+              sensorAlerts.forEach((alert: any) => {
+                const fechaHora = new Date(alert.fechaMedicion).toLocaleString(
+                  "es-ES",
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                );
+
+                tableData.push([
+                  fechaHora,
+                  alert.valorMedido.toString(),
+                  alert.umbralSobrepasado,
+                  alert.descripcion,
+                ]);
+              });
+
+              // Create table
+              autoTable(pdf, {
+                startY: alertYPosition,
+                head: [tableData[0]],
+                body: tableData.slice(1),
+                theme: "grid",
+                styles: {
+                  fontSize: 8,
+                  cellPadding: 3,
+                },
+                headStyles: {
+                  fillColor: [255, 140, 0], // Orange header
+                  textColor: 255,
+                  fontStyle: "bold",
+                },
+                alternateRowStyles: {
+                  fillColor: [255, 248, 240], // Very light orange for alternate rows
+                },
+              });
+
+              alertYPosition = (pdf as any).lastAutoTable.finalY + 15;
+            }
+          );
+        }
+
+        onProgress?.(90);
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
+
         // Generate trazabilidad section
         await generateCultivoTrazabilidad(
           pdf,
@@ -1382,7 +1631,7 @@ export const generateSensorSearchPDF = async (
         );
 
         // Update footer with new page count
-        onProgress?.(96);
+        onProgress?.(98);
         await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
         const totalPages = pdf.getNumberOfPages();
@@ -1421,7 +1670,7 @@ export const generateSensorSearchPDF = async (
         }
 
         // Save the complete PDF
-        onProgress?.(95);
+        onProgress?.(99);
         await new Promise((resolve) => setTimeout(resolve, 100)); // Allow UI update
 
         const fileName = `reporte-completo-cultivo-agrotic-${

@@ -1,5 +1,5 @@
-console.log('zonasService.ts: Starting module execution');
-import axios from '../lib/axios/axios';
+console.log("zonasService.ts: Starting module execution");
+import axios from "../lib/axios/axios";
 
 export interface Zona {
   id: string;
@@ -70,7 +70,7 @@ export interface UmbralesResponse {
 }
 
 class ZonasService {
-  private baseUrl = '/zonas';
+  private baseUrl = "/zonas";
 
   async getAll(): Promise<Zona[]> {
     const response = await axios.get(this.baseUrl);
@@ -86,7 +86,7 @@ class ZonasService {
     return response.data;
   }
 
-  async create(zona: Omit<Zona, 'id'>): Promise<Zona> {
+  async create(zona: Omit<Zona, "id">): Promise<Zona> {
     const response = await axios.post(this.baseUrl, zona);
     return response.data;
   }
@@ -101,13 +101,15 @@ class ZonasService {
   }
 
   async getZonaCultivosVariedadXZona(zonaId: string) {
-    const response = await axios.get(`${this.baseUrl}/${zonaId}/cultivos-variedad-zona`);
+    const response = await axios.get(
+      `${this.baseUrl}/${zonaId}/cultivos-variedad-zona`
+    );
     return response.data;
   }
 }
 
 class MqttConfigService {
-  private baseUrl = '/mqtt-config';
+  private baseUrl = "/mqtt-config";
 
   async getAll(): Promise<MqttConfig[]> {
     const response = await axios.get(this.baseUrl);
@@ -129,29 +131,48 @@ class MqttConfigService {
     return response.data;
   }
 
-  async getActiveZonaMqttConfig(zonaId: string): Promise<ZonaMqttConfig | null> {
+  async getActiveZonaMqttConfig(
+    zonaId: string
+  ): Promise<ZonaMqttConfig | null> {
     const response = await axios.get(`${this.baseUrl}/zona/${zonaId}/active`);
     return response.data;
   }
 
   async getAllActiveZonaMqttConfigs(): Promise<ZonaMqttConfig[]> {
-    const response = await axios.get(`${this.baseUrl}/active-zona-mqtt-configs`);
+    const response = await axios.get(
+      `${this.baseUrl}/active-zona-mqtt-configs`
+    );
     return response.data;
   }
 
-  async assignConfigToZona(zonaId: string, configId: string): Promise<{ success: boolean; data?: ZonaMqttConfig; error?: { configName: string; zonaName: string } }> {
-    const response = await axios.post(`${this.baseUrl}/assign`, { zonaId, configId });
+  async assignConfigToZona(
+    zonaId: string,
+    configId: string
+  ): Promise<{
+    success: boolean;
+    data?: ZonaMqttConfig;
+    error?: { configName: string; zonaName: string };
+  }> {
+    const response = await axios.post(`${this.baseUrl}/assign`, {
+      zonaId,
+      configId,
+    });
     return response.data;
   }
 
-  async unassignConfigFromZona(zonaId: string, configId: string): Promise<void> {
+  async unassignConfigFromZona(
+    zonaId: string,
+    configId: string
+  ): Promise<void> {
     await axios.post(`${this.baseUrl}/unassign`, { zonaId, configId });
   }
 
-  async create(config: Omit<MqttConfig, 'id' | 'zonaMqttConfigs'>): Promise<MqttConfig> {
-    console.log('MqttConfigService.create: Sending data:', config);
+  async create(
+    config: Omit<MqttConfig, "id" | "zonaMqttConfigs">
+  ): Promise<MqttConfig> {
+    console.log("MqttConfigService.create: Sending data:", config);
     const response = await axios.post(this.baseUrl, config);
-    console.log('MqttConfigService.create: Response:', response.data);
+    console.log("MqttConfigService.create: Response:", response.data);
     return response.data;
   }
 
@@ -166,7 +187,7 @@ class MqttConfigService {
 }
 
 class MedicionSensorService {
-  private baseUrl = '/medicion-sensor';
+  private baseUrl = "/medicion-sensor";
 
   async getAll(): Promise<MedicionSensor[]> {
     const response = await axios.get(this.baseUrl);
@@ -175,21 +196,27 @@ class MedicionSensorService {
 
   async getByZona(zonaId: string, limit?: number): Promise<MedicionSensor[]> {
     const params = limit ? { limit: limit.toString() } : {};
-    const response = await axios.get(`${this.baseUrl}/zona/${zonaId}`, { params });
+    const response = await axios.get(`${this.baseUrl}/zona/${zonaId}`, {
+      params,
+    });
     return response.data;
   }
 
   async getByMqttConfig(mqttConfigId: string): Promise<MedicionSensor[]> {
-    const response = await axios.get(`${this.baseUrl}/mqtt-config/${mqttConfigId}`);
+    const response = await axios.get(
+      `${this.baseUrl}/mqtt-config/${mqttConfigId}`
+    );
     return response.data;
   }
 
-  async create(medicion: Omit<MedicionSensor, 'id'>): Promise<MedicionSensor> {
+  async create(medicion: Omit<MedicionSensor, "id">): Promise<MedicionSensor> {
     const response = await axios.post(this.baseUrl, medicion);
     return response.data;
   }
 
-  async createBatch(mediciones: Omit<MedicionSensor, 'id'>[]): Promise<MedicionSensor[]> {
+  async createBatch(
+    mediciones: Omit<MedicionSensor, "id">[]
+  ): Promise<MedicionSensor[]> {
     const response = await axios.post(`${this.baseUrl}/batch`, mediciones);
     return response.data;
   }
@@ -200,112 +227,216 @@ class MedicionSensorService {
   }
 
   async getHistoricalData(sensorKeys: string[]) {
-    const response = await axios.post(`${this.baseUrl}/historical-data`, { sensorKeys });
+    const response = await axios.post(`${this.baseUrl}/historical-data`, {
+      sensorKeys,
+    });
     return response.data;
   }
 }
 
 class UmbralesService {
-  private baseUrl = '/mqtt-config';
+  private baseUrl = "/mqtt-config";
 
-  async getUmbrales(zonaMqttConfigId: string): Promise<UmbralesConfig> {
+  async getUmbralesByZona(zonaId: string): Promise<UmbralesConfig> {
     try {
-      const response = await axios.get(`${this.baseUrl}/zona-mqtt/${zonaMqttConfigId}/umbrales`);
-      
+      const response = await axios.get(
+        `${this.baseUrl}/zona/${zonaId}/umbrales`
+      );
+
       // Verificar si la respuesta tiene la estructura esperada
       if (response.data && response.data.umbrales) {
         return response.data.umbrales;
       }
-      
+
       // Si no hay umbrales definidos, devolver objeto vacío
       return {};
     } catch (error: any) {
-      console.error('Error al obtener umbrales:', error);
-      throw new Error(`Error al obtener umbrales: ${error.response?.data?.message || error.message}`);
+      console.error("Error al obtener umbrales:", error);
+      throw new Error(
+        `Error al obtener umbrales: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
   }
 
-  async updateUmbrales(zonaMqttConfigId: string, umbrales: UmbralesConfig): Promise<void> {
+  async getUmbrales(mqttConfigId: string): Promise<UmbralesConfig> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/mqtt-config/${mqttConfigId}/umbrales`
+      );
+
+      // Verificar si la respuesta tiene la estructura esperada
+      if (response.data && response.data.umbrales) {
+        return response.data.umbrales;
+      }
+
+      // Si no hay umbrales definidos, devolver objeto vacío
+      return {};
+    } catch (error: any) {
+      console.error("Error al obtener umbrales:", error);
+      throw new Error(
+        `Error al obtener umbrales: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  async getSensorsForMqttConfig(mqttConfigId: string): Promise<string[]> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/mqtt-config/${mqttConfigId}/sensors`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Error al obtener sensores:", error);
+      throw new Error(
+        `Error al obtener sensores: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  async updateUmbralesByZona(
+    zonaId: string,
+    umbrales: UmbralesConfig
+  ): Promise<void> {
     try {
       // Validación local antes de enviar
       this.validateUmbralesData(umbrales);
-      
-      const response = await axios.put(`${this.baseUrl}/zona-mqtt/${zonaMqttConfigId}/umbrales`, {
-        umbrales
-      });
+
+      const response = await axios.put(
+        `${this.baseUrl}/zona/${zonaId}/umbrales`,
+        {
+          umbrales,
+        }
+      );
 
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Error al actualizar umbrales');
+        throw new Error(
+          response.data.message || "Error al actualizar umbrales"
+        );
       }
     } catch (error: any) {
-      console.error('Error al actualizar umbrales:', error);
-      throw new Error(`Error al actualizar umbrales: ${error.response?.data?.message || error.message}`);
+      console.error("Error al actualizar umbrales:", error);
+      throw new Error(
+        `Error al actualizar umbrales: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
   }
 
-  async validateValue(sensorKey: string, valor: number, umbrales: UmbralesConfig): Promise<{ isValid: boolean; status: 'normal' | 'bajo' | 'alto' }> {
+  async updateUmbrales(
+    mqttConfigId: string,
+    umbrales: UmbralesConfig
+  ): Promise<void> {
     try {
-      // Validación local 
+      // Validación local antes de enviar
+      this.validateUmbralesData(umbrales);
+
+      const response = await axios.put(
+        `${this.baseUrl}/mqtt-config/${mqttConfigId}/umbrales`,
+        {
+          umbrales,
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(
+          response.data.message || "Error al actualizar umbrales"
+        );
+      }
+    } catch (error: any) {
+      console.error("Error al actualizar umbrales:", error);
+      throw new Error(
+        `Error al actualizar umbrales: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  async validateValue(
+    sensorKey: string,
+    valor: number,
+    umbrales: UmbralesConfig
+  ): Promise<{ isValid: boolean; status: "normal" | "bajo" | "alto" }> {
+    try {
+      // Validación local
       const result = this.validateThresholdLocally(sensorKey, valor, umbrales);
       return result;
     } catch (error: any) {
-      console.error('Error al validar valor:', error);
+      console.error("Error al validar valor:", error);
       // En caso de error, devolver resultado conservador
-      return { isValid: false, status: 'normal' };
+      return { isValid: false, status: "normal" };
     }
   }
 
   // Método de validación local de umbrales
-  private validateThresholdLocally(sensorKey: string, valor: number, umbrales: UmbralesConfig): { isValid: boolean; status: 'normal' | 'bajo' | 'alto' } {
+  private validateThresholdLocally(
+    sensorKey: string,
+    valor: number,
+    umbrales: UmbralesConfig
+  ): { isValid: boolean; status: "normal" | "bajo" | "alto" } {
     const threshold = umbrales[sensorKey];
-    
+
     if (!threshold) {
       // No hay umbrales definidos para este sensor
-      return { isValid: true, status: 'normal' };
+      return { isValid: true, status: "normal" };
     }
 
-    if (typeof valor !== 'number' || isNaN(valor)) {
-      throw new Error('El valor debe ser un número válido');
+    if (typeof valor !== "number" || isNaN(valor)) {
+      throw new Error("El valor debe ser un número válido");
     }
 
-    if (typeof threshold.minimo !== 'number' || typeof threshold.maximo !== 'number') {
-      throw new Error('Los umbrales deben tener valores numéricos');
+    if (
+      typeof threshold.minimo !== "number" ||
+      typeof threshold.maximo !== "number"
+    ) {
+      throw new Error("Los umbrales deben tener valores numéricos");
     }
 
     if (threshold.minimo >= threshold.maximo) {
-      throw new Error('El valor mínimo debe ser menor que el máximo');
+      throw new Error("El valor mínimo debe ser menor que el máximo");
     }
 
     if (valor < threshold.minimo) {
-      return { isValid: false, status: 'bajo' };
+      return { isValid: false, status: "bajo" };
     }
 
     if (valor > threshold.maximo) {
-      return { isValid: false, status: 'alto' };
+      return { isValid: false, status: "alto" };
     }
 
-    return { isValid: true, status: 'normal' };
+    return { isValid: true, status: "normal" };
   }
 
   // Validación de estructura de datos de umbrales
   private validateUmbralesData(umbrales: UmbralesConfig): void {
-    if (typeof umbrales !== 'object' || umbrales === null) {
-      throw new Error('Los umbrales deben ser un objeto válido');
+    if (typeof umbrales !== "object" || umbrales === null) {
+      throw new Error("Los umbrales deben ser un objeto válido");
     }
 
     for (const [sensorKey, threshold] of Object.entries(umbrales)) {
-      if (typeof threshold !== 'object' || threshold === null) {
+      if (typeof threshold !== "object" || threshold === null) {
         throw new Error(`El umbral para ${sensorKey} debe ser un objeto`);
       }
 
       const { minimo, maximo } = threshold;
-      
-      if (typeof minimo !== 'number' || typeof maximo !== 'number') {
-        throw new Error(`Los valores mínimo y máximo para ${sensorKey} deben ser números`);
+
+      if (typeof minimo !== "number" || typeof maximo !== "number") {
+        throw new Error(
+          `Los valores mínimo y máximo para ${sensorKey} deben ser números`
+        );
       }
 
       if (minimo >= maximo) {
-        throw new Error(`El valor mínimo debe ser menor que el máximo para ${sensorKey}`);
+        throw new Error(
+          `El valor mínimo debe ser menor que el máximo para ${sensorKey}`
+        );
       }
 
       if (isNaN(minimo) || isNaN(maximo)) {
@@ -316,7 +447,7 @@ class UmbralesService {
 
   // Método utilitario para validar umbrales completos
   validateCompleteUmbralesStructure(umbrales: any): umbrales is UmbralesConfig {
-    if (typeof umbrales !== 'object' || umbrales === null) {
+    if (typeof umbrales !== "object" || umbrales === null) {
       return false;
     }
 
@@ -334,4 +465,9 @@ export const mqttConfigService = new MqttConfigService();
 export const medicionSensorService = new MedicionSensorService();
 export const umbralesService = new UmbralesService();
 
-console.log('zonasService.ts: Exporting services:', { zonasService, mqttConfigService, medicionSensorService, umbralesService });
+console.log("zonasService.ts: Exporting services:", {
+  zonasService,
+  mqttConfigService,
+  medicionSensorService,
+  umbralesService,
+});
