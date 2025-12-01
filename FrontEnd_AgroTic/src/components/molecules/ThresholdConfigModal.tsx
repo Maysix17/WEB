@@ -270,7 +270,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
             {/* Información de la zona MQTT config */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
-                <strong>ID de Configuración MQTT:</strong> {initialMqttConfigId}
+                <strong>ID de Configuración broker:</strong> {initialMqttConfigId}
               </p>
               <p className="text-sm text-blue-700">
                 <strong>Sensores disponibles:</strong> {availableSensorsForConfig.length}

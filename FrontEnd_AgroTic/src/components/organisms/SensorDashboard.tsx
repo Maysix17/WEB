@@ -825,7 +825,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
             <ModalBody className="p-6">
               <div className="space-y-3">
                 <p className="text-sm text-gray-600 mb-4">
-                  Selecciona la configuración MQTT para configurar sus umbrales:
+                  Selecciona la configuración broker para configurar sus umbrales:
                 </p>
                 {getAllAvailableMqttConfigs().map((config, index) => (
                   <div
