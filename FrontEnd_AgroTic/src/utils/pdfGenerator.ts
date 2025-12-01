@@ -414,9 +414,7 @@ export const generatePDFReport = async (
 
         // Preparar datos para la tabla
         const slotNames = ["6am-12pm", "12pm-6pm", "6pm-12am", "12am-6am"];
-        const tableData = [
-          ["Franja Horaria", "Mínimo", "Máximo", "Promedio", "Conteo"],
-        ];
+        const tableData = [["Franja Horaria", "Mínimo", "Máximo", "Promedio"]];
 
         [0, 1, 2, 3].forEach((slot) => {
           const slotData = slots[slot];
@@ -425,7 +423,6 @@ export const generatePDFReport = async (
             slotData ? slotData.min.toFixed(2) : "N/A",
             slotData ? slotData.max.toFixed(2) : "N/A",
             slotData ? slotData.avg.toFixed(2) : "N/A",
-            slotData ? slotData.count.toString() : "0",
           ]);
         });
 
