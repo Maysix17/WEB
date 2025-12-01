@@ -703,8 +703,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
               {/* Chart */}
               <Card>
-                
-                <CardBody>
+
+                <CardBody className="pt-[12px] px-0 pb-0">
                   <div className="flex">
                     {chartData.length > 0 ? (
                       <>
@@ -743,7 +743,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
-                        <div className="w-1/5 p-4">
+                        <div className="w-1/5 p-[4px]">
                           <div className="space-y-2">
                             {sensorEntries.map(([key], index) => (
                               <Button
