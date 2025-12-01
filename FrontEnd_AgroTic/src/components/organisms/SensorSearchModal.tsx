@@ -589,8 +589,8 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
                                           className="w-full [&>span>svg]:text-black"
                                         >
                                           <div className="flex justify-between items-center">
-                                            <span className="font-medium text-gray-800 text-sm">{sensor.key}</span>
-                                            <span className="text-xs text-gray-500 bg-gray-100 px-1 py-0.5 rounded text-xs">
+                                            <span className="font-medium text-gray-800 text-xs">{sensor.key}</span>
+                                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1 py-0.5 rounded">
                                               {sensor.unidad}
                                             </span>
                                           </div>
