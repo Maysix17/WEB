@@ -961,28 +961,13 @@ export class MedicionSensorService {
 
         // Special logic for HumedadSuelo sensor
         if (sensorKey === 'HumedadSuelo') {
-          // Get thresholds for HumedadSuelo to determine if it's high or low
-          const thresholds = measurement.thresholds as Record<
-            string,
-            { minimo: number; maximo: number }
-          >;
-
-          if (thresholds && thresholds[sensorKey]) {
-            const { minimo, maximo } = thresholds[sensorKey];
-
-            // Determine if it's above maximum or below minimum
-            if (value > maximo) {
-              umbralSobrepasado = 'máximo';
-              descripcion = `Alerta: Humedad del suelo alta, bomba de agua desactivada (${value} ${unit})`;
-            } else if (value < minimo) {
-              umbralSobrepasado = 'mínimo';
-              descripcion = `Alerta: Humedad del suelo baja, bomba de agua activada (${value} ${unit})`;
-            } else {
-              // If within range but still marked as alert, use generic message
-              descripcion = `Alerta: Humedad del suelo fuera de rango óptimo (${value} ${unit})`;
-            }
+          // For HumedadSuelo, determine message based on umbralSobrepasado
+          if (umbralSobrepasado === 'máximo') {
+            descripcion = `Bomba de agua desactivada - Humedad alta detectada (${value} ${unit})`;
+          } else if (umbralSobrepasado === 'mínimo') {
+            descripcion = `Bomba de agua activada - Humedad baja detectada (${value} ${unit})`;
           } else {
-            // No thresholds configured, use generic message
+            // Fallback for any other case
             descripcion = `Alerta: Humedad del suelo requiere atención (${value} ${unit})`;
           }
         } else {
