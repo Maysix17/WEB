@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { medicionSensorService, zonasService, umbralesService, mqttConfigService, type UmbralesConfig } from '../../services/zonasService';
+import { medicionSensorService, zonasService, umbralesService, type UmbralesConfig } from '../../services/zonasService';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
 import CustomButton from '../atoms/Boton';
 import { MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
@@ -23,6 +23,7 @@ interface SensorData {
     zonaNombre: string;
     cultivoNombres?: string[];
     zonaMqttConfigId?: string;
+    mqttConfigId?: string;
     thresholdStatus?: 'normal' | 'bajo' | 'alto';
     hasThresholds?: boolean;
   };
@@ -99,23 +100,27 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
               // Find active zona-mqtt-config for this zone
               const activeZonaMqttConfig = zona.zonaMqttConfigs?.find((zm: any) => zm.estado === true);
               const zonaMqttConfigId = activeZonaMqttConfig?.id;
-              
+              const mqttConfigId = activeZonaMqttConfig?.mqttConfig?.id;
+
               // Validate threshold if available
               let thresholdStatus: 'normal' | 'bajo' | 'alto' = 'normal';
               let hasThresholds = false;
-              
-              if (zonaMqttConfigId && umbrales[zonaMqttConfigId]) {
-                const configUmbrales = umbrales[zonaMqttConfigId];
+
+              if (mqttConfigId && umbrales[mqttConfigId]) {
+                const configUmbrales = umbrales[mqttConfigId];
                 hasThresholds = Object.keys(configUmbrales).length > 0;
-                
+
                 if (configUmbrales[sensorKey]) {
                   const threshold = configUmbrales[sensorKey];
                   if (newValue < threshold.minimo) {
                     thresholdStatus = 'bajo';
+                    console.log(`🚨 ALERTA: Sensor ${sensorKey} en zona ${zona.nombre} - Valor ${newValue} por DEBAJO del umbral mínimo (${threshold.minimo})`);
                   } else if (newValue > threshold.maximo) {
                     thresholdStatus = 'alto';
+                    console.log(`🚨 ALERTA: Sensor ${sensorKey} en zona ${zona.nombre} - Valor ${newValue} por ENCIMA del umbral máximo (${threshold.maximo})`);
                   } else {
                     thresholdStatus = 'normal';
+                    console.log(`✅ NORMAL: Sensor ${sensorKey} en zona ${zona.nombre} - Valor ${newValue} dentro del rango (${threshold.minimo} - ${threshold.maximo})`);
                   }
                 }
               }
@@ -129,19 +134,21 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
                 zonaNombre: zona.nombre,
                 cultivoNombres,
                 zonaMqttConfigId,
+                mqttConfigId,
                 thresholdStatus,
                 hasThresholds,
               };
               hasUpdates = true;
             } else {
-              newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
-              if (new Date(medicion.fechaMedicion) > new Date(newData[sensorKey].lastUpdate)) {
-                newData[sensorKey].lastValue = newValue;
-                newData[sensorKey].lastUpdate = medicion.fechaMedicion;
-                newData[sensorKey].thresholdStatus = thresholdStatus;
-                newData[sensorKey].hasThresholds = hasThresholds;
-                newData[sensorKey].zonaMqttConfigId = zonaMqttConfigId;
-              }
+             newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
+             if (new Date(medicion.fechaMedicion) > new Date(newData[sensorKey].lastUpdate)) {
+               newData[sensorKey].lastValue = newValue;
+               newData[sensorKey].lastUpdate = medicion.fechaMedicion;
+               newData[sensorKey].thresholdStatus = thresholdStatus;
+               newData[sensorKey].hasThresholds = hasThresholds;
+               newData[sensorKey].zonaMqttConfigId = zonaMqttConfigId;
+               newData[sensorKey].mqttConfigId = mqttConfigId;
+             }
               // Keep only last 50 values
               if (newData[sensorKey].history.length > 50) {
                 newData[sensorKey].history = newData[sensorKey].history.slice(-50);
@@ -184,10 +191,10 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
   const loadUmbralesForZonas = async (zonasData: any[]) => {
     setIsLoadingThresholds(true);
     setThresholdError(null);
-    
+
     try {
       const umbralesMap: Record<string, UmbralesConfig> = {};
-      
+
       // Get all unique zona-mqtt-config IDs from zonas
       const zonaMqttConfigPromises = zonasData.map(async (zona) => {
         if (zona.zonaMqttConfigs && zona.zonaMqttConfigs.length > 0) {
@@ -195,7 +202,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
             if (zonaMqttConfig.estado && zonaMqttConfig.mqttConfig) { // Only active configs with mqtt config
               try {
                 const umbrales = await umbralesService.getUmbrales(zonaMqttConfig.mqttConfig.id);
-                umbralesMap[zonaMqttConfig.id] = umbrales;
+                // Store thresholds under mqttConfigId for consistent lookup
+                umbralesMap[zonaMqttConfig.mqttConfig.id] = umbrales;
               } catch (error) {
                 console.warn(`Error loading umbrales for config ${zonaMqttConfig.id}:`, error);
                 // Continue with other configs even if one fails
@@ -204,11 +212,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           }
         }
       });
-      
+
       await Promise.all(zonaMqttConfigPromises);
-      
+
       setUmbrales(umbralesMap);
-      
+
     } catch (error) {
       console.error('Error loading umbrales:', error);
       setThresholdError('Error al cargar umbrales: ' + (error instanceof Error ? error.message : 'Error desconocido'));
@@ -229,23 +237,27 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
       // Find active zona-mqtt-config for this zone
       const activeZonaMqttConfig = zona.zonaMqttConfigs?.find((zm: any) => zm.estado === true);
       const zonaMqttConfigId = activeZonaMqttConfig?.id;
-      
+      const mqttConfigId = activeZonaMqttConfig?.mqttConfig?.id;
+
       // Validate threshold if available
       let thresholdStatus: 'normal' | 'bajo' | 'alto' = 'normal';
       let hasThresholds = false;
-      
-      if (zonaMqttConfigId && umbrales[zonaMqttConfigId]) {
-        const configUmbrales = umbrales[zonaMqttConfigId];
+
+      if (mqttConfigId && umbrales[mqttConfigId]) {
+        const configUmbrales = umbrales[mqttConfigId];
         hasThresholds = Object.keys(configUmbrales).length > 0;
-        
+
         if (configUmbrales[medicion.key]) {
           const threshold = configUmbrales[medicion.key];
           if (medicion.valor < threshold.minimo) {
             thresholdStatus = 'bajo';
+            console.log(`🚨 ALERTA (Histórico): Sensor ${medicion.key} en zona ${zona.nombre} - Valor ${medicion.valor} por DEBAJO del umbral mínimo (${threshold.minimo})`);
           } else if (medicion.valor > threshold.maximo) {
             thresholdStatus = 'alto';
+            console.log(`🚨 ALERTA (Histórico): Sensor ${medicion.key} en zona ${zona.nombre} - Valor ${medicion.valor} por ENCIMA del umbral máximo (${threshold.maximo})`);
           } else {
             thresholdStatus = 'normal';
+            console.log(`✅ NORMAL (Histórico): Sensor ${medicion.key} en zona ${zona.nombre} - Valor ${medicion.valor} dentro del rango (${threshold.minimo} - ${threshold.maximo})`);
           }
         }
       }
@@ -259,6 +271,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           zonaNombre: zona.nombre,
           cultivoNombres,
           zonaMqttConfigId,
+          mqttConfigId,
           thresholdStatus,
           hasThresholds,
         };
@@ -283,6 +296,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         data[medicion.key].thresholdStatus = thresholdStatus;
         data[medicion.key].hasThresholds = hasThresholds;
         data[medicion.key].zonaMqttConfigId = zonaMqttConfigId;
+        data[medicion.key].mqttConfigId = mqttConfigId;
       }
     });
 
@@ -537,11 +551,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
     // Get threshold range info if available
     const getThresholdRange = () => {
-      if (!data.hasThresholds || !data.zonaMqttConfigId || !umbrales[data.zonaMqttConfigId]) {
+      if (!data.hasThresholds || !data.mqttConfigId || !umbrales[data.mqttConfigId]) {
         return null;
       }
 
-      const configUmbrales = umbrales[data.zonaMqttConfigId];
+      const configUmbrales = umbrales[data.mqttConfigId];
       const sensorThreshold = configUmbrales[sensorKey];
 
       if (sensorThreshold) {
