@@ -935,6 +935,7 @@ export class MedicionSensorService {
           'ms.key as sensorKey',
           'ms.valor as value',
           'ms.unidad as unit',
+          'mc.umbrales as thresholds',
           'tc.nombre as cropTypeName',
           'v.nombre as varietyName',
           'z.nombre as zoneName',
@@ -946,7 +947,7 @@ export class MedicionSensorService {
         `Query executed successfully. Found ${measurements.length} alert measurements`,
       );
 
-      // Process alerts - simplified: all measurements with tipo='alerta' are alerts
+      // Process alerts - simplified for most sensors, specific logic for HumedadSuelo
       const alerts: SensorAlertDto[] = [];
       console.log('Processing measurements for alerts...');
 
@@ -955,33 +956,60 @@ export class MedicionSensorService {
         const value = parseFloat(measurement.value);
         const unit = measurement.unit || '';
 
-        // Generate description based on sensor type
         let descripcion = '';
-        switch (sensorKey) {
-          case 'Gas':
-            descripcion = `Alerta: Nivel de gas anormal detectado (${value} ${unit})`;
-            break;
-          case 'Luz':
-            descripcion = `Alerta: Intensidad de luz fuera de rango (${value} ${unit})`;
-            break;
-          case 'Humedad':
-            descripcion = `Alerta: Nivel de humedad anormal (${value} ${unit})`;
-            break;
-          case 'Temperatura':
-            descripcion = `Alerta: Temperatura fuera de rango óptimo (${value} ${unit})`;
-            break;
-          case 'HumedadSuelo':
+        let umbralSobrepasado: 'máximo' | 'mínimo' = 'máximo';
+
+        // Special logic for HumedadSuelo sensor
+        if (sensorKey === 'HumedadSuelo') {
+          // Get thresholds for HumedadSuelo to determine if it's high or low
+          const thresholds = measurement.thresholds as Record<
+            string,
+            { minimo: number; maximo: number }
+          >;
+
+          if (thresholds && thresholds[sensorKey]) {
+            const { minimo, maximo } = thresholds[sensorKey];
+
+            // Determine if it's above maximum or below minimum
+            if (value > maximo) {
+              umbralSobrepasado = 'máximo';
+              descripcion = `Alerta: Humedad del suelo alta, bomba de agua desactivada (${value} ${unit})`;
+            } else if (value < minimo) {
+              umbralSobrepasado = 'mínimo';
+              descripcion = `Alerta: Humedad del suelo baja, bomba de agua activada (${value} ${unit})`;
+            } else {
+              // If within range but still marked as alert, use generic message
+              descripcion = `Alerta: Humedad del suelo fuera de rango óptimo (${value} ${unit})`;
+            }
+          } else {
+            // No thresholds configured, use generic message
             descripcion = `Alerta: Humedad del suelo requiere atención (${value} ${unit})`;
-            break;
-          default:
-            descripcion = `Alerta: Sensor ${sensorKey} reportó valor crítico (${value} ${unit})`;
+          }
+        } else {
+          // Simplified logic for other sensors
+          switch (sensorKey) {
+            case 'Gas':
+              descripcion = `Alerta: Nivel de gas anormal detectado (${value} ${unit})`;
+              break;
+            case 'Luz':
+              descripcion = `Alerta: Intensidad de luz fuera de rango (${value} ${unit})`;
+              break;
+            case 'Humedad':
+              descripcion = `Alerta: Nivel de humedad anormal (${value} ${unit})`;
+              break;
+            case 'Temperatura':
+              descripcion = `Alerta: Temperatura fuera de rango óptimo (${value} ${unit})`;
+              break;
+            default:
+              descripcion = `Alerta: Sensor ${sensorKey} reportó valor crítico (${value} ${unit})`;
+          }
         }
 
         alerts.push({
           fechaMedicion: measurement.fechamedicion.toISOString(),
           sensor: sensorKey,
           valorMedido: value,
-          umbralSobrepasado: 'máximo', // Default to maximo for display purposes
+          umbralSobrepasado,
           descripcion,
           zonaNombre: measurement.zonename || 'Sin zona',
           cultivoNombre: measurement.croptypename || 'Sin cultivo',
