@@ -15,7 +15,7 @@ export class AppController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'API Nest AgroTic',
-      version: '1.0.0'
+      version: '1.0.0',
     };
   }
 

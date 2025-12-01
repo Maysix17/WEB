@@ -62,8 +62,9 @@ interface SelectedSensorDetail {
 
 // Utility function to format date ranges
 const formatDateRange = (startDate: string, endDate: string): string => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Interpret dates as Bogotá time (UTC-5)
+  const start = new Date(startDate + "T00:00:00-05:00");
+  const end = new Date(endDate + "T23:59:59-05:00");
 
   const formatOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -844,8 +845,9 @@ const generateCultivoTrazabilidad = async (
     let filteredVentas = cultivoVentas;
 
     if (!exportarTodo && fechaInicio && fechaFin) {
-      const startDate = new Date(fechaInicio + "T00:00:00.000Z");
-      const endDate = new Date(fechaFin + "T23:59:59.999Z");
+      // Interpret dates as Bogotá time (UTC-5), not UTC
+      const startDate = new Date(fechaInicio + "T00:00:00-05:00");
+      const endDate = new Date(fechaFin + "T23:59:59-05:00");
 
       console.log(
         "🔍 PDF TRAZABILIDAD: Applying date filters - startDate:",

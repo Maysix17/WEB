@@ -90,7 +90,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body() body?: { refreshToken?: string },
   ) {
-    let refreshToken = req.cookies?.refresh_token || body?.refreshToken;
+    const refreshToken = req.cookies?.refresh_token || body?.refreshToken;
     console.log(
       'Refresh token from cookie or body:',
       refreshToken ? 'present' : 'missing',
@@ -119,7 +119,7 @@ export class AuthController {
     return {
       message: result.message,
       access_token: result.access_token,
-      refresh_token: result.refresh_token
+      refresh_token: result.refresh_token,
     };
   }
 

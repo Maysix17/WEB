@@ -40,6 +40,23 @@ export class MedicionSensorService {
     private readonly zonaMqttConfigRepository: Repository<ZonaMqttConfig>,
   ) {}
 
+  /**
+   * Adjusts a date string to Bogotá timezone (UTC-5)
+   * @param dateString Date in YYYY-MM-DD format
+   * @param isEndDate If true, sets to end of day (23:59:59), otherwise start of day (00:00:00)
+   * @returns Date object adjusted to UTC equivalent of Bogotá time
+   */
+  private adjustToBogotaTime(
+    dateString: string,
+    isEndDate: boolean = false,
+  ): Date {
+    // Create date in Bogotá timezone
+    const bogotaDate = new Date(
+      dateString + (isEndDate ? 'T23:59:59-05:00' : 'T00:00:00-05:00'),
+    );
+    return bogotaDate;
+  }
+
   async create(
     createMedicionSensorDto: CreateMedicionSensorDto,
   ): Promise<MedicionSensor> {
@@ -232,16 +249,16 @@ export class MedicionSensorService {
       .leftJoinAndSelect('v.tipoCultivo', 'tc')
       .where('ms.key IN (:...sensorKeys)', { sensorKeys });
 
-    // Add date filters if provided
+    // Add date filters if provided (adjusted to Bogotá timezone)
     if (startDate) {
       query = query.andWhere('ms.fechaMedicion >= :startDate', {
-        startDate: new Date(startDate),
+        startDate: this.adjustToBogotaTime(startDate, false),
       });
     }
 
     if (endDate) {
       query = query.andWhere('ms.fechaMedicion <= :endDate', {
-        endDate: new Date(endDate),
+        endDate: this.adjustToBogotaTime(endDate, true),
       });
     }
 
@@ -372,16 +389,16 @@ export class MedicionSensorService {
       query = query.andWhere('z.id IN (:...zona_ids)', { zona_ids });
     }
 
-    // Add date filters
+    // Add date filters (adjusted to Bogotá timezone)
     if (start_date) {
       query = query.andWhere('ms.fechaMedicion >= :start_date', {
-        start_date: new Date(start_date),
+        start_date: this.adjustToBogotaTime(start_date, false),
       });
     }
 
     if (end_date) {
       query = query.andWhere('ms.fechaMedicion <= :end_date', {
-        end_date: new Date(end_date),
+        end_date: this.adjustToBogotaTime(end_date, true),
       });
     }
 
@@ -608,16 +625,16 @@ export class MedicionSensorService {
       query = query.andWhere('z.id IN (:...zona_ids)', { zona_ids });
     }
 
-    // Add date filters
+    // Add date filters (adjusted to Bogotá timezone)
     if (start_date) {
       query = query.andWhere('ms.fechaMedicion >= :start_date', {
-        start_date: new Date(start_date),
+        start_date: this.adjustToBogotaTime(start_date, false),
       });
     }
 
     if (end_date) {
       query = query.andWhere('ms.fechaMedicion <= :end_date', {
-        end_date: new Date(end_date),
+        end_date: this.adjustToBogotaTime(end_date, true),
       });
     }
 
@@ -839,16 +856,16 @@ export class MedicionSensorService {
         query = query.andWhere('z.id IN (:...zona_ids)', { zona_ids });
       }
 
-      // Add date filters
+      // Add date filters (adjusted to Bogotá timezone)
       if (start_date) {
         query = query.andWhere('ms.fechaMedicion >= :start_date', {
-          start_date: new Date(start_date),
+          start_date: this.adjustToBogotaTime(start_date, false),
         });
       }
 
       if (end_date) {
         query = query.andWhere('ms.fechaMedicion <= :end_date', {
-          end_date: new Date(end_date),
+          end_date: this.adjustToBogotaTime(end_date, true),
         });
       }
 
@@ -957,7 +974,7 @@ export class MedicionSensorService {
         const unit = measurement.unit || '';
 
         let descripcion = '';
-        let umbralSobrepasado: 'máximo' | 'mínimo' = 'máximo';
+        const umbralSobrepasado: 'máximo' | 'mínimo' = 'máximo';
 
         // Special logic for HumedadSuelo sensor
         if (sensorKey === 'HumedadSuelo') {

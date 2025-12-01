@@ -303,7 +303,9 @@ export class AuthService {
         }),
         this.jwtService.signAsync(newPayload, {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME'),
+          expiresIn: this.configService.get<string>(
+            'JWT_REFRESH_EXPIRATION_TIME',
+          ),
         }),
       ]);
 
@@ -311,15 +313,24 @@ export class AuthService {
       const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
       session.tokenHash = newRefreshTokenHash;
       session.expiresAt = new Date();
-      session.expiresAt.setSeconds(session.expiresAt.getSeconds() + 30 * 24 * 60 * 60); // Reset to 30 days from now
+      session.expiresAt.setSeconds(
+        session.expiresAt.getSeconds() + 30 * 24 * 60 * 60,
+      ); // Reset to 30 days from now
       await this.sessionRepository.save(session);
 
       // Update Redis cache with new token hash
       try {
         const ttl = 30 * 24 * 60 * 60;
-        await this.cacheManager.set(`session:${usuario.id}`, newRefreshTokenHash, ttl);
+        await this.cacheManager.set(
+          `session:${usuario.id}`,
+          newRefreshTokenHash,
+          ttl,
+        );
       } catch (redisError) {
-        this.logger.warn(`Failed to update session in Redis for user ${usuario.id}:`, redisError.message);
+        this.logger.warn(
+          `Failed to update session in Redis for user ${usuario.id}:`,
+          redisError.message,
+        );
       }
 
       return {
