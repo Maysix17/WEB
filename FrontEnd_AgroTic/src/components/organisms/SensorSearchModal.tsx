@@ -345,19 +345,35 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
         return;
       }
 
-      // Convert to CSV
-      const headers = ['timestamp', 'sensor_id', 'value', 'unit', 'crop_name', 'zone_name', 'variety_name', 'crop_type_name'];
-      const csvContent = [
-        headers.join(','),
+      // Convert to CSV with UTF-8 BOM for proper character encoding and semicolon delimiter for Excel compatibility
+      const BOM = '\uFEFF';
+      const delimiter = ';'; // Use semicolon for better Excel compatibility in Spanish-speaking regions
+
+      // Map Spanish headers to English property names from the backend DTO
+      const headerMapping = {
+        'fecha_hora': 'timestamp',
+        'id_sensor': 'sensor_id',
+        'valor': 'value',
+        'unidad': 'unit',
+        'nombre_cultivo': 'crop_name',
+        'nombre_zona': 'zone_name',
+        'nombre_variedad': 'variety_name',
+        'tipo_cultivo': 'crop_type_name'
+      };
+
+      const displayHeaders = Object.keys(headerMapping); // Spanish headers for display
+      const csvContent = BOM + [
+        displayHeaders.join(delimiter),
         ...csvData.map((row: any) =>
-          headers.map(header => {
-            const value = row[header];
-            // Escape commas and quotes in CSV
-            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          displayHeaders.map(displayHeader => {
+            const actualProperty = headerMapping[displayHeader as keyof typeof headerMapping];
+            const value = row[actualProperty];
+            // Escape semicolons and quotes in CSV (using semicolon as delimiter)
+            if (typeof value === 'string' && (value.includes(delimiter) || value.includes('"'))) {
               return `"${value.replace(/"/g, '""')}"`;
             }
             return value;
-          }).join(',')
+          }).join(delimiter)
         )
       ].join('\n');
 
