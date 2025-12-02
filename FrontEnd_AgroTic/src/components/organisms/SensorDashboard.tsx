@@ -26,6 +26,8 @@ interface SensorData {
     mqttConfigId?: string;
     thresholdStatus?: 'normal' | 'bajo' | 'alto';
     hasThresholds?: boolean;
+    connectionStatus?: 'connected' | 'disconnected' | 'unknown';
+    lastDataTimestamp?: number;
   };
 }
 
@@ -141,32 +143,65 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
                 mqttConfigId,
                 thresholdStatus,
                 hasThresholds,
+                connectionStatus: 'connected',
+                lastDataTimestamp: Date.now(),
               };
               hasUpdates = true;
             } else {
-             newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
-             if (new Date(medicion.fechaMedicion) > new Date(newData[sensorKey].lastUpdate)) {
-               newData[sensorKey].lastValue = newValue;
-               newData[sensorKey].lastUpdate = medicion.fechaMedicion;
-               newData[sensorKey].thresholdStatus = thresholdStatus;
-               newData[sensorKey].hasThresholds = hasThresholds;
-               newData[sensorKey].zonaMqttConfigId = zonaMqttConfigId;
-               newData[sensorKey].mqttConfigId = mqttConfigId;
-             }
-              // Keep only last 50 values
-              if (newData[sensorKey].history.length > 50) {
-                newData[sensorKey].history = newData[sensorKey].history.slice(-50);
+              newData[sensorKey].history.push({ value: newValue, timestamp: medicion.fechaMedicion, zonaId: lectura.zonaId, cultivoNombres });
+              if (new Date(medicion.fechaMedicion) > new Date(newData[sensorKey].lastUpdate)) {
+                newData[sensorKey].lastValue = newValue;
+                newData[sensorKey].lastUpdate = medicion.fechaMedicion;
+                newData[sensorKey].thresholdStatus = thresholdStatus;
+                newData[sensorKey].hasThresholds = hasThresholds;
+                newData[sensorKey].zonaMqttConfigId = zonaMqttConfigId;
+                newData[sensorKey].mqttConfigId = mqttConfigId;
+                newData[sensorKey].connectionStatus = 'connected';
+                newData[sensorKey].lastDataTimestamp = Date.now();
               }
-              hasUpdates = true;
-            }
-          }
-        });
-        });
+               // Keep only last 50 values
+               if (newData[sensorKey].history.length > 50) {
+                 newData[sensorKey].history = newData[sensorKey].history.slice(-50);
+               }
+               hasUpdates = true;
+             }
+           }
+         });
+         });
 
         return hasUpdates ? newData : prevData;
       });
     }
   }, [lecturas, zonas]);
+
+  // Effect to check for disconnected sensors based on timeout
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSensorData(prevData => {
+        const newData = { ...prevData };
+        let hasUpdates = false;
+
+        Object.keys(newData).forEach(sensorKey => {
+          const sensor = newData[sensorKey];
+          if (sensor.lastDataTimestamp && Date.now() - sensor.lastDataTimestamp > 15000) { // 15 seconds
+            if (sensor.connectionStatus !== 'disconnected') {
+              sensor.connectionStatus = 'disconnected';
+              hasUpdates = true;
+              console.log(`🔌 Sensor ${sensorKey} desconectado por timeout`);
+            }
+          } else if (sensor.connectionStatus === 'disconnected' && sensor.lastDataTimestamp && Date.now() - sensor.lastDataTimestamp <= 15000) {
+            sensor.connectionStatus = 'connected';
+            hasUpdates = true;
+            console.log(`🔌 Sensor ${sensorKey} reconectado`);
+          }
+        });
+
+        return hasUpdates ? newData : prevData;
+      });
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const loadInitialData = async () => {
     setIsLoading(true);
@@ -290,6 +325,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           mqttConfigId,
           thresholdStatus,
           hasThresholds,
+          connectionStatus: 'connected',
+          lastDataTimestamp: new Date(medicion.fechaMedicion).getTime(),
         };
       }
 
@@ -313,6 +350,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
         data[medicion.key].hasThresholds = hasThresholds;
         data[medicion.key].zonaMqttConfigId = zonaMqttConfigId;
         data[medicion.key].mqttConfigId = mqttConfigId;
+        data[medicion.key].connectionStatus = 'connected';
+        data[medicion.key].lastDataTimestamp = new Date(medicion.fechaMedicion).getTime();
       }
     });
 
@@ -565,6 +604,32 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
     const statusBadge = getStatusBadge();
 
+    // Get connection status badge
+    const getConnectionBadge = () => {
+      switch (data.connectionStatus) {
+        case 'connected':
+          return {
+            color: 'success' as const,
+            text: 'Conectado',
+            icon: '🟢'
+          };
+        case 'disconnected':
+          return {
+            color: 'danger' as const,
+            text: 'Desconectado',
+            icon: '🔴'
+          };
+        default:
+          return {
+            color: 'warning' as const,
+            text: 'Desconocido',
+            icon: '🟡'
+          };
+      }
+    };
+
+    const connectionBadge = getConnectionBadge();
+
     // Get threshold range info if available
     const getThresholdRange = () => {
       if (!data.hasThresholds || !data.mqttConfigId || !umbrales[data.mqttConfigId]) {
@@ -585,18 +650,32 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
     return (
       <Card className="w-full max-w-xs" style={isSelected ? { border: `2px solid ${highlightColor}`, boxShadow: `0 6px 12px ${highlightColor}70, 0 10px 20px ${highlightColor}50` } : {}}>
-        <CardHeader className="flex items-center justify-between pb-2">
-          <div className="text-center flex-1">
-            <h3 className="text-lg font-bold text-gray-800 mb-1">{formatSensorKey(sensorKey)}</h3>
-            <div className="text-xs text-gray-600">
-              <p>{data.zonaNombre}</p>
-              {data.cultivoNombres && data.cultivoNombres.length > 0 && <p>Cultivos: {data.cultivoNombres.join(', ')}</p>}
-            </div>
-          </div>
-          <Badge color={statusBadge.color} variant="flat" className="ml-2">
-            {statusBadge.icon} {statusBadge.text}
-          </Badge>
-        </CardHeader>
+        <CardHeader className="flex justify-between items-start pb-2">
+           <div className="text-left">
+             <h3 className="text-lg font-bold text-gray-800 mb-1">{formatSensorKey(sensorKey)}</h3>
+             <div className="text-xs text-gray-600">
+               <p>{data.zonaNombre}</p>
+               {data.cultivoNombres && data.cultivoNombres.length > 0 && <p>Cultivos: {data.cultivoNombres.join(', ')}</p>}
+             </div>
+           </div>
+           <div className="flex flex-col items-end gap-1">
+             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+               statusBadge.color === 'success' ? 'bg-green-100 text-green-800' :
+               statusBadge.color === 'danger' ? 'bg-red-100 text-red-800' :
+               statusBadge.color === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+               'bg-gray-100 text-gray-800'
+             }`}>
+               {statusBadge.icon} {statusBadge.text}
+             </span>
+             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+               connectionBadge.color === 'success' ? 'bg-green-100 text-green-800' :
+               connectionBadge.color === 'danger' ? 'bg-red-100 text-red-800' :
+               'bg-yellow-100 text-yellow-800'
+             }`}>
+               {connectionBadge.icon} {connectionBadge.text}
+             </span>
+           </div>
+         </CardHeader>
         <CardBody className="pt-0">
           <div className="space-y-3">
             <div className={`text-center rounded-lg p-3 border ${styles.cardBg} ${styles.borderColor}`}>
@@ -735,7 +814,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
               {/* Chart */}
               <Card>
 
-                <CardBody className="pt-[12px] px-0 pb-0">
+                <CardBody className="pt-[6px] px-0 pb-0">
                   <div className="flex">
                     {chartData.length > 0 ? (
                       <>
