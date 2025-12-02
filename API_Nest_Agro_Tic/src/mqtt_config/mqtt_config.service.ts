@@ -391,4 +391,24 @@ export class MqttConfigService {
       relations: ['mqttConfig', 'zona'],
     });
   }
+
+  /**
+   * Verificar si existe una zona_mqtt_config ACTIVA con el mismo topicBase en otra zona
+   * basado en zmc_estado, no en conexiones MQTT
+   */
+  async findActiveZonaMqttConfigByTopicAndZona(
+    topicBase: string,
+    zonaId: string,
+  ): Promise<boolean> {
+    const activeConfig = await this.zonaMqttConfigRepository.findOne({
+      where: {
+        mqttConfig: { topicBase },
+        fkZonaId: Not(zonaId), // Otra zona
+        estado: true, // Solo configuraciones activas
+      },
+      relations: ['mqttConfig'],
+    });
+
+    return !!activeConfig;
+  }
 }

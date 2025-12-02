@@ -29,7 +29,7 @@ export class MqttService implements OnModuleInit {
   private readingBuffers = new Map<string, BufferedReading[]>(); // zonaMqttConfigId -> readings
   private lastSaveTimes = new Map<string, Date>(); // zonaMqttConfigId -> last save time
   private firstReadingSaved = new Set<string>(); // zonaMqttConfigId -> has first reading been saved
-  private readonly SAVE_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
+  private readonly SAVE_INTERVAL = 30 * 60 * 1000; // 30 seconds in milliseconds
 
   constructor(
     private readonly mqttConfigService: MqttConfigService,
@@ -370,7 +370,7 @@ export class MqttService implements OnModuleInit {
           );
         }
 
-        // Verificar guardado periódico (cada hora)
+        // Verificar guardado periódico (cada 30 segundos)
         await this.checkAndSaveBufferedReadings(zonaMqttConfigId);
       }
     } catch (error) {
@@ -398,17 +398,16 @@ export class MqttService implements OnModuleInit {
     topicBase: string,
     zonaId: string,
   ): Promise<boolean> {
-    // Verificar si alguna conexión activa usa el mismo tópico para otra zona
-    for (const connection of this.connections.values()) {
-      if (
-        connection.zonaId !== zonaId &&
-        connection.topic === topicBase &&
-        connection.connected
-      ) {
-        return false;
-      }
-    }
-    return true;
+    // Verificar si alguna zona_mqtt_config ACTIVA usa el mismo tópico para otra zona
+    // basado en zmc_estado, no en el estado de conexión MQTT
+    const activeZonaMqttConfig =
+      await this.mqttConfigService.findActiveZonaMqttConfigByTopicAndZona(
+        topicBase,
+        zonaId,
+      );
+
+    // Si existe una configuración activa con el mismo tópico en otra zona, bloquear
+    return !activeZonaMqttConfig;
   }
 
   private emitConnectionStatus(
@@ -487,7 +486,7 @@ export class MqttService implements OnModuleInit {
     const shouldSaveHourly =
       !lastSave || now.getTime() - lastSave.getTime() >= this.SAVE_INTERVAL;
 
-    // Save immediately if it's the first reading OR if an hour has passed
+    // Save immediately if it's the first reading OR if 30 seconds have passed
     if (isFirstReading || shouldSaveHourly) {
       try {
         const saved = await this.medicionSensorService.saveBatch(buffer);
