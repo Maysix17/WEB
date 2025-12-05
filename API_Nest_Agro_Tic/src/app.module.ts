@@ -12,9 +12,7 @@ import { BodegaModule } from './bodega/bodega.module';
 import { CosechasModule } from './cosechas/cosechas.module';
 import { CultivosModule } from './cultivos/cultivos.module';
 import { CultivosVariedadXZonaModule } from './cultivos_variedad_x_zona/cultivos_variedad_x_zona.module';
-import { CultivosXEpaModule } from './cultivos_x_epa/cultivos_x_epa.module';
 import { CultivosXVariedadModule } from './cultivos_x_variedad/cultivos_x_variedad.module';
-import { EpaModule } from './epa/epa.module';
 import { CategoriaModule } from './categoria/categoria.module';
 import { MedicionSensorModule } from './medicion_sensor/medicion_sensor.module';
 import { SensorModule } from './sensor/sensor.module';
@@ -25,7 +23,6 @@ import { UsuariosXActividadesModule } from './usuarios_x_actividades/usuarios_x_
 import { VariedadModule } from './variedad/variedad.module';
 import { VentaModule } from './venta/venta.module';
 import { ZonasModule } from './zonas/zonas.module';
-import { TipoEpaModule } from './tipo_epa/tipo_epa.module';
 import { RolesModule } from './roles/roles.module';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -171,9 +168,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     CosechasModule,
     CultivosModule,
     CultivosVariedadXZonaModule,
-    CultivosXEpaModule,
     CultivosXVariedadModule,
-    EpaModule,
     CategoriaModule,
     MedicionSensorModule,
     SensorModule,
@@ -184,7 +179,6 @@ import { NotificationsModule } from './notifications/notifications.module';
     VariedadModule,
     VentaModule,
     ZonasModule,
-    TipoEpaModule,
     RolesModule,
     AuthModule,
     PermisosModule,

@@ -7,12 +7,14 @@ import { Cosecha } from '../cosechas/entities/cosecha.entity';
 import { CosechasVentasModule } from '../cosechas_ventas/cosechas_ventas.module';
 import { Cultivo } from '../cultivos/entities/cultivo.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Venta, Cosecha, Cultivo]),
     CosechasVentasModule,
     NotificationsModule,
+    AuthModule,
   ],
   controllers: [VentaController],
   providers: [VentaService],

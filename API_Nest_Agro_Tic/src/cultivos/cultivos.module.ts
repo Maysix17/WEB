@@ -7,7 +7,7 @@ import { CultivosVariedadXZona } from '../cultivos_variedad_x_zona/entities/cult
 import { CultivosXVariedad } from '../cultivos_x_variedad/entities/cultivos_x_variedad.entity';
 import { Variedad } from '../variedad/entities/variedad.entity';
 import { Zona } from '../zonas/entities/zona.entity';
-
+import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -17,6 +17,7 @@ import { Zona } from '../zonas/entities/zona.entity';
       Variedad,
       Zona,
     ]),
+    AuthModule,
   ],
   controllers: [CultivosController],
   providers: [CultivosService],

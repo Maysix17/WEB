@@ -8,6 +8,7 @@ import { CultivosVariedadXZona } from '../cultivos_variedad_x_zona/entities/cult
 import { CultivosXVariedad } from '../cultivos_x_variedad/entities/cultivos_x_variedad.entity';
 import { Variedad } from '../variedad/entities/variedad.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Variedad,
     ]),
     NotificationsModule,
+    AuthModule,
   ],
   controllers: [CosechasController],
   providers: [CosechasService],

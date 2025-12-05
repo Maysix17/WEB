@@ -7,19 +7,29 @@ import {
   Param,
   Delete,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { CultivosVariedadXZonaService } from './cultivos_variedad_x_zona.service';
 import { CreateCultivosVariedadXZonaDto } from './dto/create-cultivos_variedad_x_zona.dto';
 import { UpdateCultivosVariedadXZonaDto } from './dto/update-cultivos_variedad_x_zona.dto';
 import { UpdateCantidadPlantasDto } from './dto/update-cantidad-plantas.dto';
 import { UpdateEstadoFenologicoDto } from './dto/update-estado-fenologico.dto';
+import { AuthenticationGuard } from '../common/guards/authentication.guard';
+import { AuthorizationGuard } from '../common/guards/authorization.guard';
+import { Permisos } from '../permisos/decorators/permisos.decorator';
 
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
 @Controller('cultivos-variedad-x-zona')
 export class CultivosVariedadXZonaController {
   constructor(
     private readonly cultivosVariedadXZonaService: CultivosVariedadXZonaService,
   ) {}
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['crear'],
+    moduloNombre: 'Cultivos',
+  })
   @Post()
   create(
     @Body() createCultivosVariedadXZonaDto: CreateCultivosVariedadXZonaDto,
@@ -29,22 +39,42 @@ export class CultivosVariedadXZonaController {
     );
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
   @Get()
   findAll() {
     return this.cultivosVariedadXZonaService.findAll();
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
   @Get('cultivo/:cultivoId')
   findByCultivo(@Param('cultivoId') cultivoId: string) {
     return this.cultivosVariedadXZonaService.findByCultivo(cultivoId);
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     console.log(`[DEBUG] Controller findOne called with id: ${id}`);
     return this.cultivosVariedadXZonaService.findOne(id);
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['actualizar'],
+    moduloNombre: 'Cultivos',
+  })
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -56,12 +86,22 @@ export class CultivosVariedadXZonaController {
     );
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['eliminar'],
+    moduloNombre: 'Cultivos',
+  })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.cultivosVariedadXZonaService.remove(id);
   }
 
   // Nuevos endpoints para características del cultivo
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['actualizar'],
+    moduloNombre: 'Cultivos',
+  })
   @Post(':id/cantidad-plantas')
   actualizarCantidadPlantas(
     @Param('id') id: string,
@@ -70,6 +110,11 @@ export class CultivosVariedadXZonaController {
     return this.cultivosVariedadXZonaService.actualizarCantidadPlantas(id, dto);
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['actualizar'],
+    moduloNombre: 'Cultivos',
+  })
   @Put(':id/estado-fenologico')
   actualizarEstadoFenologico(
     @Param('id') id: string,
@@ -81,11 +126,21 @@ export class CultivosVariedadXZonaController {
     );
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
   @Get(':id/edad')
   calcularEdadCultivo(@Param('id') id: string) {
     return this.cultivosVariedadXZonaService.calcularEdadCultivo(id);
   }
 
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
   @Get(':id/detalles-cultivo')
   getCropDetails(@Param('id') id: string) {
     console.log(`[DEBUG] Controller getCropDetails called with id: ${id}`);

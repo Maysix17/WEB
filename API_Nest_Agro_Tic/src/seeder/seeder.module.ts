@@ -15,9 +15,6 @@ import { CultivosVariedadXZona } from 'src/cultivos_variedad_x_zona/entities/cul
 import { Actividad } from 'src/actividades/entities/actividades.entity';
 import { UsuarioXActividad } from 'src/usuarios_x_actividades/entities/usuarios_x_actividades.entity';
 import { Cosecha } from 'src/cosechas/entities/cosecha.entity';
-import { Epa } from 'src/epa/entities/epa.entity';
-import { TipoEpa } from 'src/tipo_epa/entities/tipo_epa.entity';
-import { CultivosXEpa } from 'src/cultivos_x_epa/entities/cultivos_x_epa.entity';
 import { Sensor } from 'src/sensor/entities/sensor.entity';
 import { TipoSensor } from 'src/tipo_sensor/entities/tipo_sensor.entity';
 import { MedicionSensor } from 'src/medicion_sensor/entities/medicion_sensor.entity';
@@ -60,9 +57,6 @@ import { MqttConfig } from 'src/mqtt_config/entities/mqtt_config.entity';
       Actividad,
       UsuarioXActividad,
       Cosecha,
-      Epa,
-      TipoEpa,
-      CultivosXEpa,
       Sensor,
       TipoSensor,
       MedicionSensor,
