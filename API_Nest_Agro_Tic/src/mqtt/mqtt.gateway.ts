@@ -38,6 +38,10 @@ export class MqttGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // Emitir nueva lectura a todos los clientes conectados
   emitNuevaLectura(lectura: any) {
+    if (!this.server) {
+      this.logger.warn('WebSocket server no inicializado, omitiendo emisión de lectura');
+      return;
+    }
     this.logger.log(`Emitiendo nueva lectura MQTT:`, lectura);
     this.server.emit('lecturaNueva', lectura);
   }
@@ -48,6 +52,10 @@ export class MqttGateway implements OnGatewayConnection, OnGatewayDisconnect {
     conectado: boolean;
     mensaje?: string;
   }) {
+    if (!this.server) {
+      this.logger.warn('WebSocket server no inicializado, omitiendo emisión de estado de conexión');
+      return;
+    }
     this.logger.log(
       `Emitiendo estado MQTT para zona ${estado.zonaId}:`,
       estado,

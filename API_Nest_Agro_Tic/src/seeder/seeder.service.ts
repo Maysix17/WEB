@@ -256,6 +256,9 @@ export class SeederService {
 
       // Remove the "movimientos_inventario" resource from the Inventario module
       await this.removeMovimientosInventarioFromInventario();
+
+      // Remove the "mqtt_config" resource from the zonas module
+      await this.removeMqttConfigFromZonas();
     } catch (error) {
       this.logger.error(
         'Error sincronizando permisos: ' + error.message,
@@ -343,6 +346,34 @@ export class SeederService {
     } catch (error) {
       this.logger.error(
         'Error removiendo recurso "movimientos_inventario" del módulo Inventario: ' + error.message,
+        'Seeder',
+      );
+    }
+  }
+
+  private async removeMqttConfigFromZonas() {
+    this.logger.log('Removiendo recurso "mqtt_config" del módulo zonas...', 'Seeder');
+    try {
+      // Find all resources named "mqtt_config"
+      const recursosMqttConfig = await this.recursoRepository.find({
+        where: { nombre: 'mqtt_config' },
+        relations: ['modulo'],
+      });
+
+      for (const recurso of recursosMqttConfig) {
+        if (recurso.modulo && recurso.modulo.nombre === 'zonas') {
+          // Remove the resource (permissions will be deleted by CASCADE)
+          await this.recursoRepository.remove(recurso);
+          this.logger.log('Recurso "mqtt_config" eliminado del módulo zonas.', 'Seeder');
+        }
+      }
+
+      if (recursosMqttConfig.length === 0) {
+        this.logger.log('No se encontraron recursos "mqtt_config". Omitiendo.', 'Seeder');
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error removiendo recurso "mqtt_config" del módulo zonas: ' + error.message,
         'Seeder',
       );
     }
@@ -448,7 +479,7 @@ export class SeederService {
               'Seeder',
             );
           }
-  
+
           // Asignar permisos de IoT al INSTRUCTOR
           for (const permisoIoT of permisosIoT) {
             const tienePermisoIoT = rolInstructorConPermisos.permisos.some(
@@ -463,7 +494,7 @@ export class SeederService {
             `Permisos de IoT asignados a INSTRUCTOR.`,
             'Seeder',
           );
-  
+
           rolInstructor = rolInstructorConPermisos; // Reasignamos para el resto de la función
         }
       }
