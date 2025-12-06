@@ -4,9 +4,10 @@ import { MedicionSensorService } from './medicion_sensor.service';
 import { MedicionSensorController } from './medicion_sensor.controller';
 import { MedicionSensor } from './entities/medicion_sensor.entity';
 import { ZonaMqttConfig } from '../mqtt_config/entities/zona_mqtt_config.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MedicionSensor, ZonaMqttConfig])],
+  imports: [TypeOrmModule.forFeature([MedicionSensor, ZonaMqttConfig]), AuthModule],
   controllers: [MedicionSensorController],
   providers: [MedicionSensorService],
   exports: [MedicionSensorService],

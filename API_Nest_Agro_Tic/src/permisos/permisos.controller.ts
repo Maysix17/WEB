@@ -4,6 +4,8 @@ import {
   Body,
   ValidationPipe,
   UseGuards,
+  Get,
+  Req,
 } from '@nestjs/common';
 import { PermisosService } from './permisos.service';
 import { CreatePermisoDto } from './dto/create-permiso.dto';
@@ -16,13 +18,19 @@ import { Permisos } from './decorators/permisos.decorator';
 @Controller('permisos')
 export class PermisosController {
   constructor(private readonly permisosService: PermisosService) {}
-
-  /* {
-  "recurso": "productos",
-  "acciones": ["leer", "crear", "actualizar", "eliminar"]
+/* {
+"recurso": "productos",
+"acciones": ["leer", "crear", "actualizar", "eliminar"]
 }*/
-  @Post('sincronizar')
-  create(@Body(new ValidationPipe()) createPermisoDto: CreatePermisoDto) {
-    return this.permisosService.sincronizarPermisos(createPermisoDto);
-  }
+
+@Post('sincronizar')
+create(@Body(new ValidationPipe()) createPermisoDto: CreatePermisoDto) {
+  return this.permisosService.sincronizarPermisos(createPermisoDto);
+}
+
+@Get('user-modules')
+async getUserModules(@Req() req: any) {
+  const userId = req.userId;
+  return this.permisosService.getUserModules(userId);
+}
 }

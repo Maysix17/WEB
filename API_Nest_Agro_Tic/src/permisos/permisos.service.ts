@@ -13,6 +13,8 @@ import { CreatePermisoDto } from './dto/create-permiso.dto';
 import { Permiso } from './entities/permiso.entity';
 import { Recurso } from '../recursos/entities/recurso.entity';
 import { Modulo } from '../modulos/entities/modulo.entity';
+import { Usuario } from '../usuarios/entities/usuario.entity';
+import { Roles as Rol } from '../roles/entities/role.entity';
 
 @Injectable()
 export class PermisosService {
@@ -23,6 +25,10 @@ export class PermisosService {
     private readonly recursoRepository: Repository<Recurso>,
     @InjectRepository(Modulo)
     private readonly moduloRepository: Repository<Modulo>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
+    @InjectRepository(Rol)
+    private readonly rolRepository: Repository<Rol>,
     private readonly eventEmitter: EventEmitter2,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
@@ -193,5 +199,51 @@ export class PermisosService {
     );
     await this.cacheManager.set('permissions:all', permissions, 0);
     return permissions;
+  }
+
+  /**
+   * Get modules available for a specific user based on their permissions
+   */
+  async getUserModules(userId: string): Promise<any[]> {
+    // Get user with their role and permissions
+    const user = await this.usuarioRepository.findOne({
+      where: { id: userId },
+      relations: ['rol', 'rol.permisos', 'rol.permisos.recurso', 'rol.permisos.recurso.modulo'],
+    });
+
+    if (!user || !user.rol) {
+      return [];
+    }
+
+    // Get unique modules from user's permissions
+    const modulesMap = new Map();
+
+    for (const permiso of user.rol.permisos) {
+      if (permiso.recurso?.modulo) {
+        const modulo = permiso.recurso.modulo;
+        if (!modulesMap.has(modulo.id)) {
+          modulesMap.set(modulo.id, {
+            id: modulo.id,
+            nombre: modulo.nombre,
+            recursos: [],
+          });
+        }
+
+        const moduleData = modulesMap.get(modulo.id);
+        if (!moduleData.recursos.some((r: any) => r.nombre === permiso.recurso.nombre)) {
+          moduleData.recursos.push({
+            nombre: permiso.recurso.nombre,
+            acciones: [],
+          });
+        }
+
+        const recursoData = moduleData.recursos.find((r: any) => r.nombre === permiso.recurso.nombre);
+        if (!recursoData.acciones.includes(permiso.accion)) {
+          recursoData.acciones.push(permiso.accion);
+        }
+      }
+    }
+
+    return Array.from(modulesMap.values());
   }
 }

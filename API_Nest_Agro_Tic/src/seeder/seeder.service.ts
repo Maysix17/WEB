@@ -54,6 +54,7 @@ const PERMISOS_BASE = [
   // Módulo de zonas
   { moduloNombre: 'zonas', recurso: 'acceso_zonas', acciones: ACCION_VER },
   { moduloNombre: 'zonas', recurso: 'zonas', acciones: ACCIONES_CRUD },
+  { moduloNombre: 'zonas', recurso: 'mqtt_config', acciones: ACCIONES_CRUD },
 
   // Módulo de Cultivos
   {
@@ -70,6 +71,7 @@ const PERMISOS_BASE = [
     acciones: ACCION_VER,
   },
   { moduloNombre: 'Actividades', recurso: 'actividades', acciones: ACCIONES_CRUD },
+
 
   // Módulo de Inventario
   {
@@ -341,6 +343,7 @@ export class SeederService {
       );
     }
   }
+
 
   private async seedRolAdmin(): Promise<Rol | null> {
     const nombreRol = 'ADMIN';

@@ -26,9 +26,9 @@ export class CultivosVariedadXZonaController {
   ) {}
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['crear'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Post()
   create(
@@ -40,9 +40,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['leer'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Get()
   findAll() {
@@ -50,9 +50,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['leer'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Get('cultivo/:cultivoId')
   findByCultivo(@Param('cultivoId') cultivoId: string) {
@@ -60,9 +60,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['leer'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -71,9 +71,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['actualizar'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Patch(':id')
   update(
@@ -87,9 +87,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['eliminar'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Delete(':id')
   remove(@Param('id') id: string) {
@@ -98,9 +98,9 @@ export class CultivosVariedadXZonaController {
 
   // Nuevos endpoints para características del cultivo
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['actualizar'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Post(':id/cantidad-plantas')
   actualizarCantidadPlantas(
@@ -111,9 +111,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['actualizar'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Put(':id/estado-fenologico')
   actualizarEstadoFenologico(
@@ -127,9 +127,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['leer'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Get(':id/edad')
   calcularEdadCultivo(@Param('id') id: string) {
@@ -137,9 +137,9 @@ export class CultivosVariedadXZonaController {
   }
 
   @Permisos({
-    recurso: 'cultivos',
+    recurso: 'zonas',
     acciones: ['leer'],
-    moduloNombre: 'Cultivos',
+    moduloNombre: 'Zonas',
   })
   @Get(':id/detalles-cultivo')
   getCropDetails(@Param('id') id: string) {
