@@ -98,7 +98,7 @@ const Menu: React.FC = () => {
     (module) =>
       permissions.some(
         (perm) => perm.modulo === module.nombre && perm.accion === "ver"
-      ) || module.nombre === "Usuarios" || module.nombre === "Actividades" || module.nombre === "IOT"
+      ) || module.nombre === "Usuarios" || module.nombre === "Actividades" || module.nombre === "IOT" || module.nombre === "zonas"
   );
 
   const priorityOrder = ["Inicio", "zonas", "IOT", "Cultivos", "Actividades", "Inventario", "Usuarios"];

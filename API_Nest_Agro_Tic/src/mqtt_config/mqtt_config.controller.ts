@@ -10,11 +10,7 @@ import {
   Put,
   NotFoundException,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthenticationGuard } from '../common/guards/authentication.guard';
-import { AuthorizationGuard } from '../common/guards/authorization.guard';
-import { Permisos } from '../permisos/decorators/permisos.decorator';
 import { MqttConfigService } from './mqtt_config.service';
 import { CreateMqttConfigDto } from './dto/create-mqtt_config.dto';
 import { UpdateMqttConfigDto } from './dto/update-mqtt_config.dto';
@@ -26,7 +22,6 @@ import {
 import { ValidateThresholdDto } from './dto/validate-threshold.dto';
 import { MqttService } from '../mqtt/mqtt.service';
 
-@UseGuards(AuthenticationGuard, AuthorizationGuard)
 @Controller('mqtt-config')
 export class MqttConfigController {
   constructor(
@@ -34,11 +29,6 @@ export class MqttConfigController {
     private readonly mqttService: MqttService,
   ) {}
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['crear'],
-    moduloNombre: 'zonas',
-  })
   @Post()
   async create(@Body() createMqttConfigDto: CreateMqttConfigDto) {
     const config = await this.mqttConfigService.create(createMqttConfigDto);
@@ -69,91 +59,46 @@ export class MqttConfigController {
     return config;
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get()
   findAll() {
     return this.mqttConfigService.findAll();
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('active')
   findActive() {
     return this.mqttConfigService.findActive();
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('zona/:zonaId')
   findByZona(@Param('zonaId') zonaId: string) {
     return this.mqttConfigService.findByZona(zonaId);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('zona/:zonaId/configs')
   getZonaMqttConfigs(@Param('zonaId') zonaId: string) {
     return this.mqttConfigService.getZonaMqttConfigs(zonaId);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get(':configId/zona-mqtt-configs')
   getZonaMqttConfigsByConfig(@Param('configId') configId: string) {
     return this.mqttConfigService.getZonaMqttConfigsByConfig(configId);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('zona/:zonaId/active')
   getActiveZonaMqttConfig(@Param('zonaId') zonaId: string) {
     return this.mqttConfigService.getActiveZonaMqttConfig(zonaId);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('active-zona-mqtt-configs')
   getAllActiveZonaMqttConfigs() {
     return this.mqttConfigService.findActiveZonaMqttConfigs();
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.mqttConfigService.findOne(id);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['actualizar'],
-    moduloNombre: 'zonas',
-  })
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -181,11 +126,6 @@ export class MqttConfigController {
     return updatedConfig;
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['eliminar'],
-    moduloNombre: 'zonas',
-  })
   @Delete(':id')
   async remove(@Param('id') id: string) {
     // Remover conexión MQTT antes de eliminar la configuración
@@ -193,11 +133,7 @@ export class MqttConfigController {
     return this.mqttConfigService.remove(id);
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['actualizar'],
-    moduloNombre: 'zonas',
-  })
+
   @Post('assign')
   async assignConfigToZona(@Body() body: { zonaId: string; configId: string }) {
     try {
@@ -231,11 +167,6 @@ export class MqttConfigController {
     }
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['actualizar'],
-    moduloNombre: 'zonas',
-  })
   @Post('unassign')
   async unassignConfigFromZona(
     @Body() body: { zonaId: string; configId: string },
@@ -255,11 +186,7 @@ export class MqttConfigController {
     return { success: true };
   }
 
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
+
   @Post('test-connection')
   async testConnection(
     @Body()
@@ -377,11 +304,6 @@ export class MqttConfigController {
   /**
    * Obtener umbrales de una zona específica (usando la configuración activa)
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('zona/:zonaId/umbrales')
   async getUmbralesByZona(@Param('zonaId') zonaId: string) {
     try {
@@ -397,11 +319,6 @@ export class MqttConfigController {
   /**
    * Actualizar umbrales de una zona específica (usando la configuración activa)
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['actualizar'],
-    moduloNombre: 'zonas',
-  })
   @Put('zona/:zonaId/umbrales')
   async updateUmbralesByZona(
     @Param('zonaId') zonaId: string,
@@ -432,11 +349,6 @@ export class MqttConfigController {
   /**
    * Obtener umbrales de una configuración MQTT específica
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('mqtt-config/:id/umbrales')
   async getUmbrales(@Param('id') id: string) {
     try {
@@ -452,11 +364,6 @@ export class MqttConfigController {
   /**
    * Actualizar umbrales de una configuración MQTT específica
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['actualizar'],
-    moduloNombre: 'zonas',
-  })
   @Put('mqtt-config/:id/umbrales')
   async updateUmbrales(
     @Param('id') id: string,
@@ -475,11 +382,6 @@ export class MqttConfigController {
   /**
    * Obtener sensores para una configuración MQTT específica
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Get('mqtt-config/:id/sensors')
   async getSensorsForMqttConfig(@Param('id') id: string) {
     try {
@@ -495,11 +397,6 @@ export class MqttConfigController {
   /**
    * Validar si un valor excede los umbrales establecidos
    */
-  @Permisos({
-    recurso: 'mqtt_config',
-    acciones: ['leer'],
-    moduloNombre: 'zonas',
-  })
   @Post('mqtt-config/:id/validate-threshold')
   async validateThreshold(
     @Param('id') id: string,

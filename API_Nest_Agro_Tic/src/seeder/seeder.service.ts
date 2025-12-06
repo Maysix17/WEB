@@ -51,6 +51,7 @@ const PERMISOS_BASE = [
   { moduloNombre: 'Usuarios', recurso: 'roles', acciones: ACCIONES_CRUD },
   { moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] },
 
+
   // Módulo de zonas
   { moduloNombre: 'zonas', recurso: 'acceso_zonas', acciones: ACCION_VER },
   { moduloNombre: 'zonas', recurso: 'zonas', acciones: ACCIONES_CRUD },
