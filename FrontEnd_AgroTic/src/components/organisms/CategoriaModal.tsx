@@ -9,6 +9,7 @@ import {
 import Table from '../atoms/Table';
 import CustomButton from '../atoms/Boton';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface CategoriaModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface CategoriaModalProps {
 }
 
 const CategoriaModal: React.FC<CategoriaModalProps> = ({ isOpen, onClose }) => {
+  const { hasPermission } = usePermission();
   const [categorias, setCategorias] = useState<CategoriaData[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [message, setMessage] = useState<string>('');
@@ -41,14 +43,12 @@ const CategoriaModal: React.FC<CategoriaModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Seguro que deseas eliminar esta categoría?')) {
-      try {
-        await deleteCategoria(id);
-        fetchCategorias();
-        setMessage('Eliminado con éxito');
-      } catch (err) {
-        setMessage('Error al eliminar');
-      }
+    try {
+      await deleteCategoria(id);
+      fetchCategorias();
+      setMessage('Eliminado con éxito');
+    } catch (err) {
+      setMessage('Error al eliminar');
     }
   };
 
@@ -74,22 +74,26 @@ const CategoriaModal: React.FC<CategoriaModalProps> = ({ isOpen, onClose }) => {
                     <td className="px-4 py-2 border-b">{categoria.esDivisible ? 'Sí' : 'No'}</td>
                     <td className="px-4 py-2 border-b">
                       <div className="flex gap-1">
-                        <CustomButton
-                          icon={<PencilIcon className="w-4 h-4" />}
-                          tooltip="Editar"
-                          onClick={() => handleEdit(categoria)}
-                          color="secondary"
-                          variant="light"
-                          size="sm"
-                        />
-                        <CustomButton
-                          icon={<TrashIcon className="w-4 h-4" />}
-                          tooltip="Eliminar"
-                          onClick={() => handleDelete(categoria.id!)}
-                          color="danger"
-                          variant="light"
-                          size="sm"
-                        />
+                        {hasPermission('Inventario', 'inventario', 'actualizar') && (
+                          <CustomButton
+                            icon={<PencilIcon className="w-4 h-4" />}
+                            tooltip="Editar"
+                            onClick={() => handleEdit(categoria)}
+                            color="secondary"
+                            variant="light"
+                            size="sm"
+                          />
+                        )}
+                        {hasPermission('Inventario', 'inventario', 'eliminar') && (
+                          <CustomButton
+                            icon={<TrashIcon className="w-4 h-4" />}
+                            tooltip="Eliminar"
+                            onClick={() => handleDelete(categoria.id!)}
+                            color="danger"
+                            variant="light"
+                            size="sm"
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>

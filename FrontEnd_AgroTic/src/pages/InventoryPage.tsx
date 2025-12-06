@@ -8,23 +8,24 @@ import CategoriaModal from '../components/organisms/CategoriaModal';
 import { inventoryService } from '../services/inventoryService';
 import type { LoteInventario } from '../services/inventoryService';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
-import Swal from 'sweetalert2';
 import { Modal, ModalContent } from '@heroui/react';
+import { usePermission } from '../contexts/PermissionContext';
 
 const InventoryPage: React.FC = () => {
-    const navigate = useNavigate();
-    const [filters, setFilters] = useState<Record<string, any>>({});
-    const [allItems, setAllItems] = useState<LoteInventario[]>([]);
-    const [results, setResults] = useState<LoteInventario[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [isUnifiedProductModalOpen, setIsUnifiedProductModalOpen] = useState(false);
-      const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-      const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-      const [selectedItem, setSelectedItem] = useState<LoteInventario | null>(null);
-      const [editItem, setEditItem] = useState<LoteInventario | null>(null);
-      const [isBodegaModalOpen, setIsBodegaModalOpen] = useState(false);
-      const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
-      const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
+  const { hasPermission } = usePermission();
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [allItems, setAllItems] = useState<LoteInventario[]>([]);
+  const [results, setResults] = useState<LoteInventario[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isUnifiedProductModalOpen, setIsUnifiedProductModalOpen] = useState(false);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<LoteInventario | null>(null);
+    const [editItem, setEditItem] = useState<LoteInventario | null>(null);
+    const [isBodegaModalOpen, setIsBodegaModalOpen] = useState(false);
+    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
    const limit = 10; // Items per page
 
@@ -81,25 +82,11 @@ const InventoryPage: React.FC = () => {
 
 
   const handleDelete = async (id: string) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción no se puede deshacer.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await inventoryService.delete(id);
-        Swal.fire('Eliminado', 'El inventario ha sido eliminado.', 'success');
-        fetchInventory(currentPage);
-      } catch {
-        Swal.fire('Error', 'No se pudo eliminar el inventario.', 'error');
-      }
+    try {
+      await inventoryService.delete(id);
+      fetchAllInventory();
+    } catch (error) {
+      console.error('Error deleting item:', error);
     }
   };
 
@@ -138,12 +125,18 @@ const InventoryPage: React.FC = () => {
           onClear={handleClear}
           loading={loading}
           mainFilters={mainFilters}
-          onCreate={() => setIsUnifiedProductModalOpen(true)}
-          onManageActions={[
-            { label: 'Gestionar Bodegas', icon: <span>🏢</span>, onClick: () => setIsBodegaModalOpen(true) },
-            { label: 'Gestionar Categorías', icon: <span>📂</span>, onClick: () => setIsCategoriaModalOpen(true) },
-            { label: 'Historial de Movimientos', icon: <span>📊</span>, onClick: () => navigate('/app/movements') }
-          ]}
+          onCreate={hasPermission('Inventario', 'inventario', 'crear') ? () => setIsUnifiedProductModalOpen(true) : undefined}
+          onManageActions={
+            hasPermission('Inventario', 'inventario', 'leer')
+              ? [
+                  { label: 'Gestionar Bodegas', icon: <span>🏢</span>, onClick: () => setIsBodegaModalOpen(true) },
+                  { label: 'Gestionar Categorías', icon: <span>📂</span>, onClick: () => setIsCategoriaModalOpen(true) },
+                  { label: 'Historial de Movimientos', icon: <span>📊</span>, onClick: () => navigate('/app/movements') }
+                ]
+              : [
+                  { label: 'Historial de Movimientos', icon: <span>📊</span>, onClick: () => navigate('/app/movements') }
+                ]
+          }
         />
 
         {/* Tabla usando el componente genérico */}
@@ -166,33 +159,39 @@ const InventoryPage: React.FC = () => {
           countLabel="productos"
           actions={(item) => (
             <>
-              <button
-                onClick={() => {
-                  setSelectedItem(item);
-                  setIsDetailsModalOpen(true);
-                }}
-                className="text-primary-500 hover:text-primary-700"
-                title="Ver más"
-              >
-                <EyeIcon className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => {
-                  setEditItem(item);
-                  setIsUnifiedProductModalOpen(true);
-                }}
-                className="text-blue-500 hover:text-blue-700"
-                title="Editar"
-              >
-                <PencilIcon className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="text-red-500 hover:text-red-700"
-                title="Eliminar"
-              >
-                <TrashIcon className="w-4 h-4" />
-              </button>
+              {hasPermission('Inventario', 'inventario', 'leer') && (
+                <button
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setIsDetailsModalOpen(true);
+                  }}
+                  className="text-primary-500 hover:text-primary-700"
+                  title="Ver más"
+                >
+                  <EyeIcon className="w-4 h-4" />
+                </button>
+              )}
+              {hasPermission('Inventario', 'inventario', 'actualizar') && (
+                <button
+                  onClick={() => {
+                    setEditItem(item);
+                    setIsUnifiedProductModalOpen(true);
+                  }}
+                  className="text-blue-500 hover:text-blue-700"
+                  title="Editar"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+              )}
+              {hasPermission('Inventario', 'inventario', 'eliminar') && (
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="text-red-500 hover:text-red-700"
+                  title="Eliminar"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              )}
             </>
           )}
           mobileFields={(item) => [
@@ -205,29 +204,37 @@ const InventoryPage: React.FC = () => {
             { label: 'Disponible', value: `${item.cantidadDisponibleParaReservar?.toFixed(2) || '0.00'} ${item.unidadAbreviatura || ''}` },
             { label: 'Reservado', value: `${item.cantidadReservada?.toFixed(2) || '0.00'} ${item.unidadAbreviatura || ''}` }
           ]}
-          mobileActions={(item) => [
-            {
-              label: 'Ver más',
-              onClick: () => {
-                setSelectedItem(item);
-                setIsDetailsModalOpen(true);
-              },
-              size: 'sm' as const,
-            },
-            {
-              label: 'Editar',
-              onClick: () => {
-                setEditItem(item);
-                setIsUnifiedProductModalOpen(true);
-              },
-              size: 'sm',
-            },
-            {
-              label: 'Eliminar',
-              onClick: () => handleDelete(item.id),
-              size: 'sm',
-            },
-          ]}
+          mobileActions={(item) => {
+            const actions: any[] = [];
+            if (hasPermission('Inventario', 'inventario', 'leer')) {
+              actions.push({
+                label: 'Ver más',
+                onClick: () => {
+                  setSelectedItem(item);
+                  setIsDetailsModalOpen(true);
+                },
+                size: 'sm' as const,
+              });
+            }
+            if (hasPermission('Inventario', 'inventario', 'actualizar')) {
+              actions.push({
+                label: 'Editar',
+                onClick: () => {
+                  setEditItem(item);
+                  setIsUnifiedProductModalOpen(true);
+                },
+                size: 'sm' as const,
+              });
+            }
+            if (hasPermission('Inventario', 'inventario', 'eliminar')) {
+              actions.push({
+                label: 'Eliminar',
+                onClick: () => handleDelete(item.id),
+                size: 'sm' as const,
+              });
+            }
+            return actions;
+          }}
         />
       </div>
 

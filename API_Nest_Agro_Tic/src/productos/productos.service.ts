@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Producto } from './entities/productos.entity';
@@ -24,6 +24,13 @@ export class ProductosService {
   ) {}
 
   async create(createDto: CreateProductosDto): Promise<Producto> {
+    // Check if sku already exists
+    const existing = await this.productoRepo.findOne({
+      where: { sku: createDto.sku },
+    });
+    if (existing) {
+      throw new ConflictException(`Ya existe un producto con SKU ${createDto.sku}`);
+    }
     const entity = this.productoRepo.create(createDto);
     return await this.productoRepo.save(entity);
   }
@@ -50,6 +57,17 @@ export class ProductosService {
     userDni?: number,
   ): Promise<Producto> {
     const entity = await this.findOne(id);
+
+    // Check if sku is being changed and if it already exists
+    if (updateDto.sku && updateDto.sku !== entity.sku) {
+      const existing = await this.productoRepo.findOne({
+        where: { sku: updateDto.sku },
+      });
+      if (existing) {
+        throw new ConflictException(`Ya existe un producto con SKU ${updateDto.sku}`);
+      }
+    }
+
     Object.assign(entity, updateDto);
     const savedEntity = await this.productoRepo.save(entity);
 
@@ -135,6 +153,14 @@ export class ProductosService {
     createDto: CreateProductoWithLoteDto,
     userDni?: number,
   ): Promise<Producto> {
+    // Check if sku already exists
+    const existing = await this.productoRepo.findOne({
+      where: { sku: createDto.sku },
+    });
+    if (existing) {
+      throw new ConflictException(`Ya existe un producto con SKU ${createDto.sku}`);
+    }
+
     // Start transaction
     const queryRunner =
       this.productoRepo.manager.connection.createQueryRunner();

@@ -12,6 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '../common/guards/authentication.guard';
+import { AuthorizationGuard } from '../common/guards/authorization.guard';
+import { Permisos } from '../permisos/decorators/permisos.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -23,6 +25,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
 @Controller('productos')
 export class ProductosController {
   constructor(
@@ -31,21 +34,41 @@ export class ProductosController {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['crear'],
+    moduloNombre: 'Inventario',
+  })
   @Post()
   create(@Body() createProductosDto: CreateProductosDto) {
     return this.productosService.create(createProductosDto);
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['leer'],
+    moduloNombre: 'Inventario',
+  })
   @Get()
   findAll() {
     return this.productosService.findAll();
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['leer'],
+    moduloNombre: 'Inventario',
+  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productosService.findOne(id);
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['actualizar'],
+    moduloNombre: 'Inventario',
+  })
   @Patch(':id')
   @UseGuards(AuthenticationGuard)
   async update(
@@ -64,11 +87,21 @@ export class ProductosController {
     return this.productosService.update(id, updateProductosDto, userDni);
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['eliminar'],
+    moduloNombre: 'Inventario',
+  })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productosService.remove(id);
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['crear'],
+    moduloNombre: 'Inventario',
+  })
   @Post('with-lote')
   @UseGuards(AuthenticationGuard)
   async createWithLote(
@@ -89,6 +122,11 @@ export class ProductosController {
     );
   }
 
+  @Permisos({
+    recurso: 'inventario',
+    acciones: ['crear'],
+    moduloNombre: 'Inventario',
+  })
   @Post('upload-image')
   @UseInterceptors(
     FileInterceptor('imgUrl', {

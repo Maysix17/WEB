@@ -7,6 +7,8 @@ import { PermisosService } from '../permisos/permisos.service';
 import { Roles as Rol } from '../roles/entities/role.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Permiso } from '../permisos/entities/permiso.entity';
+import { Recurso } from '../recursos/entities/recurso.entity';
+import { Modulo } from '../modulos/entities/modulo.entity';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { BodegaService } from '../bodega/bodega.service';
 import { CategoriaService } from '../categoria/categoria.service'; // Asegúrate que la ruta es correcta
@@ -60,7 +62,6 @@ const PERMISOS_BASE = [
     acciones: ACCION_VER,
   },
   { moduloNombre: 'Cultivos', recurso: 'cultivos', acciones: ACCIONES_CRUD },
-  { moduloNombre: 'Cultivos', recurso: 'lotes', acciones: ACCIONES_CRUD },
 
   // Módulo de Inventario
   {
@@ -70,15 +71,10 @@ const PERMISOS_BASE = [
   },
   {
     moduloNombre: 'Inventario',
-    recurso: 'items_inventario',
+    recurso: 'inventario',
     acciones: ACCIONES_CRUD,
   },
   // Los movimientos son registros, no se editan/borran
-  {
-    moduloNombre: 'Inventario',
-    recurso: 'movimientos_inventario',
-    acciones: ['leer', 'crear'],
-  },
 ];
 
 @Injectable()
@@ -95,6 +91,10 @@ export class SeederService {
     private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(Permiso)
     private readonly permisoRepository: Repository<Permiso>,
+    @InjectRepository(Recurso)
+    private readonly recursoRepository: Repository<Recurso>,
+    @InjectRepository(Modulo)
+    private readonly moduloRepository: Repository<Modulo>,
     @InjectRepository(Ficha)
     private readonly fichaRepository: Repository<Ficha>,
     @InjectRepository(TipoCultivo)
@@ -233,9 +233,102 @@ export class SeederService {
         await this.permisosService.sincronizarPermisos(permisoData);
       }
       this.logger.log('Permisos base sincronizados.', 'Seeder');
+
+      // Remove the "lotes" resource from the Cultivos module
+      await this.removeLotesFromCultivos();
+
+      // Remove the old "items_inventario" resource from the Inventario module
+      await this.removeItemsInventarioFromInventario();
+
+      // Remove the "movimientos_inventario" resource from the Inventario module
+      await this.removeMovimientosInventarioFromInventario();
     } catch (error) {
       this.logger.error(
         'Error sincronizando permisos: ' + error.message,
+        'Seeder',
+      );
+    }
+  }
+
+  private async removeLotesFromCultivos() {
+    this.logger.log('Removiendo recurso "lotes" del módulo Cultivos...', 'Seeder');
+    try {
+      // Find all resources named "lotes"
+      const recursosLotes = await this.recursoRepository.find({
+        where: { nombre: 'lotes' },
+        relations: ['modulo'],
+      });
+
+      for (const recurso of recursosLotes) {
+        if (recurso.modulo && recurso.modulo.nombre === 'Cultivos') {
+          // Remove the resource (permissions will be deleted by CASCADE)
+          await this.recursoRepository.remove(recurso);
+          this.logger.log('Recurso "lotes" eliminado del módulo Cultivos.', 'Seeder');
+        }
+      }
+
+      if (recursosLotes.length === 0) {
+        this.logger.log('No se encontraron recursos "lotes". Omitiendo.', 'Seeder');
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error removiendo recurso "lotes" del módulo Cultivos: ' + error.message,
+        'Seeder',
+      );
+    }
+  }
+
+  private async removeItemsInventarioFromInventario() {
+    this.logger.log('Removiendo recurso "items_inventario" del módulo Inventario...', 'Seeder');
+    try {
+      // Find all resources named "items_inventario"
+      const recursosItemsInventario = await this.recursoRepository.find({
+        where: { nombre: 'items_inventario' },
+        relations: ['modulo'],
+      });
+
+      for (const recurso of recursosItemsInventario) {
+        if (recurso.modulo && recurso.modulo.nombre === 'Inventario') {
+          // Remove the resource (permissions will be deleted by CASCADE)
+          await this.recursoRepository.remove(recurso);
+          this.logger.log('Recurso "items_inventario" eliminado del módulo Inventario.', 'Seeder');
+        }
+      }
+
+      if (recursosItemsInventario.length === 0) {
+        this.logger.log('No se encontraron recursos "items_inventario". Omitiendo.', 'Seeder');
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error removiendo recurso "items_inventario" del módulo Inventario: ' + error.message,
+        'Seeder',
+      );
+    }
+  }
+
+  private async removeMovimientosInventarioFromInventario() {
+    this.logger.log('Removiendo recurso "movimientos_inventario" del módulo Inventario...', 'Seeder');
+    try {
+      // Find all resources named "movimientos_inventario"
+      const recursosMovimientosInventario = await this.recursoRepository.find({
+        where: { nombre: 'movimientos_inventario' },
+        relations: ['modulo'],
+      });
+
+      for (const recurso of recursosMovimientosInventario) {
+        if (recurso.modulo && recurso.modulo.nombre === 'Inventario') {
+          // Remove the resource (permissions will be deleted by CASCADE)
+          await this.recursoRepository.remove(recurso);
+          this.logger.log('Recurso "movimientos_inventario" eliminado del módulo Inventario.', 'Seeder');
+        }
+      }
+
+      if (recursosMovimientosInventario.length === 0) {
+        this.logger.log('No se encontraron recursos "movimientos_inventario". Omitiendo.', 'Seeder');
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error removiendo recurso "movimientos_inventario" del módulo Inventario: ' + error.message,
         'Seeder',
       );
     }
@@ -246,24 +339,24 @@ export class SeederService {
     try {
       let rol = await this.rolRepository.findOne({
         where: { nombre: nombreRol },
+        relations: ['permisos'],
       });
+
+      const todosLosPermisos = await this.permisoRepository.find();
+      if (todosLosPermisos.length === 0) {
+        this.logger.warn(
+          'No se encontraron permisos para asignar al rol admin. ¿Se ejecutó seedPermisos() correctamente?',
+          'Seeder',
+        );
+      }
 
       if (!rol) {
         this.logger.log(`Creando el rol "${nombreRol}"...`, 'Seeder');
-        const todosLosPermisos = await this.permisoRepository.find();
-        if (todosLosPermisos.length === 0) {
-          this.logger.warn(
-            'No se encontraron permisos para asignar al rol admin. ¿Se ejecutó seedPermisos() correctamente?',
-            'Seeder',
-          );
-        }
         rol = this.rolRepository.create({
           nombre: nombreRol,
           permisos: todosLosPermisos,
         });
         await this.rolRepository.save(rol);
-
-        // No se configura jerarquía compleja, solo validación simple en el servicio
 
         this.logger.log(
           `Rol "${nombreRol}" creado con ${todosLosPermisos.length} permisos.`,
@@ -271,14 +364,22 @@ export class SeederService {
         );
       } else {
         this.logger.log(
-          `El rol "${nombreRol}" ya existe. Omitiendo creación.`,
+          `El rol "${nombreRol}" ya existe. Actualizando permisos...`,
+          'Seeder',
+        );
+        // Update the existing role with all current permissions
+        rol.permisos = todosLosPermisos;
+        await this.rolRepository.save(rol);
+
+        this.logger.log(
+          `Rol "${nombreRol}" actualizado con ${todosLosPermisos.length} permisos.`,
           'Seeder',
         );
       }
       return rol;
     } catch (error) {
       this.logger.error(
-        `Error creando el rol admin: ${error.message}`,
+        `Error creando/actualizando el rol admin: ${error.message}`,
         'Seeder',
       );
       return null;
@@ -1705,7 +1806,7 @@ export class SeederService {
 
       for (const prodData of productos) {
         let existing = await this.productoRepository.findOne({
-          where: { nombre: prodData.nombre },
+          where: { sku: prodData.sku },
         });
         if (!existing) {
           const categoria = categorias.find(

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CustomButton from '../atoms/Boton';
 import type { CategoriaData } from '../../types/categoria.types';
 import { registerCategoria, updateCategoria, getCategorias } from '../../services/categoriaService';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface CategoriaFormProps {
   editId?: string | null;
@@ -9,6 +10,7 @@ interface CategoriaFormProps {
 }
 
 const CategoriaForm: React.FC<CategoriaFormProps> = ({ editId, onSuccess }) => {
+  const { hasPermission } = usePermission();
   const [categoriaData, setCategoriaData] = useState<CategoriaData>({
     nombre: '',
     descripcion: '',
@@ -106,11 +108,13 @@ const CategoriaForm: React.FC<CategoriaFormProps> = ({ editId, onSuccess }) => {
 
       {message && <p className="text-center text-primary-600">{message}</p>}
 
-      <CustomButton
-        type="submit"
-        text={editId ? 'Actualizar Categoría' : 'Registrar Categoría'}
-        className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 w-full"
-      />
+      {(editId ? hasPermission('Inventario', 'inventario', 'actualizar') : hasPermission('Inventario', 'inventario', 'crear')) && (
+        <CustomButton
+          type="submit"
+          text={editId ? 'Actualizar Categoría' : 'Registrar Categoría'}
+          className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 w-full"
+        />
+      )}
     </form>
   );
 };

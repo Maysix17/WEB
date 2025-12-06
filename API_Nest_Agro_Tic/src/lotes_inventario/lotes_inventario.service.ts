@@ -164,6 +164,14 @@ export class LotesInventarioService {
 
   async remove(id: string): Promise<void> {
     const entity = await this.findOne(id);
+
+    // Delete related movimientos_inventario first
+    await this.movimientosInventarioRepo.delete({ fkLoteId: id });
+
+    // Delete related reservas_x_actividad (if any)
+    const { ReservasXActividad } = await import('../reservas_x_actividad/entities/reservas_x_actividad.entity');
+    await this.lotesInventarioRepo.manager.delete(ReservasXActividad, { fkLoteId: id });
+
     await this.lotesInventarioRepo.remove(entity);
   }
 

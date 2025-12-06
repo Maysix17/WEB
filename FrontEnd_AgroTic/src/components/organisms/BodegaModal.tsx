@@ -9,6 +9,7 @@ import {
 import Table from '../atoms/Table';
 import CustomButton from '../atoms/Boton';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface BodegaModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface BodegaModalProps {
 }
 
 const BodegaModal: React.FC<BodegaModalProps> = ({ isOpen, onClose }) => {
+  const { hasPermission } = usePermission();
   const [bodegas, setBodegas] = useState<BodegaData[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [message, setMessage] = useState<string>('');
@@ -41,14 +43,12 @@ const BodegaModal: React.FC<BodegaModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Seguro que deseas eliminar esta bodega?')) {
-      try {
-        await deleteBodega(id);
-        fetchBodegas();
-        setMessage('Eliminado con éxito');
-      } catch (err) {
-        setMessage('Error al eliminar');
-      }
+    try {
+      await deleteBodega(id);
+      fetchBodegas();
+      setMessage('Eliminado con éxito');
+    } catch (err) {
+      setMessage('Error al eliminar');
     }
   };
 
@@ -72,22 +72,26 @@ const BodegaModal: React.FC<BodegaModalProps> = ({ isOpen, onClose }) => {
                   <td className="px-4 py-2 border-b">{bodega.nombre}</td>
                   <td className="px-4 py-2 border-b">
                     <div className="flex gap-1">
-                      <CustomButton
-                        icon={<PencilIcon className="w-4 h-4" />}
-                        tooltip="Editar"
-                        onClick={() => handleEdit(bodega)}
-                        color="secondary"
-                        variant="light"
-                        size="sm"
-                      />
-                      <CustomButton
-                        icon={<TrashIcon className="w-4 h-4" />}
-                        tooltip="Eliminar"
-                        onClick={() => handleDelete(bodega.id!)}
-                        color="danger"
-                        variant="light"
-                        size="sm"
-                      />
+                      {hasPermission('Inventario', 'inventario', 'actualizar') && (
+                        <CustomButton
+                          icon={<PencilIcon className="w-4 h-4" />}
+                          tooltip="Editar"
+                          onClick={() => handleEdit(bodega)}
+                          color="secondary"
+                          variant="light"
+                          size="sm"
+                        />
+                      )}
+                      {hasPermission('Inventario', 'inventario', 'eliminar') && (
+                        <CustomButton
+                          icon={<TrashIcon className="w-4 h-4" />}
+                          tooltip="Eliminar"
+                          onClick={() => handleDelete(bodega.id!)}
+                          color="danger"
+                          variant="light"
+                          size="sm"
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>

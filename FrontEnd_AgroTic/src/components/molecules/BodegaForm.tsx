@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CustomButton from '../atoms/Boton';
 import type { BodegaData } from '../../types/bodega.types';
 import { registerBodega, updateBodega, getBodegas } from '../../services/bodegaService';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface BodegaFormProps {
   editId?: string | null;
@@ -9,6 +10,7 @@ interface BodegaFormProps {
 }
 
 const BodegaForm: React.FC<BodegaFormProps> = ({ editId, onSuccess }) => {
+  const { hasPermission } = usePermission();
   const [bodegaData, setBodegaData] = useState<BodegaData>({
     numero: '',
     nombre: '',
@@ -83,11 +85,13 @@ const BodegaForm: React.FC<BodegaFormProps> = ({ editId, onSuccess }) => {
 
       {message && <p className="text-center text-primary-600">{message}</p>}
 
-      <CustomButton
-        type="submit"
-        text={editId ? 'Actualizar Bodega' : 'Registrar Bodega'}
-        className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 w-full"
-      />
+      {(editId ? hasPermission('Inventario', 'inventario', 'actualizar') : hasPermission('Inventario', 'inventario', 'crear')) && (
+        <CustomButton
+          type="submit"
+          text={editId ? 'Actualizar Bodega' : 'Registrar Bodega'}
+          className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 w-full"
+        />
+      )}
     </form>
   );
 };

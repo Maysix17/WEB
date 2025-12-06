@@ -7,6 +7,7 @@ import { MovimientosInventario } from '../movimientos_inventario/entities/movimi
 import { TipoMovimiento } from '../tipos_movimiento/entities/tipos_movimiento.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { MovimientosInventarioModule } from '../movimientos_inventario/movimientos_inventario.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MovimientosInventarioModule } from '../movimientos_inventario/movimient
       Usuario,
     ]),
     MovimientosInventarioModule,
+    AuthModule
   ],
   controllers: [ProductosController],
   providers: [ProductosService],

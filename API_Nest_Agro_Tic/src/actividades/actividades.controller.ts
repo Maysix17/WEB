@@ -13,6 +13,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '../common/guards/authentication.guard';
+import { AuthorizationGuard } from '../common/guards/authorization.guard';
+import { Permisos } from '../permisos/decorators/permisos.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -23,6 +25,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
 @Controller('actividades')
 export class ActividadesController {
   constructor(
@@ -31,8 +34,12 @@ export class ActividadesController {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
+  })
   @Post()
-  @UseGuards(AuthenticationGuard)
   @UseInterceptors(
     FileInterceptor('imgUrl', {
       storage: diskStorage({
@@ -75,53 +82,102 @@ export class ActividadesController {
     return this.actividadesService.create({ ...dto, imgUrl }, dniResponsable);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get()
   findAll() {
     return this.actividadesService.findAll();
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get('count-by-date/:date')
   countByDate(@Param('date') date: string) {
     return this.actividadesService.countByDate(date);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get('by-date/:date')
   findByDate(@Param('date') date: string) {
     return this.actividadesService.findByDate(date);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get('by-date-active/:date')
   findByDateWithActive(@Param('date') date: string) {
     return this.actividadesService.findByDateWithActive(date);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get('by-date-range')
   findByDateRange(@Query('start') start: string, @Query('end') end: string) {
     return this.actividadesService.findByDateRange(start, end);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get('by-cultivo-variedad-zona/:cvzId')
   findByCultivoVariedadZonaId(@Param('cvzId') cvzId: string) {
     return this.actividadesService.findByCultivoVariedadZonaId(cvzId);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.actividadesService.findOne(id);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['actualizar'],
+    moduloNombre: 'Actividades',
+  })
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateActividadeDto) {
     return this.actividadesService.update(id, dto);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['eliminar'],
+    moduloNombre: 'Actividades',
+  })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.actividadesService.remove(id);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['actualizar'],
+    moduloNombre: 'Actividades',
+  })
   @Patch(':id/finalizar')
-  @UseGuards(AuthenticationGuard)
   @UseInterceptors(
     FileInterceptor('imgUrl', {
       storage: diskStorage({
@@ -172,6 +228,11 @@ export class ActividadesController {
     );
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
+  })
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -191,6 +252,11 @@ export class ActividadesController {
 
   // New endpoints for reservation management
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
+  })
   @Post(':id/reservas')
   createReservation(
     @Param('id') actividadId: string,
@@ -205,6 +271,11 @@ export class ActividadesController {
     );
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
+  })
   @Post(':id/reservas/producto')
   createReservationByProduct(
     @Param('id') actividadId: string,
@@ -219,6 +290,11 @@ export class ActividadesController {
     );
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['actualizar'],
+    moduloNombre: 'Actividades',
+  })
   @Patch('reservas/:reservaId/confirm-usage')
   confirmUsage(
     @Param('reservaId') reservaId: string,
@@ -227,11 +303,21 @@ export class ActividadesController {
     return this.actividadesService.confirmUsage(reservaId, body.cantidadUsada);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get(':id/cost')
   calculateCost(@Param('id') actividadId: string) {
     return this.actividadesService.calculateCost(actividadId);
   }
 
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  })
   @Get(':id/reservas')
   getReservationsByActivity(@Param('id') actividadId: string) {
     return this.actividadesService.getReservationsByActivity(actividadId);
