@@ -24,16 +24,18 @@ export class CategoriaActividadController {
     private readonly categoriaActividadService: CategoriaActividadService,
   ) {}
 
-  @Permisos({
-    recurso: 'cultivos',
-    acciones: ['crear'],
-    moduloNombre: 'Cultivos',
+  @Permisos(
+    {
+      recurso: 'cultivos',
+      acciones: ['crear'],
+      moduloNombre: 'Cultivos',
     },
-  {
-    recurso: 'actividades',
-    acciones: ['crear'],
-    moduloNombre: 'Actividades',
-  })
+    {
+      recurso: 'actividades',
+      acciones: ['crear'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Post()
   create(@Body() createCategoriaActividadDto: CreateCategoriaActividadDto) {
     return this.categoriaActividadService.create(createCategoriaActividadDto);
