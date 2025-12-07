@@ -93,11 +93,11 @@ const PanelControl: React.FC = () => {
   }, []);
 
   // Check if user has access to panel control
-  const canAccessPanel = hasPermission('Usuarios', 'panel_de_control', 'leer');
-  const canCreateUsers = hasPermission('Usuarios', 'panel_de_control', 'leer');
-  const canUpdateUsers = hasPermission('Usuarios', 'panel_de_control', 'leer');
-  const canCreateRoles = hasPermission('Usuarios', 'panel_de_control', 'leer');
-  const canManageRoles = hasPermission('Usuarios', 'panel_de_control', 'leer');
+  const canAccessPanel = hasPermission('Usuarios', 'panel de control', 'ver');
+  const canCreateUsers = hasPermission('Usuarios', 'panel de control', 'ver');
+  const canUpdateUsers = hasPermission('Usuarios', 'panel de control', 'ver');
+  const canCreateRoles = hasPermission('Usuarios', 'panel de control', 'ver');
+  const canManageRoles = hasPermission('Usuarios', 'panel de control', 'ver');
 
   if (!canAccessPanel) {
     return (

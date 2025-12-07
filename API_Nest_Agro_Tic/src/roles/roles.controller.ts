@@ -35,25 +35,37 @@ se envia el id del rol al que se le va a asignar el permiso
   "permisoId": "3518a2d4-c5c2-429c-bfee-bba3aa4e3bd4"
 }
   */
-  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] })
   @Post()
   create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
 
-  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer']})
+  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']},
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get()
   findAll() {
     return this.rolesService.findAll();
   }
 
-  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.findOne(id);
   }
 
-  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer']})
+  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string) {
@@ -62,7 +74,7 @@ se envia el id del rol al que se le va a asignar el permiso
 
   // --- Endpoints para gestionar permisos en un rol ---
 
-  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Post(':id/permisos')
   assignPermission(
     @Param('id', ParseUUIDPipe) id: string,
@@ -74,7 +86,7 @@ se envia el id del rol al que se le va a asignar el permiso
     );
   }
 
-  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({  moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Post(':id/permisos/multiple')
   assignMultiplePermissions(
     @Param('id', ParseUUIDPipe) id: string,
@@ -86,7 +98,7 @@ se envia el id del rol al que se le va a asignar el permiso
     );
   }
 
-  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel_de_control', acciones: ['leer']})
+  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Patch(':id')
   updateRoleWithPermissions(
     @Param('id', ParseUUIDPipe) id: string,

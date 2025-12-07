@@ -37,21 +37,35 @@ export class MovimientosInventarioController {
     );
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get()
   findAll() {
     return this.movimientosInventarioService.findAll();
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get('filter')
   filter(
     @Query('startDate') startDate?: string,
@@ -65,11 +79,18 @@ export class MovimientosInventarioController {
     );
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.movimientosInventarioService.findOne(id);

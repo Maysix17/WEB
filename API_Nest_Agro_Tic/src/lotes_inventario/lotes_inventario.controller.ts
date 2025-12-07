@@ -39,11 +39,18 @@ export class LotesInventarioController {
     return this.lotesInventarioService.create(createLotesInventarioDto);
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get()
   findAll(
     @Query('page') page: string = '1',
@@ -54,11 +61,18 @@ export class LotesInventarioController {
     return this.lotesInventarioService.findAllPaginated(pageNum, limitNum);
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get('search/:query')
   search(
     @Param('query') query: string,
@@ -70,11 +84,18 @@ export class LotesInventarioController {
     return this.lotesInventarioService.search(query, pageNum, limitNum);
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.lotesInventarioService.findOne(id);
@@ -118,11 +139,18 @@ export class LotesInventarioController {
     return this.lotesInventarioService.remove(id);
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get('available-products')
   getAvailableProducts() {
     return this.lotesInventarioService.getAvailableProducts();

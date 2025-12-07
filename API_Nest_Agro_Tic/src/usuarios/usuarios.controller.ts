@@ -39,28 +39,34 @@ export class UsuariosController {
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] },
+    {
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
+  }
+  )
   @Post('register')
   create(@Body() createUserDto: CreateUsuarioDto, @Req() req: any) {
     return this.usuariosService.createUserByPanel(createUserDto, req.user);
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Get()
   findAll() {
     return this.usuariosService.findAll();
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({ moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usuariosService.findOne(+id);
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']})
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto, @Req() req: any) {
     const requestingUser = req.user ? { rol: req.user.rol?.nombre } : undefined;
@@ -68,7 +74,7 @@ export class UsuariosController {
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos({moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usuariosService.remove(+id);
@@ -77,7 +83,7 @@ export class UsuariosController {
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
   @Permisos(
     { moduloNombre: 'Actividades', recurso: 'actividades', acciones: ['leer'] },
-    { moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] }
+    { moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver']}
   )
   @Get('search/:query')
   search(
@@ -91,7 +97,7 @@ export class UsuariosController {
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
   @Permisos(
     { moduloNombre: 'Actividades', recurso: 'actividades', acciones: ['leer'] },
-    { moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] }
+    { moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] }
   )
   @Get('search/dni/:dni')
   findByDni(@Param('dni') dni: string) {

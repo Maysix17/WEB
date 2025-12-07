@@ -44,21 +44,35 @@ export class ProductosController {
     return this.productosService.create(createProductosDto);
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get()
   findAll() {
     return this.productosService.findAll();
   }
 
-  @Permisos({
-    recurso: 'inventario',
-    acciones: ['leer'],
-    moduloNombre: 'Inventario',
-  })
+  @Permisos(
+    {
+      recurso: 'inventario',
+      acciones: ['leer'],
+      moduloNombre: 'Inventario',
+    },
+    {
+      recurso: 'actividades',
+      acciones: ['leer'],
+      moduloNombre: 'Actividades',
+    }
+  )
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productosService.findOne(id);

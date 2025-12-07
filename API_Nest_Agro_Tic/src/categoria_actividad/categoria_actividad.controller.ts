@@ -28,6 +28,11 @@ export class CategoriaActividadController {
     recurso: 'cultivos',
     acciones: ['crear'],
     moduloNombre: 'Cultivos',
+    },
+  {
+    recurso: 'actividades',
+    acciones: ['crear'],
+    moduloNombre: 'Actividades',
   })
   @Post()
   create(@Body() createCategoriaActividadDto: CreateCategoriaActividadDto) {
