@@ -75,7 +75,10 @@ export class UsuariosController {
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos(
+    { moduloNombre: 'Actividades', recurso: 'actividades', acciones: ['leer'] },
+    { moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] }
+  )
   @Get('search/:query')
   search(
     @Param('query') query: string,
@@ -86,7 +89,10 @@ export class UsuariosController {
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
-  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
+  @Permisos(
+    { moduloNombre: 'Actividades', recurso: 'actividades', acciones: ['leer'] },
+    { moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] }
+  )
   @Get('search/dni/:dni')
   findByDni(@Param('dni') dni: string) {
     return this.usuariosService.findByDni(+dni);

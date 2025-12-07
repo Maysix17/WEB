@@ -50,7 +50,7 @@ export class AuthorizationGuard implements CanActivate {
         `Permisos del usuario ${request.userId}: ${JSON.stringify(userPermissions)}`,
       );
 
-      const hasPermission = requiredPermissions.every((routePermission) => {
+      const hasPermission = requiredPermissions.some((routePermission) => {
         const userPermissionForResource = userPermissions.find(
           (perm) => perm.recurso === routePermission.recurso,
         );
