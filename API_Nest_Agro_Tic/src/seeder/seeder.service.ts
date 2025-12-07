@@ -667,7 +667,7 @@ export class SeederService {
   }
 
   private async seedUsuarioAdmin(rolAdmin: Rol) {
-    const dniAdmin = 123456789; // DNI por defecto para el admin (como string)
+    const dniAdmin = 123456789; // N. Documento por defecto para el admin (como string)
     try {
       const existeUsuario = await this.usuarioRepository.findOne({
         where: { dni: dniAdmin },

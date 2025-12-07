@@ -52,8 +52,8 @@ const UserInputs: React.FC<UserInputsProps & { errors?: ErrorState }> = ({
       {dni !== undefined && setDni && (
         <div>
           <TextInput
-            label="DNI"
-            placeholder="Ingrese DNI"
+            label="N. Documento"
+            placeholder="Ingrese N. Documento"
             value={dni}
             onChange={(e) => setDni(e.target.value)}
           />

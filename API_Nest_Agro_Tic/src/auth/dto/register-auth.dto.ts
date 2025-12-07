@@ -8,8 +8,8 @@ import {
 } from 'class-validator';
 
 export class RegisterAuthDto {
-  @IsNumber({}, { message: 'El DNI debe ser un valor numérico.' })
-  @IsNotEmpty({ message: 'El DNI no puede estar vacío.' })
+  @IsNumber({}, { message: 'El N. Documento debe ser un valor numérico.' })
+  @IsNotEmpty({ message: 'El N. Documento no puede estar vacío.' })
   dni: number;
 
   @IsNumber({}, { message: 'El teléfono debe ser un valor numérico.' })

@@ -77,7 +77,7 @@ const ActivityHistoryModal: React.FC<ActivityHistoryModalProps> = ({
         console.log(`[${new Date().toISOString()}] 👥 FRONTEND: Activity ${idx + 1} (${act.id}) - Usuarios asignados: ${act.usuariosAsignados?.length || 0}`);
         if (act.usuariosAsignados && act.usuariosAsignados.length > 0) {
           act.usuariosAsignados.forEach((uxa: any, uidx: number) => {
-            console.log(`[${new Date().toISOString()}] 👤 FRONTEND:   User ${uidx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (DNI: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`);
+            console.log(`[${new Date().toISOString()}] 👤 FRONTEND:   User ${uidx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (N. Documento: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`);
           });
         }
       });

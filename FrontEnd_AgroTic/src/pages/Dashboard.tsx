@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Function to get user name and role by DNI
+  // Function to get user name and role by N. Documento
   const getUserByDni = async (dni: number) => {
     try {
       const response = await axios.get(`/usuarios/search/dni/${dni}`);
@@ -170,7 +170,7 @@ const Dashboard: React.FC = () => {
         },
       };
     } catch (error) {
-      console.error('Error fetching user by DNI:', error);
+      console.error('Error fetching user by N. Documento:', error);
       return null;
     }
   };

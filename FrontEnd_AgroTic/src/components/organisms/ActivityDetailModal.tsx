@@ -194,11 +194,11 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                     {(activity as any).nombreResponsable ? (
                       <div className="p-3 bg-white rounded border">
                         <div className="font-medium text-gray-900">{(activity as any).nombreResponsable}</div>
-                        <div className="text-sm text-gray-600">DNI: {(activity as any).responsableDni}</div>
+                        <div className="text-sm text-gray-600">N. Documento: {(activity as any).responsableDni}</div>
                       </div>
                     ) : activity.dniResponsable ? (
                       <div className="p-3 bg-white rounded border">
-                        <div className="font-medium text-gray-900">DNI: {activity.dniResponsable}</div>
+                        <div className="font-medium text-gray-900">N. Documento: {activity.dniResponsable}</div>
                       </div>
                     ) : (
                       <p className="text-gray-500 italic">Sin responsable asignado</p>
@@ -218,7 +218,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                     {activity.usuariosAsignados?.filter(u => u.activo).map((uxa, idx) => (
                       <div key={idx} className="p-3 bg-white rounded border">
                         <div className="font-medium text-gray-900">{uxa.usuario.nombres} {uxa.usuario.apellidos}</div>
-                        <div className="text-sm text-gray-600">DNI: {uxa.usuario.dni}</div>
+                        <div className="text-sm text-gray-600">N. Documento: {uxa.usuario.dni}</div>
                         {uxa.usuario.ficha && (
                           <div className="text-sm text-gray-600">Ficha: {uxa.usuario.ficha.numero}</div>
                         )}

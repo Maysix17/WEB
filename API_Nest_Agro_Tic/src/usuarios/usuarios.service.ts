@@ -83,7 +83,7 @@ export class UsuariosService {
       where: [{ dni }, { correo }],
     });
     if (usuarioExistente) {
-      throw new ConflictException('El DNI o el correo ya están registrados.');
+      throw new ConflictException('El N. Documento o el correo ya están registrados.');
     }
 
     const passwordToUse = password || dni.toString();
@@ -168,7 +168,7 @@ export class UsuariosService {
         where: { dni },
       });
       if (existingUserWithDni && existingUserWithDni.id !== id) {
-        throw new ConflictException('El DNI ya está registrado por otro usuario.');
+        throw new ConflictException('El N. Documento ya está registrado por otro usuario.');
       }
     }
 
@@ -265,7 +265,7 @@ export class UsuariosService {
         where: { dni: updateProfileDto.dni },
       });
       if (existingUserWithDni && existingUserWithDni.id !== userId) {
-        throw new ConflictException('El DNI ya está registrado por otro usuario.');
+        throw new ConflictException('El N. Documento ya está registrado por otro usuario.');
       }
     }
 

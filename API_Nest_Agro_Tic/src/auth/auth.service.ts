@@ -57,7 +57,7 @@ export class AuthService {
     });
 
     if (usuarioExistente) {
-      throw new ConflictException('El DNI o el correo ya están registrados.');
+      throw new ConflictException('El N. Documento o el correo ya están registrados.');
     }
 
     let rolInvitado = await this.rolRepository.findOne({

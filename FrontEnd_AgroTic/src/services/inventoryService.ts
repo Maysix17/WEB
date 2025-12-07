@@ -219,7 +219,7 @@ export const inventoryService = {
       data.imgUrl = uploadResponse.data.url;
     }
 
-    // Get current user DNI from localStorage or context
+    // Get current user N. Documento from localStorage or context
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userDni = user.dni;
 
@@ -245,7 +245,7 @@ export const inventoryService = {
     console.log('DEBUG: updateInventoryItem called with ID:', id);
     console.log('DEBUG: updateInventoryItem data:', data);
 
-    // Get current user DNI from localStorage or context
+    // Get current user N. Documento from localStorage or context
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userDni = user.dni;
     console.log('DEBUG: userDni from localStorage:', userDni);

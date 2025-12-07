@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, Input, Select, SelectItem, Chip, Textarea } from '@heroui/react';
 import CustomButton from '../atoms/Boton';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import userSearchService from '../../services/userSearchService';
 import zoneSearchService from '../../services/zoneSearchService';
 import categoriaService from '../../services/categoriaService';
 import apiClient from '../../lib/axios/axios';
 import InputSearch from '../atoms/buscador';
+import AdminUserForm from './AdminUserForm';
+import CategoriaActividadModal from './CategoriaActividadModal';
 import Swal from 'sweetalert2';
 
 interface Usuario {
-  id: string;
-  dni: number;
-  nombres: string;
-  apellidos: string;
+    id: string;
+    dni: number;
+    nombres: string;
+    apellidos: string;
 }
 /*no hay grandes cambios*/ 
 interface Product {
@@ -71,8 +73,12 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
    const [selectedLote, setSelectedLote] = useState<Zona | null>(null);
 
    const [categoria, setCategoria] = useState('');
+
    const [descripcion, setDescripcion] = useState('');
 
+   // Modal states
+   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
    // Validation errors
    const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -98,6 +104,8 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
     setFilteredProducts([]);
     setFilteredZonas([]);
     setErrors({});
+    setIsUserModalOpen(false);
+    setIsCategoryModalOpen(false);
   };
 
   // Fetch categorias and reset form when modal opens
@@ -266,6 +274,27 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
     setSelectedLote(null);
   };
 
+  const handleUserCreated = () => {
+    // Refresh user search if there's a current search
+    if (debouncedUsuarioSearch.trim()) {
+      const fetchFilteredUsuarios = async () => {
+        try {
+          const data = await userSearchService.search(debouncedUsuarioSearch);
+          setFilteredUsuarios(data.items);
+        } catch (error) {
+          console.error('Error searching usuarios:', error);
+          setFilteredUsuarios([]);
+        }
+      };
+      fetchFilteredUsuarios();
+    }
+  };
+
+  const handleCategoryCreated = () => {
+    // Refresh categories
+    fetchCategorias();
+  };
+
   const handleUseSurplus = async (id: string) => {
     const product = selectedProducts[id].product;
     const surplus = product.stock_parcial || 0;
@@ -405,7 +434,17 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
             {/* Left Panel: Usuarios */}
             <div className="space-y-4">
               <div className="border rounded-lg p-4 bg-gray-50">
-                <label className="block text-sm font-medium mb-2">Usuario Asignados</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">Usuario Asignados</label>
+                  <CustomButton
+                    icon={<PlusIcon className="w-4 h-4" />}
+                    tooltip="Registrar nuevo usuario"
+                    onClick={() => setIsUserModalOpen(true)}
+                    color="primary"
+                    variant="light"
+                    size="sm"
+                  />
+                </div>
                 <InputSearch
                   placeholder="Buscar Documento..."
                   value={usuarioSearch}
@@ -424,7 +463,7 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
                             onClick={() => handleSelectUsuario(usuario)}
                           >
                             <div className="font-medium">{usuario.nombres} {usuario.apellidos}</div>
-                            <div className="text-sm text-gray-600">DNI: {usuario.dni}</div>
+                            <div className="text-sm text-gray-600">N. Documento: {usuario.dni}</div>
                           </button>
                         ))
                       )}
@@ -437,7 +476,7 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
                 <div className="flex flex-wrap gap-2">
                   {selectedUsuarios.map((usuario) => (
                     <Chip key={usuario.id} onClose={() => handleRemoveUsuario(usuario.id)} variant="flat">
-                      {usuario.dni}
+                      N. Documento: {usuario.dni}
                     </Chip>
                   ))}
                 </div>
@@ -550,8 +589,18 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div className="space-y-4">
               <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">Seleccione categoría</label>
+                  <CustomButton
+                    icon={<PlusIcon className="w-4 h-4" />}
+                    tooltip="Registrar nueva categoría"
+                    onClick={() => setIsCategoryModalOpen(true)}
+                    color="primary"
+                    variant="light"
+                    size="sm"
+                  />
+                </div>
                 <Select
-                  label="Seleccione categoría"
                   selectedKeys={categoria ? [categoria] : []}
                   onSelectionChange={(keys) => setCategoria(Array.from(keys)[0] as string)}
                 >
@@ -620,6 +669,17 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
           </div>
         </ModalBody>
       </ModalContent>
+
+      <AdminUserForm
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        onUserCreated={handleUserCreated}
+      />
+
+      <CategoriaActividadModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </Modal>
   );
 };

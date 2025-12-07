@@ -94,7 +94,7 @@ const ActivityManagementDetailModal: React.FC<ActivityManagementDetailModalProps
                 {activity.usuariosAsignados?.filter(u => u.activo).map((uxa, idx) => (
                   <div key={idx} className="p-2 border rounded">
                     <div className="font-medium">{uxa.usuario.nombres} {uxa.usuario.apellidos}</div>
-                    <div className="text-sm text-gray-600">DNI: {uxa.usuario.dni}</div>
+                    <div className="text-sm text-gray-600">N. Documento: {uxa.usuario.dni}</div>
                     {uxa.usuario.ficha && (
                       <div className="text-sm text-gray-600">Ficha: {uxa.usuario.ficha.numero}</div>
                     )}

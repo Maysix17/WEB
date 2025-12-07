@@ -70,7 +70,7 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
       console.log(`[${new Date().toISOString()}] 👥 FRONTEND: Activity has ${activity.usuariosAsignados?.length || 0} assigned users`);
       if (activity.usuariosAsignados && activity.usuariosAsignados.length > 0) {
         activity.usuariosAsignados.forEach((uxa, idx) => {
-          console.log(`[${new Date().toISOString()}] 👤 FRONTEND: Assigned user ${idx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (DNI: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`);
+          console.log(`[${new Date().toISOString()}] 👤 FRONTEND: Assigned user ${idx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (N. Documento: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`);
         });
       } else {
         console.log(`[${new Date().toISOString()}] ⚠️ FRONTEND: No assigned users found in activity data`);
@@ -116,7 +116,7 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
                   {(activity as any).nombreResponsable ? (
                     <div className="p-3 bg-white rounded border">
                       <div className="font-medium text-gray-900">{(activity as any).nombreResponsable}</div>
-                      <div className="text-sm text-gray-600">DNI: {(activity as any).responsableDni}</div>
+                      <div className="text-sm text-gray-600">N. Documento: {(activity as any).responsableDni}</div>
                     </div>
                   ) : (
                     <p className="text-gray-500 italic">Sin responsable asignado</p>
@@ -141,7 +141,7 @@ const ActivityHistoryDetailModal: React.FC<ActivityHistoryDetailModalProps> = ({
                       allUsers.map((uxa, idx) => (
                         <div key={idx} className="p-3 bg-white rounded border">
                           <div className="font-medium text-gray-900">{uxa.usuario.nombres} {uxa.usuario.apellidos}</div>
-                          <div className="text-sm text-gray-600">DNI: {uxa.usuario.dni}</div>
+                          <div className="text-sm text-gray-600">N. Documento: {uxa.usuario.dni}</div>
                           {uxa.usuario.ficha && (
                             <div className="text-sm text-gray-600">Ficha: {uxa.usuario.ficha.numero}</div>
                           )}

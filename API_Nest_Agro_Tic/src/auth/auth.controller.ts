@@ -41,7 +41,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     console.log(
-      'AuthController: Login attempt for user with DNI:',
+      'AuthController: Login attempt for user with N. Documento:',
       loginDto.dni,
     );
     console.log('AuthController: NODE_ENV:', process.env.NODE_ENV);

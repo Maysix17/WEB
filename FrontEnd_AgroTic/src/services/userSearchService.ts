@@ -2,7 +2,7 @@ import apiClient from '../lib/axios/axios';
 
 export interface User {
   id: string;
-  numero_documento: number;
+  dni: number;
   nombres: string;
   apellidos: string;
   correo_electronico: string;

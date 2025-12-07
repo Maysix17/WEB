@@ -18,7 +18,7 @@ interface Ficha {
 
 interface User {
   id: string;
-  numero_documento: number;
+  dni: number;
   nombres: string;
   apellidos: string;
   correo_electronico: string;
@@ -63,7 +63,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
         setFormData({
           nombres: editingUser.nombres || '',
           apellidos: editingUser.apellidos || '',
-          dni: editingUser.numero_documento?.toString() || '',
+          dni: editingUser.dni?.toString() || '',
           telefono: editingUser.telefono?.toString() || '',
           correo: editingUser.correo_electronico || '',
           password: '', // Don't populate password for security
@@ -125,21 +125,9 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
       if (editingUser) {
         // Update existing user
         await updateAdminUser(editingUser.id, formData);
-        Swal.fire({
-          icon: 'success',
-          title: 'Usuario actualizado',
-          text: 'El usuario ha sido actualizado exitosamente.',
-          confirmButtonText: 'Aceptar',
-        });
       } else {
         // Create new user
         await registerAdminUser(formData);
-        Swal.fire({
-          icon: 'success',
-          title: 'Usuario creado',
-          text: 'El usuario ha sido registrado exitosamente.',
-          confirmButtonText: 'Aceptar',
-        });
       }
       onUserCreated();
       onClose();
@@ -238,7 +226,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
           {/* DNI y Teléfono */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">N. Documento</label>
               <input
                 type="number"
                 min="0"
@@ -284,7 +272,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
 
           {/* Nota */}
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-sm text-blue-700">
-            <strong>Nota:</strong> La contraseña se establecerá automáticamente como el DNI del usuario.
+            <strong>Nota:</strong> La contraseña se establecerá automáticamente como el N. Documento del usuario.
           </div>
 
           {/* Rol */}

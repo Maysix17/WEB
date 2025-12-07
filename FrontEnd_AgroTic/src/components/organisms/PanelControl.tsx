@@ -70,7 +70,7 @@ const PanelControl: React.FC = () => {
       key: 'buscar',
       label: 'Usuario',
       type: 'text' as const,
-      placeholder: 'Buscar por DNI...'
+      placeholder: 'Buscar por N. Documento...'
     }
   ];
 
@@ -125,7 +125,7 @@ const PanelControl: React.FC = () => {
         <GenericDataTable
           data={results}
           columns={[
-            { key: 'numero_documento', label: 'N. de documento', width: 'w-[15%]' },
+            { key: 'dni', label: 'N. de documento', width: 'w-[15%]' },
             { key: 'nombres', label: 'Nombres', width: 'w-[15%]' },
             { key: 'apellidos', label: 'Apellidos', width: 'w-[15%]' },
             { key: 'correo_electronico', label: 'Correo', width: 'w-[20%]' },
@@ -161,7 +161,7 @@ const PanelControl: React.FC = () => {
             </>
           )}
           mobileFields={(user) => [
-            { label: 'DNI', value: user.numero_documento },
+            { label: 'N. Documento', value: user.dni },
             { label: 'Nombres', value: user.nombres },
             { label: 'Apellidos', value: user.apellidos },
             { label: 'Correo', value: user.correo_electronico },

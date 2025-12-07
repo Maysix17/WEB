@@ -417,7 +417,7 @@ export class ActividadesService {
       if (act.usuariosAsignados && act.usuariosAsignados.length > 0) {
         act.usuariosAsignados.forEach((uxa, uidx) => {
           console.log(
-            `[${new Date().toISOString()}] 👤 BACKEND:   User ${uidx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (DNI: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`,
+            `[${new Date().toISOString()}] 👤 BACKEND:   User ${uidx + 1}: ${uxa.usuario?.nombres} ${uxa.usuario?.apellidos} (N. Documento: ${uxa.usuario?.dni}, Activo: ${uxa.activo})`,
           );
         });
       }
@@ -445,7 +445,7 @@ export class ActividadesService {
   private async enrichActividadesWithResponsable(
     actividades: Actividad[],
   ): Promise<Actividad[]> {
-    // Get all unique DNI responsables
+    // Get all unique N. Documento responsables
     const dniResponsables = [
       ...new Set(
         actividades.map((act) => act.dniResponsable).filter((dni) => dni),
@@ -462,7 +462,7 @@ export class ActividadesService {
       where: dniResponsables.map((dni) => ({ dni })),
     });
 
-    // Create a map of DNI to user info
+    // Create a map of N. Documento to user info
     const userMap = new Map<number, { nombres: string; apellidos: string }>();
     usuarios.forEach((user) => {
       userMap.set(user.dni, {
