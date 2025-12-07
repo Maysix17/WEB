@@ -179,7 +179,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onRo
               <div>Cargando módulos...</div>
             ) : (
               <div className="space-y-4">
-                {modulos.map((modulo) => (
+                {modulos.filter(modulo => modulo.recursos.length > 0).map((modulo) => (
                   <Card key={modulo.id}>
                     <CardHeader className="flex justify-between">
                       <div>

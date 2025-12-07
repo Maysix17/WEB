@@ -2,9 +2,15 @@ import apiClient from '../lib/axios/axios';
 
 export interface User {
   id: string;
+  numero_documento: number;
   nombres: string;
   apellidos: string;
-  dni: number;
+  correo_electronico: string;
+  telefono: number;
+  id_ficha: string;
+  rol: string;
+  rolId?: string;
+  fichaId?: string;
 }
 
 export interface PaginatedResponse<T> {

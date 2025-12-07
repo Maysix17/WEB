@@ -6,8 +6,10 @@ import CreateRoleModal from './CreateRoleModal';
 import ManageRolesModal from './ManageRolesModal';
 import FichaModal from './FichaModal';
 import userSearchService from '../../services/userSearchService';
+import { usePermission } from '../../contexts/PermissionContext';
 
 const PanelControl: React.FC = () => {
+  const { hasPermission } = usePermission();
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -15,6 +17,7 @@ const PanelControl: React.FC = () => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isManageRolesModalOpen, setIsManageRolesModalOpen] = useState(false);
   const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
 
   const handleSearch = useCallback(async () => {
     const searchTerm = filters.buscar || '';
@@ -80,6 +83,24 @@ const PanelControl: React.FC = () => {
     setResults([]);
   }, []);
 
+  // Check if user has access to panel control
+  const canAccessPanel = hasPermission('Panel de Control', 'panel_de_control', 'leer');
+  const canCreateUsers = hasPermission('Panel de Control', 'panel_de_control', 'leer');
+  const canUpdateUsers = hasPermission('Panel de Control', 'panel_de_control', 'leer');
+  const canCreateRoles = hasPermission('Panel de Control', 'panel_de_control', 'leer');
+  const canManageRoles = hasPermission('Panel de Control', 'panel_de_control', 'leer');
+
+  if (!canAccessPanel) {
+    return (
+      <div className="flex flex-col w-full bg-gray-50 items-center justify-center" style={{ height: 'calc(0px + 93vh)' }}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-700 mb-4">Acceso Denegado</h2>
+          <p className="text-gray-500">No tienes permisos para acceder al Panel de Control.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col w-full bg-gray-50">
       <div className="flex flex-col gap-6" style={{ height: 'calc(0px + 93vh)', overflowY: 'auto' }}>
@@ -92,10 +113,10 @@ const PanelControl: React.FC = () => {
           onClear={handleClear}
           loading={loading}
           mainFilters={mainFilters}
-          onCreate={() => setIsUserFormOpen(true)}
+          onCreate={canCreateUsers ? () => setIsUserFormOpen(true) : undefined}
           onManageActions={[
-            { label: 'Crear nuevo rol', icon: <span>➕</span>, onClick: () => setIsRoleModalOpen(true) },
-            { label: 'Gestionar roles', icon: <span>⚙️</span>, onClick: () => setIsManageRolesModalOpen(true) },
+            ...(canCreateRoles ? [{ label: 'Crear nuevo rol', icon: <span>➕</span>, onClick: () => setIsRoleModalOpen(true) }] : []),
+            ...(canManageRoles ? [{ label: 'Gestionar roles', icon: <span>⚙️</span>, onClick: () => setIsManageRolesModalOpen(true) }] : []),
             { label: 'Gestionar fichas', icon: <span>📄</span>, onClick: () => setIsFichaModalOpen(true) }
           ]}
         />
@@ -121,11 +142,19 @@ const PanelControl: React.FC = () => {
           emptyDescription="No hay usuarios que coincidan con los filtros aplicados."
           onClearFilters={handleClear}
           countLabel="usuarios"
-          actions={() => (
+          actions={(user) => (
             <>
-              <button className="text-blue-500 hover:text-blue-700 text-sm underline mr-2">
-                Editar
-              </button>
+              {canUpdateUsers && (
+                <button
+                  className="text-blue-500 hover:text-blue-700 text-sm underline mr-2"
+                  onClick={() => {
+                    setEditingUser(user);
+                    setIsUserFormOpen(true);
+                  }}
+                >
+                  Editar
+                </button>
+              )}
               <button className="text-red-500 hover:text-red-700 text-sm underline">
                 Eliminar
               </button>
@@ -140,12 +169,15 @@ const PanelControl: React.FC = () => {
             { label: 'ID Ficha', value: user.id_ficha },
             { label: 'Rol', value: <span className={`px-2 py-1 rounded text-sm ${getBadgeClass(user.rol)}`}>{user.rol}</span> }
           ]}
-          mobileActions={() => [
-            {
+          mobileActions={(user) => [
+            ...(canUpdateUsers ? [{
               label: 'Editar',
-              onClick: () => {}, // Aquí puedes abrir formulario de edición
+              onClick: () => {
+                setEditingUser(user);
+                setIsUserFormOpen(true);
+              },
               size: 'sm' as const,
-            },
+            }] : []),
             {
               label: 'Eliminar',
               onClick: () => {}, // Aquí abrir confirmación
@@ -157,10 +189,18 @@ const PanelControl: React.FC = () => {
 
       <AdminUserForm
         isOpen={isUserFormOpen}
-        onClose={() => setIsUserFormOpen(false)}
-        onUserCreated={() => {
-          // Optionally refresh the list or show a message
+        onClose={() => {
+          setIsUserFormOpen(false);
+          setEditingUser(null);
         }}
+        onUserCreated={() => {
+          // Refresh the search results
+          if (filters.buscar?.trim()) {
+            handleSearch();
+          }
+          setEditingUser(null);
+        }}
+        editingUser={editingUser}
       />
 
       <CreateRoleModal

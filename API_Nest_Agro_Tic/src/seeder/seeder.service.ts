@@ -47,9 +47,7 @@ const PERMISOS_BASE = [
   { moduloNombre: 'Inicio', recurso: 'acceso_inicio', acciones: ACCION_VER },
   { moduloNombre: 'Inicio', recurso: 'dashboard', acciones: ['leer'] },
 
-  { moduloNombre: 'Usuarios', recurso: 'usuarios', acciones: ACCIONES_CRUD },
-  { moduloNombre: 'Usuarios', recurso: 'roles', acciones: ACCIONES_CRUD },
-  { moduloNombre: 'Usuarios', recurso: 'panel de control', acciones: ['ver'] },
+  { moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ACCIONES_CRUD },
 
 
   // Módulo de zonas
@@ -259,6 +257,9 @@ export class SeederService {
 
       // Remove the "mqtt_config" resource from the zonas module
       await this.removeMqttConfigFromZonas();
+
+      // Remove the "usuarios" and "roles" resources from the Usuarios module
+      await this.removeUsuariosAndRolesFromUsuarios();
     } catch (error) {
       this.logger.error(
         'Error sincronizando permisos: ' + error.message,
@@ -379,6 +380,34 @@ export class SeederService {
     }
   }
 
+  private async removeUsuariosAndRolesFromUsuarios() {
+    this.logger.log('Removiendo recursos "usuarios" y "roles" del módulo Usuarios...', 'Seeder');
+    try {
+      // Find all resources named "usuarios" or "roles"
+      const recursosUsuariosRoles = await this.recursoRepository.find({
+        where: [{ nombre: 'usuarios' }, { nombre: 'roles' }],
+        relations: ['modulo'],
+      });
+
+      for (const recurso of recursosUsuariosRoles) {
+        if (recurso.modulo && recurso.modulo.nombre === 'Usuarios') {
+          // Remove the resource (permissions will be deleted by CASCADE)
+          await this.recursoRepository.remove(recurso);
+          this.logger.log(`Recurso "${recurso.nombre}" eliminado del módulo Usuarios.`, 'Seeder');
+        }
+      }
+
+      if (recursosUsuariosRoles.length === 0) {
+        this.logger.log('No se encontraron recursos "usuarios" o "roles". Omitiendo.', 'Seeder');
+      }
+    } catch (error) {
+      this.logger.error(
+        'Error removiendo recursos "usuarios" y "roles" del módulo Usuarios: ' + error.message,
+        'Seeder',
+      );
+    }
+  }
+
 
   private async seedRolAdmin(): Promise<Rol | null> {
     const nombreRol = 'ADMIN';
@@ -395,6 +424,16 @@ export class SeederService {
           'Seeder',
         );
       }
+
+      // Ensure admin has panel de control permission
+      const userManagementPermisos = todosLosPermisos.filter(p =>
+        p.recurso.nombre === 'panel_de_control'
+      );
+
+      this.logger.log(
+        `Admin tendrá ${userManagementPermisos.length} permisos de gestión de usuarios: ${userManagementPermisos.map(p => `${p.recurso.nombre}:${p.accion}`).join(', ')}`,
+        'Seeder',
+      );
 
       if (!rol) {
         this.logger.log(`Creando el rol "${nombreRol}"...`, 'Seeder');
@@ -450,16 +489,13 @@ export class SeederService {
       const allPermisos = await this.permisoRepository.find({
         relations: ['recurso', 'recurso.modulo'],
       });
-      const permisoCrearUsuarios = allPermisos.find(
-        (p) => p.accion === 'crear' && p.recurso.nombre === 'usuarios',
-      );
 
       // Asignar permisos de IoT al INSTRUCTOR
       const permisosIoT = allPermisos.filter(
         (p) => p.recurso.modulo?.nombre === 'IoT',
       );
 
-      if (rolInstructor && permisoCrearUsuarios) {
+      if (rolInstructor) {
         // Cargamos el rol con sus permisos para no sobreescribirlos
         const rolInstructorConPermisos = await this.rolRepository.findOne({
           where: { id: rolInstructor.id },
@@ -468,18 +504,6 @@ export class SeederService {
 
         // ✅ Comprobamos que el rol se encontró antes de usarlo
         if (rolInstructorConPermisos) {
-          const tienePermiso = rolInstructorConPermisos.permisos.some(
-            (p) => p.id === permisoCrearUsuarios.id,
-          );
-          if (!tienePermiso) {
-            rolInstructorConPermisos.permisos.push(permisoCrearUsuarios);
-            await this.rolRepository.save(rolInstructorConPermisos);
-            this.logger.log(
-              `Permiso 'crear usuarios' asignado a INSTRUCTOR.`,
-              'Seeder',
-            );
-          }
-
           // Asignar permisos de IoT al INSTRUCTOR
           for (const permisoIoT of permisosIoT) {
             const tienePermisoIoT = rolInstructorConPermisos.permisos.some(

@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Raw } from 'typeorm';
+import { Repository, Like, Not, Raw } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from './entities/usuario.entity';
 import { Roles } from '../roles/entities/role.entity';
@@ -77,16 +77,7 @@ export class UsuariosService {
     }
 
     // 3. Lógica de autorización simplificada
-    // Solo los ADMIN pueden crear otros usuarios ADMIN
-    if (
-      requestingUser &&
-      rolAAsignar.nombre === 'ADMIN' &&
-      requestingUser.rol !== 'ADMIN'
-    ) {
-      throw new ForbiddenException(
-        'Solo los administradores pueden crear usuarios con rol ADMIN.',
-      );
-    }
+    // Usuarios con acceso al panel pueden crear cualquier rol
 
     const usuarioExistente = await this.usuarioRepository.findOne({
       where: [{ dni }, { correo }],
@@ -127,11 +118,12 @@ export class UsuariosService {
     const qb = this.usuarioRepository
       .createQueryBuilder('u')
       .leftJoinAndSelect('u.ficha', 'f')
+      .leftJoinAndSelect('u.rol', 'r')
       .where(
         'u.nombres ILIKE :query OR u.apellidos ILIKE :query OR CAST(u.dni AS TEXT) ILIKE :query',
         { query: `%${query}%` },
       )
-      .select(['u.id', 'u.nombres', 'u.apellidos', 'u.dni', 'f.numero'])
+      .select(['u.id', 'u.nombres', 'u.apellidos', 'u.dni', 'u.telefono', 'u.correo', 'f.id', 'f.numero', 'r.id', 'r.nombre'])
       .skip(skip)
       .take(limit);
 
@@ -149,8 +141,93 @@ export class UsuariosService {
     return `This action returns a #${id} usuario`;
   }
 
-  update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
-    return `This action updates a #${id} usuario`;
+  async update(id: string, updateUsuarioDto: UpdateUsuarioDto, requestingUser?: RequestingUser) {
+    const {
+      nombres,
+      apellidos,
+      dni,
+      correo,
+      telefono,
+      rolId,
+      fichaId,
+    } = updateUsuarioDto;
+
+    // Find the user to update
+    const user = await this.usuarioRepository.findOne({
+      where: { id },
+      relations: ['rol', 'ficha'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID "${id}" no encontrado.`);
+    }
+
+    // Check for conflicts with DNI and email (excluding current user)
+    if (dni !== undefined) {
+      const existingUserWithDni = await this.usuarioRepository.findOne({
+        where: { dni },
+      });
+      if (existingUserWithDni && existingUserWithDni.id !== id) {
+        throw new ConflictException('El DNI ya está registrado por otro usuario.');
+      }
+    }
+
+    if (correo !== undefined) {
+      const existingUserWithEmail = await this.usuarioRepository.findOne({
+        where: { correo },
+      });
+      if (existingUserWithEmail && existingUserWithEmail.id !== id) {
+        throw new ConflictException('El correo ya está registrado por otro usuario.');
+      }
+    }
+
+    // Handle role changes
+    let newRol: Roles | null = null;
+    if (rolId !== undefined) {
+      newRol = await this.rolRepository.findOneBy({ id: rolId });
+      if (!newRol) {
+        throw new NotFoundException(`El rol con ID "${rolId}" no fue encontrado.`);
+      }
+    }
+
+    // Handle ficha changes
+    let newFicha: Ficha | null = null;
+    if (fichaId !== undefined) {
+      if (fichaId.trim() === '') {
+        newFicha = null; // Remove ficha
+      } else {
+        newFicha = await this.fichaRepository.findOneBy({ id: fichaId });
+        if (!newFicha) {
+          throw new NotFoundException(`La ficha con ID "${fichaId}" no fue encontrada.`);
+        }
+      }
+    }
+
+    // Validate ficha requirement for APRENDIZ role
+    const finalRol = newRol || user.rol;
+    const finalFicha = fichaId !== undefined ? newFicha : user.ficha;
+
+    if (finalRol && finalRol.nombre?.toLowerCase() === 'aprendiz' && !finalFicha) {
+      throw new BadRequestException(
+        'Debe proporcionar una ficha para usuarios con rol APRENDIZ.',
+      );
+    }
+
+    // Update user fields
+    if (nombres !== undefined) user.nombres = nombres;
+    if (apellidos !== undefined) user.apellidos = apellidos;
+    if (dni !== undefined) user.dni = dni;
+    if (correo !== undefined) user.correo = correo;
+    if (telefono !== undefined) user.telefono = telefono;
+    if (rolId !== undefined) user.rol = newRol || undefined;
+    if (fichaId !== undefined) user.ficha = newFicha || undefined;
+
+    // Save updated user
+    const updatedUser = await this.usuarioRepository.save(user);
+
+    // Return user without password hash
+    const { passwordHash, ...result } = updatedUser;
+    return result;
   }
 
   remove(id: number) {
@@ -208,6 +285,7 @@ export class UsuariosService {
 
     return [
       {
+        id: user.id,
         numero_documento: user.dni,
         nombres: user.nombres,
         apellidos: user.apellidos,
@@ -215,6 +293,8 @@ export class UsuariosService {
         telefono: user.telefono,
         id_ficha: user.ficha?.numero || 'No tiene ficha',
         rol: user.rol?.nombre,
+        rolId: user.rol?.id,
+        fichaId: user.ficha?.id,
       },
     ];
   }

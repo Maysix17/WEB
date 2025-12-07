@@ -76,7 +76,33 @@ export const refreshToken = async (): Promise<void> => {
 };
 
 export const registerAdminUser = async (formData: any): Promise<any> => {
-  const response = await apiClient.post("/usuarios/register", formData);
+  // Convert string values to appropriate types for backend
+  const payload = {
+    ...formData,
+    dni: parseInt(formData.dni, 10),
+    telefono: parseInt(formData.telefono, 10),
+  };
+
+  const response = await apiClient.post("/usuarios/register", payload);
+  return response.data;
+};
+
+export const updateAdminUser = async (userId: string, formData: any): Promise<any> => {
+  // Convert string values to appropriate types for backend
+  const payload = {
+    ...formData,
+    dni: formData.dni ? parseInt(formData.dni, 10) : undefined,
+    telefono: formData.telefono ? parseInt(formData.telefono, 10) : undefined,
+  };
+
+  // Remove empty strings and undefined values
+  Object.keys(payload).forEach(key => {
+    if (payload[key] === '' || payload[key] === undefined) {
+      delete payload[key];
+    }
+  });
+
+  const response = await apiClient.patch(`/usuarios/${userId}`, payload);
   return response.data;
 };
 

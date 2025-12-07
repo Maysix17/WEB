@@ -3,7 +3,7 @@ import { Modal, ModalContent } from '@heroui/react';
 import CustomButton from '../atoms/Boton';
 import { getRoles } from '../../services/rolesService';
 import { getFichas } from '../../services/fichasService';
-import { registerAdminUser } from '../../services/authService';
+import { registerAdminUser, updateAdminUser } from '../../services/authService';
 import Swal from 'sweetalert2';
 
 interface Role {
@@ -16,13 +16,27 @@ interface Ficha {
   numero: number;
 }
 
+interface User {
+  id: string;
+  numero_documento: number;
+  nombres: string;
+  apellidos: string;
+  correo_electronico: string;
+  telefono: number;
+  id_ficha: string;
+  rol: string;
+  rolId?: string;
+  fichaId?: string;
+}
+
 interface AdminUserFormProps {
   isOpen: boolean;
   onClose: () => void;
   onUserCreated: () => void;
+  editingUser?: User | null;
 }
 
-const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCreated }) => {
+const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCreated, editingUser }) => {
   const [formData, setFormData] = useState({
     nombres: '',
     apellidos: '',
@@ -43,8 +57,34 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
     if (isOpen) {
       fetchRoles();
       fetchFichas();
+
+      if (editingUser) {
+        // Populate form with editing user data
+        setFormData({
+          nombres: editingUser.nombres || '',
+          apellidos: editingUser.apellidos || '',
+          dni: editingUser.numero_documento?.toString() || '',
+          telefono: editingUser.telefono?.toString() || '',
+          correo: editingUser.correo_electronico || '',
+          password: '', // Don't populate password for security
+          rolId: editingUser.rolId || '',
+          fichaId: editingUser.fichaId || '',
+        });
+      } else {
+        // Reset form for new user creation
+        setFormData({
+          nombres: '',
+          apellidos: '',
+          dni: '',
+          telefono: '',
+          correo: '',
+          password: '',
+          rolId: '',
+          fichaId: '',
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editingUser]);
 
   const fetchRoles = async () => {
     try {
@@ -82,13 +122,25 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
     setErrors({});
 
     try {
-      await registerAdminUser(formData);
-      Swal.fire({
-        icon: 'success',
-        title: 'Usuario creado',
-        text: 'El usuario ha sido registrado exitosamente.',
-        confirmButtonText: 'Aceptar',
-      });
+      if (editingUser) {
+        // Update existing user
+        await updateAdminUser(editingUser.id, formData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario actualizado',
+          text: 'El usuario ha sido actualizado exitosamente.',
+          confirmButtonText: 'Aceptar',
+        });
+      } else {
+        // Create new user
+        await registerAdminUser(formData);
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario creado',
+          text: 'El usuario ha sido registrado exitosamente.',
+          confirmButtonText: 'Aceptar',
+        });
+      }
       onUserCreated();
       onClose();
       setFormData({
@@ -116,7 +168,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
         });
         setErrors(newErrors);
       } else {
-        setErrors({ general: 'Error al crear el usuario.' });
+        setErrors({ general: editingUser ? 'Error al actualizar el usuario.' : 'Error al crear el usuario.' });
       }
     } finally {
       setIsLoading(false);
@@ -147,7 +199,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
         "
       >
         <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center sm:text-left">
-          Registrar Nuevo Usuario
+          {editingUser ? 'Editar Usuario' : 'Registrar Nuevo Usuario'}
         </h2>
 
         <form
@@ -286,7 +338,7 @@ const AdminUserForm: React.FC<AdminUserFormProps> = ({ isOpen, onClose, onUserCr
               Cancelar
             </CustomButton>
             <CustomButton
-              text={isLoading ? 'Creando...' : 'Crear Usuario'}
+              text={isLoading ? (editingUser ? 'Actualizando...' : 'Creando...') : (editingUser ? 'Actualizar Usuario' : 'Crear Usuario')}
               type="submit"
               disabled={isLoading}
               className="w-full sm:w-auto"

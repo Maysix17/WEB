@@ -39,31 +39,43 @@ export class UsuariosController {
   }
 
   @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Post('register')
   create(@Body() createUserDto: CreateUsuarioDto, @Req() req: any) {
     return this.usuariosService.createUserByPanel(createUserDto, req.user);
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Get()
   findAll() {
     return this.usuariosService.findAll();
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usuariosService.findOne(+id);
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto) {
-    return this.usuariosService.update(+id, updateUsuarioDto);
+  update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto, @Req() req: any) {
+    const requestingUser = req.user ? { rol: req.user.rol?.nombre } : undefined;
+    return this.usuariosService.update(id, updateUsuarioDto, requestingUser);
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usuariosService.remove(+id);
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Get('search/:query')
   search(
     @Param('query') query: string,
@@ -73,8 +85,11 @@ export class UsuariosController {
     return this.usuariosService.search(query, page, limit);
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizationGuard)
+  @Permisos({ moduloNombre: 'Panel de Control', recurso: 'panel_de_control', acciones: ['leer'] })
   @Get('search/dni/:dni')
   findByDni(@Param('dni') dni: string) {
     return this.usuariosService.findByDni(+dni);
   }
 }
+

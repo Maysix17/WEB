@@ -154,9 +154,21 @@ const UnifiedProductModal: React.FC<UnifiedProductModalProps> = ({
       console.log('DEBUG: data to send:', data);
 
       if (editItem) {
-        // Update existing item
-        console.log('DEBUG: Updating item with ID:', editItem.id);
-        await inventoryService.updateInventoryItem(editItem.id, data);
+        // Update existing product
+        console.log('DEBUG: Updating product with ID:', editItem.producto.id);
+        // Note: For now, we're only updating the product. Lote updates would need separate handling
+        const productData = {
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          sku: data.sku,
+          precioCompra: data.precioCompra,
+          capacidadPresentacion: data.capacidadPresentacion,
+          fkCategoriaId: data.fkCategoriaId,
+          fkUnidadMedidaId: data.fkUnidadMedidaId,
+          vidaUtilPromedioPorUsos: data.vidaUtilPromedioPorUsos,
+          imgUrl: data.imgUrl,
+        };
+        await inventoryService.updateProduct(editItem.producto.id, productData);
         Swal.fire({
           icon: 'success',
           title: 'Producto actualizado',

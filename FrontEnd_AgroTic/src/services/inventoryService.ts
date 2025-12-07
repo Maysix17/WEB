@@ -257,4 +257,28 @@ export const inventoryService = {
     console.log('DEBUG: updateInventoryItem response:', response);
     return response.data;
   },
+
+  updateProduct: async (id: string, data: any): Promise<any> => {
+    console.log('DEBUG: updateProduct called with ID:', id);
+    console.log('DEBUG: updateProduct data:', data);
+
+    const formData = new FormData();
+    formData.append('nombre', data.nombre);
+    if (data.descripcion) formData.append('descripcion', data.descripcion);
+    if (data.sku) formData.append('sku', data.sku);
+    formData.append('precioCompra', data.precioCompra.toString());
+    formData.append('capacidadPresentacion', data.capacidadPresentacion.toString());
+    if (data.fkCategoriaId) formData.append('fkCategoriaId', data.fkCategoriaId);
+    if (data.fkUnidadMedidaId) formData.append('fkUnidadMedidaId', data.fkUnidadMedidaId);
+    if (data.vidaUtilPromedioPorUsos) formData.append('vidaUtilPromedioPorUsos', data.vidaUtilPromedioPorUsos.toString());
+    if (data.imgUrl && data.imgUrl instanceof File) formData.append('imgUrl', data.imgUrl);
+
+    const response = await apiClient.patch(`/productos/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('DEBUG: updateProduct response:', response);
+    return response.data;
+  },
 };
