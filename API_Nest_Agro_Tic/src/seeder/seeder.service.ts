@@ -75,8 +75,8 @@ const PERMISOS_BASE = [
   // Módulo de Panel de Control
   {
     moduloNombre: 'Usuarios',
-    recurso: 'panel_de_control',
-    acciones: ['leer'],
+    recurso: 'panel de control',
+    acciones: ['ver'],
   },
 
   // Módulo de Inventario
