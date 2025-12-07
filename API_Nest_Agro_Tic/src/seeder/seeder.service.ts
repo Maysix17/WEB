@@ -554,6 +554,11 @@ export class SeederService {
         (p) => p.recurso.modulo?.nombre === 'IoT',
       );
 
+      // Asignar permisos de Cultivos al INSTRUCTOR
+      const permisosCultivos = allPermisos.filter(
+        (p) => p.recurso.modulo?.nombre === 'Cultivos',
+      );
+
       if (rolInstructor) {
         // Cargamos el rol con sus permisos para no sobreescribirlos
         const rolInstructorConPermisos = await this.rolRepository.findOne({
@@ -572,9 +577,20 @@ export class SeederService {
               rolInstructorConPermisos.permisos.push(permisoIoT);
             }
           }
+
+          // Asignar permisos de Cultivos al INSTRUCTOR
+          for (const permisoCultivos of permisosCultivos) {
+            const tienePermisoCultivos = rolInstructorConPermisos.permisos.some(
+              (p) => p.id === permisoCultivos.id,
+            );
+            if (!tienePermisoCultivos) {
+              rolInstructorConPermisos.permisos.push(permisoCultivos);
+            }
+          }
+
           await this.rolRepository.save(rolInstructorConPermisos);
           this.logger.log(
-            `Permisos de IoT asignados a INSTRUCTOR.`,
+            `Permisos de IoT y Cultivos asignados a INSTRUCTOR.`,
             'Seeder',
           );
 

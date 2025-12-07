@@ -4,11 +4,13 @@ import CustomButton from '../atoms/Boton';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { PlusIcon, PencilIcon, TrashIcon, PlayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import MqttConfigModal from './MqttConfigModal';
+import { usePermission } from '../../contexts/PermissionContext';
 
 const MqttManagementModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
+  const { hasPermission } = usePermission();
   const [mqttConfigs, setMqttConfigs] = useState<MqttConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -16,6 +18,7 @@ const MqttManagementModal: React.FC<{
   const [testingConfig, setTestingConfig] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latency?: number }>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,17 +49,21 @@ const MqttManagementModal: React.FC<{
   };
 
   const handleDeleteConfig = async (configId: string) => {
-    if (!confirm('¿Está seguro de eliminar esta configuración?')) return;
-
     try {
       setSuccessMessage(null);
+      setErrorMessage(null);
       await mqttConfigService.delete(configId);
       await loadConfigs();
       setSuccessMessage('Configuración eliminada exitosamente.');
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting config:', error);
-      alert('Error al eliminar configuración');
+      if (error.response?.status === 409 || error.response?.data?.message?.includes('uso')) {
+        setErrorMessage('No se puede eliminar la configuración porque está siendo usada en una o más zonas.');
+      } else {
+        setErrorMessage('No se puede eliminar la configuración porque está siendo usada en una o más zonas.');
+      }
+      setTimeout(() => setErrorMessage(null), 3000);
     }
   };
 
@@ -108,13 +115,15 @@ const MqttManagementModal: React.FC<{
           <ModalHeader>
             <div className="flex items-center justify-between w-full">
               <h2 className="text-lg font-semibold">Gestión de Configuraciones de Bróker</h2>
-              <CustomButton
-                type="button"
-                text="Nueva Configuración"
-                onClick={handleCreateConfig}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
-                icon={<PlusIcon className="w-4 h-4" />}
-              />
+              {hasPermission('IoT', 'iot', 'crear') && (
+                <CustomButton
+                  type="button"
+                  text="Nueva Configuración"
+                  onClick={handleCreateConfig}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
+                  icon={<PlusIcon className="w-4 h-4" />}
+                />
+              )}
             </div>
           </ModalHeader>
 
@@ -129,6 +138,21 @@ const MqttManagementModal: React.FC<{
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-green-800">{successMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800">{errorMessage}</p>
                   </div>
                 </div>
               </div>
@@ -197,18 +221,22 @@ const MqttManagementModal: React.FC<{
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <CustomButton
-                            type="button"
-                            onClick={() => handleEditConfig(config)}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 text-sm"
-                            icon={<PencilIcon className="w-3 h-3" />}
-                          />
-                          <CustomButton
-                            type="button"
-                            onClick={() => handleDeleteConfig(config.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                            icon={<TrashIcon className="w-3 h-3" />}
-                          />
+                          {hasPermission('IoT', 'iot', 'actualizar') && (
+                            <CustomButton
+                              type="button"
+                              onClick={() => handleEditConfig(config)}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 text-sm"
+                              icon={<PencilIcon className="w-3 h-3" />}
+                            />
+                          )}
+                          {hasPermission('IoT', 'iot', 'eliminar') && (
+                            <CustomButton
+                              type="button"
+                              onClick={() => handleDeleteConfig(config.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
+                              icon={<TrashIcon className="w-3 h-3" />}
+                            />
+                          )}
                         </div>
                       </div>
 

@@ -126,6 +126,7 @@ export class MqttConfigController {
     return updatedConfig;
   }
 
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
     // Remover conexión MQTT antes de eliminar la configuración
