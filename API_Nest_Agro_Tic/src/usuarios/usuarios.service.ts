@@ -123,13 +123,31 @@ export class UsuariosService {
         'u.usu_nombres ILIKE :query OR u.usu_apellidos ILIKE :query OR CAST(u.usu_dni AS TEXT) ILIKE :query',
         { query: `%${query}%` },
       )
-      .select(['u.id', 'u.usu_nombres as nombres', 'u.usu_apellidos as apellidos', 'u.usu_dni as dni', 'u.usu_telefono as telefono', 'u.usu_correo as correo', 'f.id', 'f.numero', 'r.id', 'r.nombre'])
       .skip(skip)
       .take(limit);
 
     const [items, total] = await qb.getManyAndCount();
+    
+    // Transformar los resultados para asegurar que los datos estén correctamente estructurados
+    const transformedItems = items.map(item => ({
+      id: item.id,
+      dni: item.dni,
+      nombres: item.nombres,
+      apellidos: item.apellidos,
+      telefono: item.telefono,
+      correo: item.correo,
+      ficha: item.ficha ? {
+        id: item.ficha.id,
+        numero: item.ficha.numero
+      } : null,
+      rol: item.rol ? {
+        id: item.rol.id,
+        nombre: item.rol.nombre
+      } : null
+    }));
+
     return {
-      items,
+      items: transformedItems,
       total,
       page,
       limit,

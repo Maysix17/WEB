@@ -94,13 +94,31 @@ export class UsuariosXActividadesService {
   async findByActividad(
     actividadId: string,
     activo?: boolean,
-  ): Promise<UsuarioXActividad[]> {
-    const where: any = { fkActividadId: actividadId };
-    if (activo !== undefined) where.activo = activo;
-    return await this.uxActRepo.find({
-      where,
-      relations: ['usuario'],
-    });
+  ): Promise<any[]> {
+    const qb = this.uxActRepo.createQueryBuilder('uxa')
+      .leftJoinAndSelect('uxa.usuario', 'u')
+      .where('uxa.fkActividadId = :actividadId', { actividadId });
+
+    if (activo !== undefined) {
+      qb.andWhere('uxa.activo = :activo', { activo });
+    }
+
+    const results = await qb.getMany();
+
+    // Transformar los resultados para asegurar que los datos del usuario estén correctamente estructurados
+    return results.map(result => ({
+      id: result.id,
+      fkUsuarioId: result.fkUsuarioId,
+      fkActividadId: result.fkActividadId,
+      fechaAsignacion: result.fechaAsignacion,
+      activo: result.activo,
+      usuario: {
+        id: result.usuario?.id,
+        dni: result.usuario?.dni,
+        nombres: result.usuario?.nombres,
+        apellidos: result.usuario?.apellidos,
+      }
+    }));
   }
 
   async finalizarByActividad(actividadId: string): Promise<void> {

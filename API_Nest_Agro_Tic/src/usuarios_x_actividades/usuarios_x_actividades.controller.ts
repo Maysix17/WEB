@@ -35,32 +35,20 @@ export class UsuariosXActividadesController {
     );
   }
 
-  @Permisos({
-    recurso: 'actividades',
-    acciones: ['leer'],
-    moduloNombre: 'Actividades',
-  })
+
   @Get()
   findAll(@Request() req: any) {
     const userId = req.userId;
     return this.usuariosXActividadesService.findByUser(userId);
   }
 
-  @Permisos({
-    recurso: 'actividades',
-    acciones: ['leer'],
-    moduloNombre: 'Actividades',
-  })
+
   @Get('actividad/:actividadId')
   findByActividad(@Param('actividadId') actividadId: string) {
     return this.usuariosXActividadesService.findByActividad(actividadId);
   }
 
-  @Permisos({
-    recurso: 'actividades',
-    acciones: ['leer'],
-    moduloNombre: 'Actividades',
-  })
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usuariosXActividadesService.findOne(id);

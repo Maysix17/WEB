@@ -604,12 +604,7 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
                   {currentCultivo.estado_fenologico_nombre || (typeof currentCultivo.estado_fenologico === 'object' ? currentCultivo.estado_fenologico.nombre : (currentCultivo.estado_fenologico || "No definido"))}
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Área del Terreno</label>
-                <p className="text-sm text-gray-900">
-                  {currentCultivo.area_terreno ? `${currentCultivo.area_terreno} m²` : "N/A"}
-                </p>
-              </div>
+
             </div>
           </div>
 

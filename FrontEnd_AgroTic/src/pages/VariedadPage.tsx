@@ -96,12 +96,15 @@ const VariedadPage = () => {
           showConfirmButton: false
         });
       } catch (error: any) {
+        const errorMessage = error.response?.data?.message ||
+                            error.message ||
+                            'Error al eliminar la variedad.';
         await Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al eliminar la variedad.',
+          text: errorMessage,
           icon: 'error',
           timer: 5000,
-          showConfirmButton: false
+          showConfirmButton: true
         });
       }
     }

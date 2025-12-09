@@ -7,13 +7,21 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common';
 import { ZonasService } from './zonas.service';
 import { CreateZonaDto } from './dto/create-zona.dto';
 import { UpdateZonaDto } from './dto/update-zona.dto';
+import { AuthorizationGuard } from '../common/guards/authorization.guard';
+import { AuthenticationGuard } from '../common/guards/authentication.guard';
+import { Permisos } from '../permisos/decorators/permisos.decorator';
+
+
+
 
 @Controller('zonas')
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
 export class ZonasController {
   constructor(private readonly zonasService: ZonasService) {}
 
@@ -21,7 +29,18 @@ export class ZonasController {
   create(@Body() createZonaDto: CreateZonaDto) {
     return this.zonasService.create(createZonaDto);
   }
-
+ @Permisos(
+  {
+    recurso: 'zonas',
+    acciones: ['leer'],
+    moduloNombre: 'zonas',
+  },
+  {
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  }
+)
   @Get()
   findAll(@Query('nombre') nombre?: string) {
     if (nombre) {

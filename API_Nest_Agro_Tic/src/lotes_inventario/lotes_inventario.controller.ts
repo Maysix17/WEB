@@ -113,8 +113,10 @@ export class LotesInventarioController {
     @Param('id') id: string,
     @Body() updateLotesInventarioDto: UpdateLotesInventarioDto,
   ) {
-    console.log('Controller: update called with ID:', id);
-    console.log('Controller: updateDto:', updateLotesInventarioDto);
+    console.log('🎯 CONTROLLER: update called with ID:', id);
+    console.log('📝 CONTROLLER: updateDto:', updateLotesInventarioDto);
+    console.log('🏭 CONTROLLER: fkBodegaId from request:', updateLotesInventarioDto.fkBodegaId);
+    
     // Load user from database using userId from guard
     const usuario = await this.usuarioRepository.findOne({
       where: { id: req.userId },
@@ -123,12 +125,18 @@ export class LotesInventarioController {
       throw new Error('Usuario no encontrado');
     }
     const userDni = usuario.dni;
-    console.log('Controller: update called with userDni from DB:', userDni);
-    return this.lotesInventarioService.update(
+    console.log('👤 CONTROLLER: userDni from DB:', userDni);
+    
+    console.log('🚀 CONTROLLER: Calling lotesInventarioService.update...');
+    const result = await this.lotesInventarioService.update(
       id,
       updateLotesInventarioDto,
       userDni,
     );
+    console.log('✅ CONTROLLER: Service returned:', result);
+    console.log('🏭 CONTROLLER: Result fkBodegaId:', result.fkBodegaId);
+    
+    return result;
   }
 
   @Permisos({

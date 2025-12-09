@@ -36,27 +36,42 @@ export class EstadosFenologicosController {
     return await this.estadosService.create(createEstadoDto);
   }
 
-  @Permisos({
+ @Permisos(
+  {
     recurso: 'cultivos',
     acciones: ['leer'],
     moduloNombre: 'Cultivos',
-  })
+  },
+  {
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  }
+)
   @Get()
   async findAll(): Promise<EstadoFenologico[]> {
     return await this.estadosService.findAll();
   }
 
-  @Permisos({
+ @Permisos(
+  {
     recurso: 'cultivos',
     acciones: ['leer'],
     moduloNombre: 'Cultivos',
-  })
+  },
+  {
+    recurso: 'actividades',
+    acciones: ['leer'],
+    moduloNombre: 'Actividades',
+  }
+)
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<EstadoFenologico> {
     return await this.estadosService.findOne(+id);
   }
 
-  @Permisos({
+ @Permisos(
+  {
     recurso: 'cultivos',
     acciones: ['actualizar'],
     moduloNombre: 'Cultivos',
@@ -65,7 +80,8 @@ export class EstadosFenologicosController {
     recurso: 'actividades',
     acciones: ['actualizar'],
     moduloNombre: 'Actividades',
-  })
+  }
+)
   @Patch(':id')
   async update(
     @Param('id') id: string,

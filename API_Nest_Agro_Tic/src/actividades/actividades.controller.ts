@@ -132,11 +132,6 @@ export class ActividadesController {
     return this.actividadesService.findByDateRange(start, end);
   }
 
-  @Permisos({
-    recurso: 'actividades',
-    acciones: ['leer'],
-    moduloNombre: 'Actividades',
-  })
   @Get('by-cultivo-variedad-zona/:cvzId')
   findByCultivoVariedadZonaId(@Param('cvzId') cvzId: string) {
     return this.actividadesService.findByCultivoVariedadZonaId(cvzId);
@@ -170,6 +165,17 @@ export class ActividadesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.actividadesService.remove(id);
+  }
+
+  @Permisos({
+    recurso: 'actividades',
+    acciones: ['eliminar'],
+    moduloNombre: 'Actividades',
+  })
+  @Delete(':id/with-validation')
+  removeWithValidation(@Req() req: any, @Param('id') id: string) {
+    const userDni = req.user?.dni;
+    return this.actividadesService.removeWithValidation(id, userDni);
   }
 
   @Permisos({

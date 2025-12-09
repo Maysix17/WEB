@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Variedad } from './entities/variedad.entity';
+import { CultivosXVariedad } from '../cultivos_x_variedad/entities/cultivos_x_variedad.entity';
 import { CreateVariedadDto } from './dto/create-variedad.dto';
 import { UpdateVariedadDto } from './dto/update-variedad.dto';
 
@@ -10,6 +11,8 @@ export class VariedadesService {
   constructor(
     @InjectRepository(Variedad)
     private readonly variedadRepo: Repository<Variedad>,
+    @InjectRepository(CultivosXVariedad)
+    private readonly cultivosXVariedadRepo: Repository<CultivosXVariedad>,
   ) {}
 
   async create(dto: CreateVariedadDto): Promise<Variedad> {
@@ -55,6 +58,20 @@ export class VariedadesService {
 
   async remove(id: string): Promise<void> {
     const variedad = await this.findOne(id);
+    
+    // Verificar si hay cultivos asociados a esta variedad
+    const cultivosAsociados = await this.cultivosXVariedadRepo.count({
+      where: { fkVariedadId: id }
+    });
+
+    if (cultivosAsociados > 0) {
+      throw new BadRequestException(
+        `No se puede eliminar la variedad "${variedad.nombre}" porque tiene ${cultivosAsociados} cultivo(s) asociado(s). ` +
+        `Para eliminar esta variedad, primero debe eliminar o reassignar los cultivos asociados a otras variedades. ` +
+        `Le sugerimos revisar la sección de cultivos para gestionar estas asociaciones.`
+      );
+    }
+
     await this.variedadRepo.remove(variedad);
   }
 }

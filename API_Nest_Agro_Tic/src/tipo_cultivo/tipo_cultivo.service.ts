@@ -56,14 +56,32 @@ export class TipoCultivoService {
   // DELETE
   async remove(id: string): Promise<void> {
     const tipoCultivo = await this.findOne(id);
-    const variedades = await this.variedadRepository.find({
-      where: { fkTipoCultivoId: id },
+    
+    // Verificar si hay variedades asociadas a este tipo de cultivo
+    const variedadesAsociadas = await this.variedadRepository.count({
+      where: { fkTipoCultivoId: id }
     });
-    if (variedades.length > 0) {
+
+    if (variedadesAsociadas > 0) {
+      // Obtener algunos nombres de variedades para mostrar en el mensaje
+      const variedades = await this.variedadRepository
+        .createQueryBuilder('v')
+        .where('v.fkTipoCultivoId = :id', { id })
+        .limit(3) // Limitar a 3 variedades para el mensaje
+        .getMany();
+
+      const nombresVariedades = variedades.map(v => v.nombre).join(', ');
+      const mensajeAdicional = variedadesAsociadas > 3
+        ? ` y ${variedadesAsociadas - 3} variedades más`
+        : '';
+
       throw new BadRequestException(
-        'No se puede eliminar el tipo de cultivo porque tiene variedades asociadas.',
+        `No se puede eliminar el tipo de cultivo "${tipoCultivo.nombre}" porque tiene ${variedadesAsociadas} variedad(es) asociada(s): ${nombresVariedades}${mensajeAdicional}. ` +
+        `Para eliminar este tipo de cultivo, primero debe eliminar o reassignar las variedades asociadas a otros tipos de cultivo. ` +
+        `Le sugerimos revisar la sección de variedades para gestionar estas asociaciones.`
       );
     }
+
     await this.tipoCultivoRepository.remove(tipoCultivo);
   }
 }

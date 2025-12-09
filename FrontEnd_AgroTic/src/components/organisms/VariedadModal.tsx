@@ -47,13 +47,16 @@ const VariedadModal: React.FC<VariedadModalProps> = ({ isOpen, onClose }) => {
       await deleteVariedad(id);
       await fetchVariedades();
       // Eliminación exitosa, modal permanece abierto
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message ||
+                          err.message ||
+                          'No se pudo eliminar la variedad.';
       await Swal.fire({
         title: 'Error',
-        text: 'No se pudo eliminar la variedad.',
+        text: errorMessage,
         icon: 'error',
-        timer: 3000,
-        showConfirmButton: false
+        timer: 5000,
+        showConfirmButton: true
       });
     }
   };

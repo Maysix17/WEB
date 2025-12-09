@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
 import CustomButton from '../atoms/Boton';
-import { getReservationsByActivity, confirmUsage } from '../../services/actividadesService';
+import { getReservationsByActivity, confirmUsage, deleteActividadWithValidation } from '../../services/actividadesService';
 import apiClient from '../../lib/axios/axios';
 import FinalizeActivityModal from './FinalizeActivityModal';
 import EditActividadModal from './EditActividadModal';
@@ -23,6 +23,7 @@ interface Activity {
      id: string;
      descripcion: string;
      fechaAsignacion: string;
+     estado: boolean; // true = pendiente, false = finalizada
      categoriaActividad: { nombre: string };
      cultivoVariedadZona: {
        zona: { nombre: string };
@@ -167,8 +168,69 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
        }
      }
    };
-
-  if (!activity) return null;
+ 
+   const handleDeleteActivity = async () => {
+     if (!activity) return;
+ 
+     // Show confirmation dialog
+     const result = await Swal.fire({
+       title: '¿Eliminar actividad?',
+       text: `¿Está seguro que desea eliminar la actividad "${activity.descripcion}"? Esta acción devolverá todos los insumos no utilizados.`,
+       icon: 'warning',
+       showCancelButton: true,
+       confirmButtonColor: '#d33',
+       cancelButtonColor: '#3085d6',
+       confirmButtonText: 'Sí, eliminar',
+       cancelButtonText: 'Cancelar'
+     });
+ 
+     if (result.isConfirmed) {
+       try {
+         console.log('🔄 Attempting to delete activity:', activity.id);
+         
+         const response = await deleteActividadWithValidation(activity.id);
+         console.log('✅ Delete response:', response);
+         
+         Swal.fire({
+           title: '¡Actividad eliminada!',
+           text: response.message || 'La actividad ha sido eliminada exitosamente.',
+           icon: 'success',
+           confirmButtonText: 'Aceptar'
+         });
+         
+         onClose();
+         // Reload the page to update all activity counts
+         window.location.reload();
+       } catch (error: any) {
+         console.error('❌ Error deleting activity:', error);
+         console.error('❌ Error details:', {
+           message: error.message,
+           status: error.response?.status,
+           data: error.response?.data,
+           config: error.config
+         });
+         
+         let errorMessage = 'Error al eliminar la actividad';
+         
+         if (error.response?.status === 404) {
+           errorMessage = 'El servicio backend no está disponible. Verifique que el servidor esté ejecutándose.';
+         } else if (error.response?.status === 401) {
+           errorMessage = 'No tiene permisos para realizar esta acción.';
+         } else if (error.response?.data?.message) {
+           errorMessage = error.response.data.message;
+         }
+         
+         Swal.fire({
+           title: 'Error',
+           text: errorMessage,
+           icon: 'error',
+           confirmButtonText: 'Aceptar'
+         });
+       }
+     }
+   };
+ 
+   if (!activity) return null;
 
   return (
     <>
@@ -252,8 +314,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-purple-700 uppercase tracking-wide">Estado</label>
-                      <span className="inline-flex px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                        En Progreso
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        activity.estado === true
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {activity.estado === true ? 'En Progreso' : 'Finalizada'}
                       </span>
                     </div>
                     <div>
@@ -360,8 +426,20 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
               {hasPermission('Actividades', 'actividades', 'actualizar') && (
                 <CustomButton variant="ghost" onClick={() => setIsEditModalOpen(true)} label="Actualizar" />
               )}
+              {/* Botón de eliminar - solo para actividades en estado pendiente y responsable */}
+              {hasPermission('Actividades', 'actividades', 'eliminar') &&
+               activity?.dniResponsable === user?.dni &&
+               activity?.estado === true && (
+                <CustomButton
+                  color="danger"
+                  variant="light"
+                  onClick={handleDeleteActivity}
+                  label="Eliminar"
+                />
+              )}
               { hasPermission('Actividades', 'actividades', 'actualizar') &&
-               activity?.dniResponsable === user?.dni && (
+               activity?.dniResponsable === user?.dni &&
+               activity?.estado === true && (
                 
                 <CustomButton color="success" onClick={() => setIsFinalizeModalOpen(true)} label="Finalizar Actividad" />
               )}

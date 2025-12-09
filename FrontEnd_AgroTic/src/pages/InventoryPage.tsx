@@ -58,7 +58,19 @@ const InventoryPage: React.FC = () => {
       const response = await inventoryService.getAll(1, 10000);
       console.log('DEBUG: All inventory response:', response);
       console.log('DEBUG: First item bodega:', response.items[0]?.bodega);
-      console.log('DEBUG: Updated item bodega:', response.items.find(item => item.id === '7cf16a61-2334-44aa-94c4-df3c491b1ef5')?.bodega);
+      
+      // Find the specific item that was updated
+      const updatedItem = response.items.find(item =>
+        item.id === '35f55c5f-29fa-4cc0-ba75-54d1bea546c7' || // The ID from the logs
+        item.fkProductoId === '7c80ea3f-894c-4af2-8732-f2d18a23cda2' // Product ID
+      );
+      
+      console.log('DEBUG: Looking for updated item with lote ID:', '35f55c5f-29fa-4cc0-ba75-54d1bea546c7');
+      console.log('DEBUG: Looking for updated item with product ID:', '7c80ea3f-894c-4af2-8732-f2d18a23cda2');
+      console.log('DEBUG: Found updated item:', updatedItem);
+      console.log('DEBUG: Updated item bodega:', updatedItem?.bodega);
+      console.log('DEBUG: Updated item fkBodegaId:', updatedItem?.fkBodegaId);
+      
       console.log('DEBUG: Setting allItems with', response.items.length, 'items');
       setAllItems(response.items);
       setResults(response.items.slice(0, limit));

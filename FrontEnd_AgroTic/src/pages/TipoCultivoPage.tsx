@@ -83,12 +83,15 @@ const TipoCultivoPage = () => {
           showConfirmButton: false
         });
       } catch (error: any) {
+        const errorMessage = error.response?.data?.message ||
+                            error.message ||
+                            'Error al eliminar el tipo de cultivo.';
         await Swal.fire({
           title: 'Error',
-          text: error.message || 'Error al eliminar el tipo de cultivo.',
+          text: errorMessage,
           icon: 'error',
           timer: 5000,
-          showConfirmButton: false
+          showConfirmButton: true
         });
       }
     }

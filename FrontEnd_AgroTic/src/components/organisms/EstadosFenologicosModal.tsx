@@ -70,14 +70,17 @@ const EstadosFenologicosModal: React.FC<EstadosFenologicosModalProps> = ({ isOpe
     try {
       await deleteEstadoFenologico(id);
       await loadEstados();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting estado fenológico:', error);
+      const errorMessage = error.response?.data?.message ||
+                          error.message ||
+                          'No se pudo eliminar el estado fenológico.';
       await Swal.fire({
         title: 'Error',
-        text: 'No se pudo eliminar el estado fenológico.',
+        text: errorMessage,
         icon: 'error',
-        timer: 3000,
-        showConfirmButton: false
+        timer: 5000,
+        showConfirmButton: true
       });
     }
   };

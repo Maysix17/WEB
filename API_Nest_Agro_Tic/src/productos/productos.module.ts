@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductosService } from './productos.service';
 import { ProductosController } from './productos.controller';
 import { Producto } from './entities/productos.entity';
+import { LotesInventario } from '../lotes_inventario/entities/lotes_inventario.entity';
 import { MovimientosInventario } from '../movimientos_inventario/entities/movimientos_inventario.entity';
 import { TipoMovimiento } from '../tipos_movimiento/entities/tipos_movimiento.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
@@ -13,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([
       Producto,
+      LotesInventario,
       MovimientosInventario,
       TipoMovimiento,
       Usuario,

@@ -15,6 +15,8 @@ export class LotesInventarioService {
   constructor(
     @InjectRepository(LotesInventario)
     private readonly lotesInventarioRepo: Repository<LotesInventario>,
+    @InjectRepository(Producto)
+    private readonly productoRepo: Repository<Producto>,
     @InjectRepository(MovimientosInventario)
     private readonly movimientosInventarioRepo: Repository<MovimientosInventario>,
     @InjectRepository(TipoMovimiento)
@@ -65,18 +67,34 @@ export class LotesInventarioService {
     updateDto: UpdateLotesInventarioDto,
     userDni?: number,
   ): Promise<LotesInventario> {
-    console.log('DEBUG: update called with ID:', id);
-    console.log('DEBUG: updateDto:', updateDto);
-    console.log('DEBUG: userDni:', userDni);
+    console.log('🚀🚀🚀 SERVICE UPDATE STARTED 🚀🚀🚀');
+    console.log('🔄 LotesInventarioService.update called with ID:', id);
+    console.log('📝 updateDto:', updateDto);
+    console.log('🏭 updateDto.fkBodegaId:', updateDto.fkBodegaId);
+    console.log('👤 userDni:', userDni);
 
-    const entity = await this.findOne(id);
-    console.log('DEBUG: found entity:', entity);
-    console.log('DEBUG: entity.fkBodegaId:', entity.fkBodegaId);
-    console.log('DEBUG: updateDto.fkBodegaId:', updateDto.fkBodegaId);
+    // Load entity without 'bodega' relation to allow fkBodegaId updates
+    const entity = await this.lotesInventarioRepo.findOne({
+      where: { id },
+      relations: ['producto', 'reservas', 'reservas.estado'],
+    });
+    if (!entity) {
+      throw new NotFoundException(`LotesInventario con ID ${id} no encontrado`);
+    }
+
+    console.log('📦 Found entity:', entity);
+    console.log('🏭 Current entity.fkBodegaId:', entity.fkBodegaId);
+    console.log('🏭 New updateDto.fkBodegaId:', updateDto.fkBodegaId);
+    console.log('🔍 Will update bodega?', updateDto.fkBodegaId && updateDto.fkBodegaId !== entity.fkBodegaId);
 
     // Check if lote has active reservations that prevent certain updates
     if (updateDto.stock !== undefined || updateDto.fechaVencimiento !== undefined) {
-      const hasActiveReservations = entity.reservas?.some(reserva =>
+      // Load reservations separately since we didn't load them with the entity
+      const loteWithReservations = await this.lotesInventarioRepo.findOne({
+        where: { id },
+        relations: ['reservas', 'reservas.estado'],
+      });
+      const hasActiveReservations = loteWithReservations?.reservas?.some(reserva =>
         reserva.estado?.nombre !== 'Confirmada' && reserva.estado?.nombre !== 'Cancelada'
       );
 
@@ -118,8 +136,15 @@ export class LotesInventarioService {
 
     // Handle product updates if provided
     if (hasProductUpdates) {
-      const producto = await entity.producto;
+      console.log('🔄 Processing product updates...');
+      // Load producto using repository instead of relation to avoid issues
+      const producto = await this.productoRepo.findOne({
+        where: { id: entity.fkProductoId },
+      });
       if (producto) {
+        console.log('📦 Found producto:', producto.id);
+
+        // Update product fields
         if (updateDto.nombre) producto.nombre = updateDto.nombre;
         if (updateDto.descripcion !== undefined)
           producto.descripcion = updateDto.descripcion;
@@ -135,48 +160,79 @@ export class LotesInventarioService {
         if (updateDto.vidaUtilPromedioPorUsos !== undefined)
           producto.vidaUtilPromedioPorUsos = updateDto.vidaUtilPromedioPorUsos;
 
-        await this.lotesInventarioRepo.manager.save(producto);
-        console.log('DEBUG: producto updated');
+        // Save using the dedicated repository
+        const savedProducto = await this.productoRepo.save(producto);
+        console.log('✅ Producto updated successfully:', savedProducto.id);
+      } else {
+        console.log('⚠️ No producto found for update');
       }
     }
 
-    // Handle lote inventory updates
-    if (updateDto.fkBodegaId !== undefined && updateDto.fkBodegaId !== entity.fkBodegaId) {
-      console.log('DEBUG: Updating fkBodegaId from', entity.fkBodegaId, 'to', updateDto.fkBodegaId);
-      entity.fkBodegaId = updateDto.fkBodegaId; // Update the entity instance
-      console.log('DEBUG: entity.fkBodegaId set to', entity.fkBodegaId);
-    } else {
-      console.log('DEBUG: Not updating fkBodegaId, current:', entity.fkBodegaId, 'new:', updateDto.fkBodegaId);
+    // Prepare preload data - be careful with fkBodegaId update
+    const preloadData: any = {
+      id: entity.id,
+      fkProductoId: entity.fkProductoId,
+      stock: entity.stock,
+      cantidadDisponible: entity.cantidadDisponible,
+      esParcial: entity.esParcial,
+      cantidadParcial: entity.cantidadParcial,
+      fechaIngreso: entity.fechaIngreso,
+      fechaVencimiento: entity.fechaVencimiento,
+    };
+
+    // Add update fields only if they are provided
+    if (updateDto.fkBodegaId !== undefined) {
+      preloadData.fkBodegaId = updateDto.fkBodegaId;
     }
-    if (updateDto.stock) {
-      entity.stock = updateDto.stock;
-      // Recalculate cantidadDisponible
-      const producto = await entity.producto;
+    if (updateDto.stock !== undefined) {
+      preloadData.stock = updateDto.stock;
+      // Recalculate cantidadDisponible when stock changes
+      const producto = await this.productoRepo.findOne({
+        where: { id: entity.fkProductoId },
+      });
       if (producto) {
-        entity.cantidadDisponible =
-          updateDto.stock * (producto.capacidadPresentacion || 1);
+        preloadData.cantidadDisponible = updateDto.stock * (producto.capacidadPresentacion || 1);
       }
     }
-    if (updateDto.fechaVencimiento !== undefined)
-      entity.fechaVencimiento = updateDto.fechaVencimiento
-        ? new Date(updateDto.fechaVencimiento)
-        : undefined;
+    if (updateDto.fechaVencimiento !== undefined) {
+      preloadData.fechaVencimiento = updateDto.fechaVencimiento ? new Date(updateDto.fechaVencimiento) : null;
+    }
+
+    console.log('🔄 Preload data prepared:', preloadData);
 
     let savedEntity: LotesInventario;
     try {
-      savedEntity = await this.lotesInventarioRepo.save(entity);
-      console.log('DEBUG: lote saved successfully:', savedEntity);
-      console.log('DEBUG: savedEntity.fkBodegaId:', savedEntity.fkBodegaId);
+      const updatedEntity = await this.lotesInventarioRepo.preload(preloadData);
+
+      if (!updatedEntity) {
+        throw new NotFoundException(`LotesInventario con ID ${entity.id} no encontrado para preload`);
+      }
+
+      savedEntity = await this.lotesInventarioRepo.save(updatedEntity);
+      console.log('💾 lote saved successfully:', savedEntity);
+      console.log('🏭 savedEntity.fkBodegaId:', savedEntity.fkBodegaId);
+      console.log('🔍 Verification - savedEntity.fkBodegaId === new value?', savedEntity.fkBodegaId === updateDto.fkBodegaId);
     } catch (error) {
-      console.error('DEBUG: Error saving lote:', error);
+      console.error('❌ Error saving lote:', error);
       throw error;
     }
 
     // Reload with relations to ensure updated data is returned
     const reloadedEntity = await this.findOne(savedEntity.id);
-    console.log('DEBUG: reloaded entity with relations:', reloadedEntity);
-    console.log('DEBUG: reloadedEntity.fkBodegaId:', reloadedEntity.fkBodegaId);
-    console.log('DEBUG: reloadedEntity.bodega:', reloadedEntity.bodega);
+    console.log('🔄 Reloaded entity with relations:', reloadedEntity);
+    console.log('🏭 reloadedEntity.fkBodegaId:', reloadedEntity.fkBodegaId);
+    console.log('🏢 reloadedEntity.bodega:', reloadedEntity.bodega);
+    console.log('✅ Final verification - reloadedEntity matches new value?', reloadedEntity.fkBodegaId === updateDto.fkBodegaId);
+    console.log('🎯 RETURNING:', reloadedEntity);
+
+    // Additional verification - check if bodega was actually updated in database
+    const checkEntity = await this.lotesInventarioRepo.findOne({
+      where: { id: savedEntity.id },
+      select: ['id', 'fkBodegaId'],
+    });
+    console.log('🔍 Database check - fkBodegaId in DB:', checkEntity?.fkBodegaId);
+    console.log('🔍 Expected fkBodegaId:', updateDto.fkBodegaId);
+    console.log('🔍 Update successful?', checkEntity?.fkBodegaId === updateDto.fkBodegaId);
 
     // Create movement record for AJUSTE if any data was modified
     if (hasAnyUpdates) {
@@ -202,11 +258,21 @@ export class LotesInventarioService {
       }
     }
 
+    console.log('🎯 SERVICE UPDATE COMPLETE - RETURNING:', reloadedEntity);
+    console.log('🏭 RETURNING fkBodegaId:', reloadedEntity.fkBodegaId);
     return reloadedEntity;
   }
 
   async remove(id: string): Promise<void> {
-    const entity = await this.findOne(id);
+    // Load entity with reservations for validation
+    const entity = await this.lotesInventarioRepo.findOne({
+      where: { id },
+      relations: ['reservas', 'reservas.estado'],
+    });
+    if (!entity) {
+      throw new NotFoundException(`LotesInventario con ID ${id} no encontrado`);
+    }
+
     console.log('DEBUG: remove - entity:', entity);
     console.log('DEBUG: remove - cantidadDisponible:', entity.cantidadDisponible);
     console.log('DEBUG: remove - cantidadParcial:', entity.cantidadParcial);

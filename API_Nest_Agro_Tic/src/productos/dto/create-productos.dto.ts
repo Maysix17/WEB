@@ -46,4 +46,8 @@ export class CreateProductosDto {
   @IsString()
   @IsOptional()
   imgUrl?: string;
+
+  @IsUUID()
+  @IsOptional()
+  fkBodegaId?: string;
 }

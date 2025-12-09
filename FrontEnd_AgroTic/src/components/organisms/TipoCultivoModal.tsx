@@ -47,13 +47,16 @@ const TipoCultivoModal: React.FC<TipoCultivoModalProps> = ({ isOpen, onClose }) 
     try {
       await deleteTipoCultivo(id);
       fetchCultivos();
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message ||
+                          err.message ||
+                          'Error al eliminar el tipo de cultivo.';
       await Swal.fire({
         title: 'Error',
-        text: 'Error al eliminar el tipo de cultivo.',
+        text: errorMessage,
         icon: 'error',
-        timer: 3000,
-        showConfirmButton: false
+        timer: 5000,
+        showConfirmButton: true
       });
     }
   };

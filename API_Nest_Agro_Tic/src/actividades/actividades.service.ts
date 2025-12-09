@@ -166,6 +166,121 @@ export class ActividadesService {
     await this.actividadesRepo.remove(actividad);
   }
 
+  async removeWithValidation(id: string, userDni?: number): Promise<{ message: string; actividad: Actividad }> {
+    console.log(`🔄 Iniciando eliminación de actividad ${id} con validación`);
+    
+    const queryRunner = this.actividadesRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+      const actividad = await queryRunner.manager.findOne(Actividad, { where: { id } });
+      if (!actividad) {
+        throw new NotFoundException(`Actividad con ID ${id} no encontrada`);
+      }
+      
+      console.log(`📋 Actividad encontrada: ${actividad.descripcion}, estado: ${actividad.estado}`);
+      
+      // Verificar si la actividad está en estado pendiente (estado = true)
+      if (actividad.estado === false) {
+        throw new Error('No se puede eliminar una actividad que ya ha sido finalizada');
+      }
+
+      // Verificar si el usuario tiene permisos para eliminar (si se proporciona userDni)
+      if (userDni && actividad.dniResponsable !== userDni) {
+        throw new Error('Solo el responsable de la actividad puede eliminarla');
+      }
+
+      // Obtener las reservas asociadas a la actividad
+      console.log('🔍 Obteniendo reservas asociadas...');
+      const reservas = await queryRunner.manager.find(ReservasXActividad, {
+        where: { fkActividadId: id },
+        relations: ['lote', 'lote.producto', 'estado']
+      });
+      console.log(`📦 Se encontraron ${reservas.length} reservas para procesar`);
+      
+      // Devolver insumos no utilizados
+      if (reservas.length > 0) {
+        console.log(`🔄 Procesando ${reservas.length} reservas para devolver insumos...`);
+        
+        for (const reserva of reservas) {
+          try {
+            // Calcular la cantidad a devolver (cantidadReservada - cantidadUsada)
+            const cantidadADevolver = (reserva.cantidadReservada || 0) - (reserva.cantidadUsada || 0);
+            
+            if (cantidadADevolver > 0) {
+              console.log(`🔄 Creando movimiento de devolución para reserva ${reserva.id}, cantidad: ${cantidadADevolver}`);
+              
+              // Crear movimiento de devolución usando el queryRunner
+              const { TipoMovimiento } = await import('../tipos_movimiento/entities/tipos_movimiento.entity');
+              const tipoMovimiento = await queryRunner.manager.findOne(TipoMovimiento, {
+                where: { nombre: 'Devolución' }
+              });
+              
+              if (tipoMovimiento) {
+                const { MovimientosInventario } = await import('../movimientos_inventario/entities/movimientos_inventario.entity');
+                const movimiento = queryRunner.manager.create(MovimientosInventario, {
+                  fkLoteId: reserva.fkLoteId,
+                  fkReservaId: reserva.id,
+                  fkTipoMovimientoId: tipoMovimiento.id,
+                  cantidad: cantidadADevolver,
+                  observacion: `Devolución por eliminación de actividad: ${actividad.descripcion}`,
+                  responsable: 'Sistema - Eliminación automática'
+                });
+                await queryRunner.manager.save(movimiento);
+                console.log(`✅ Movimiento de devolución creado para ${cantidadADevolver} unidades`);
+              }
+            }
+          } catch (reservaError) {
+            console.error(`❌ Error procesando reserva ${reserva.id}:`, reservaError.message);
+          }
+        }
+      }
+
+      // Eliminar en orden correcto usando queries SQL directos
+      console.log('🗑️ Eliminando dependencias en orden correcto...');
+      
+      // 1. Eliminar movimientos de inventario asociados a las reservas
+      await queryRunner.query(
+        'DELETE FROM movimientos_inventario WHERE fk_reserva_id IN (SELECT id FROM reservas_x_actividad WHERE fk_actividad_id = $1)',
+        [id]
+      );
+      console.log('✅ Movimientos de inventario eliminados');
+
+      // 2. Eliminar reservas asociadas a la actividad
+      await queryRunner.query(
+        'DELETE FROM reservas_x_actividad WHERE fk_actividad_id = $1',
+        [id]
+      );
+      console.log('✅ Reservas eliminadas');
+
+      // 3. Eliminar asignaciones de usuarios
+      await queryRunner.query(
+        'DELETE FROM usuarios_x_actividades WHERE fk_id_actividad = $1',
+        [id]
+      );
+      console.log('✅ Asignaciones de usuarios eliminadas');
+
+      // 4. Finalmente eliminar la actividad
+      await queryRunner.manager.remove(actividad);
+      console.log(`✅ Actividad ${id} eliminada exitosamente`);
+
+      await queryRunner.commitTransaction();
+      console.log('✅ Transacción completada exitosamente');
+
+      return {
+        message: `Actividad eliminada exitosamente. ${reservas.length} reserva(s) procesada(s) para devolución de insumos.`,
+        actividad
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(`❌ Error en removeWithValidation:`, error.message);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async finalizar(
     id: string,
     observacion?: string,
@@ -237,6 +352,8 @@ export class ActividadesService {
     observacion: string,
   ): Promise<void> {
     try {
+      console.log(`🔄 Creando movimiento: ${tipoMovimientoNombre}, cantidad: ${cantidad}, lote: ${loteId}`);
+      
       // Import required entities and repositories
       const { TipoMovimiento } = await import(
         '../tipos_movimiento/entities/tipos_movimiento.entity'
@@ -252,7 +369,7 @@ export class ActividadesService {
 
       if (!tipoMovimiento) {
         console.warn(
-          `Tipo de movimiento "${tipoMovimientoNombre}" no encontrado.`,
+          `⚠️ Tipo de movimiento "${tipoMovimientoNombre}" no encontrado. Omitiendo creación de movimiento.`,
         );
         return;
       }
@@ -293,6 +410,8 @@ export class ActividadesService {
       );
     } catch (error) {
       console.error(`❌ Error creando movimiento: ${error.message}`);
+      console.log('ℹ️ Continuando sin crear movimiento de inventario...');
+      // No lanzar el error para que no falle toda la eliminación
     }
   }
 

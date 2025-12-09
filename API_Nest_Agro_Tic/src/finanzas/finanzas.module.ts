@@ -7,6 +7,7 @@ import { ReservasXActividad } from '../reservas_x_actividad/entities/reservas_x_
 import { Actividad } from '../actividades/entities/actividades.entity';
 import { Venta } from '../venta/entities/venta.entity';
 import { CultivosVariedadXZona } from '../cultivos_variedad_x_zona/entities/cultivos_variedad_x_zona.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CultivosVariedadXZona } from '../cultivos_variedad_x_zona/entities/cult
       Venta,
       CultivosVariedadXZona,
     ]),
+    AuthModule
   ],
   controllers: [FinanzasController],
   providers: [FinanzasService],

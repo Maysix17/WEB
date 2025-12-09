@@ -16,6 +16,8 @@ export class ProductosService {
   constructor(
     @InjectRepository(Producto)
     private readonly productoRepo: Repository<Producto>,
+    @InjectRepository(LotesInventario)
+    private readonly lotesInventarioRepo: Repository<LotesInventario>,
     @InjectRepository(MovimientosInventario)
     private readonly movimientosInventarioRepo: Repository<MovimientosInventario>,
     @InjectRepository(TipoMovimiento)
@@ -56,7 +58,11 @@ export class ProductosService {
     updateDto: UpdateProductosDto,
     userDni?: number,
   ): Promise<Producto> {
+    console.log('🔄 Iniciando actualización de producto:', id);
+    console.log('📝 Datos de actualización:', updateDto);
+
     const entity = await this.findOne(id);
+    console.log('📦 Producto encontrado:', entity.nombre);
 
     // Check if sku is being changed and if it already exists
     if (updateDto.sku && updateDto.sku !== entity.sku) {
@@ -70,7 +76,7 @@ export class ProductosService {
 
     // Check if product has active reservations that would prevent certain updates
     if (updateDto.nombre || updateDto.descripcion || updateDto.sku) {
-      const lotes = await this.productoRepo.manager.find(LotesInventario, {
+      const lotes = await this.lotesInventarioRepo.find({
         where: { fkProductoId: id },
         relations: ['reservas', 'reservas.estado'],
       });
@@ -89,36 +95,96 @@ export class ProductosService {
       }
     }
 
-    Object.assign(entity, updateDto);
-    const savedEntity = await this.productoRepo.save(entity);
+    // Extract fkBodegaId from updateDto for inventory batch updates
+    const { fkBodegaId, ...productUpdateDto } = updateDto;
+    console.log('🏭 fkBodegaId extraído:', fkBodegaId);
 
-    // Create movement record for AJUSTE when product is updated
-    if (userDni) {
-      // Get all lotes for this product to create adjustment movements
-      const lotes = await this.productoRepo.manager.find(LotesInventario, {
-        where: { fkProductoId: id },
-      });
+    // Start transaction for atomic updates
+    const queryRunner = this.productoRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      for (const lote of lotes) {
-        await this.createMovementRecord(
-          { manager: this.productoRepo.manager },
-          lote.id,
-          'Ajuste',
-          0, // No quantity change for product data updates
-          `Ajuste manual de inventario: modificación de datos del producto ${savedEntity.nombre}`,
-          userDni,
-        );
+    try {
+      // Update the product entity
+      Object.assign(entity, productUpdateDto);
+      const savedEntity = await queryRunner.manager.save(Producto, entity);
+      console.log('✅ Producto actualizado:', savedEntity.id);
+
+      // Handle bodega (warehouse) updates for inventory batches
+      if (fkBodegaId) {
+        console.log('🔄 Buscando lotes de inventario para actualizar bodega...');
+        const lotes = await queryRunner.manager.find(LotesInventario, {
+          where: { fkProductoId: id },
+        });
+        console.log(`📋 Encontrados ${lotes.length} lotes para el producto`);
+
+        for (const lote of lotes) {
+          console.log(`📦 Lote ${lote.id}: bodega actual = ${lote.fkBodegaId}, nueva bodega = ${fkBodegaId}`);
+          
+          if (lote.fkBodegaId !== fkBodegaId) {
+            console.log(`🔄 Actualizando lote ${lote.id} de bodega ${lote.fkBodegaId} a ${fkBodegaId}`);
+            
+            // Update the inventory batch with the new warehouse
+            lote.fkBodegaId = fkBodegaId;
+            const updatedLote = await queryRunner.manager.save(LotesInventario, lote);
+            console.log(`✅ Lote ${lote.id} actualizado correctamente`);
+
+            // Create movement record for the warehouse change
+            if (userDni) {
+              await this.createMovementRecord(
+                queryRunner,
+                lote.id,
+                'Ajuste',
+                0, // No quantity change for warehouse updates
+                `Cambio de bodega para producto ${savedEntity.nombre}: de ${lote.fkBodegaId} a ${fkBodegaId}`,
+                userDni,
+              );
+            }
+          } else {
+            console.log(`⏭️ Lote ${lote.id} ya tiene la bodega correcta, saltando...`);
+          }
+        }
       }
-    }
 
-    return savedEntity;
+      // Create movement record for other product updates
+      if (userDni) {
+        const lotes = await queryRunner.manager.find(LotesInventario, {
+          where: { fkProductoId: id },
+        });
+
+        for (const lote of lotes) {
+          await this.createMovementRecord(
+            queryRunner,
+            lote.id,
+            'Ajuste',
+            0, // No quantity change for product data updates
+            `Ajuste manual de inventario: modificación de datos del producto ${savedEntity.nombre}`,
+            userDni,
+          );
+        }
+      }
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+      console.log('🎉 Transacción completada exitosamente');
+
+      return savedEntity;
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      console.error('❌ Error en transacción:', error.message);
+      throw error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
   }
 
   async remove(id: string): Promise<void> {
     const entity = await this.findOne(id);
 
     // Check if product has inventory lots
-    const lotesCount = await this.productoRepo.manager.count(LotesInventario, {
+    const lotesCount = await this.lotesInventarioRepo.count({
       where: { fkProductoId: id },
     });
 

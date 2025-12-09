@@ -105,6 +105,11 @@ export const deleteActividad = async (id: string): Promise<void> => {
   await apiClient.delete(`/actividades/${id}`);
 };
 
+export const deleteActividadWithValidation = async (id: string): Promise<{ message: string; actividad: Actividad }> => {
+  const response = await apiClient.delete(`/actividades/${id}/with-validation`);
+  return response.data;
+};
+
 export const uploadActividadEvidence = async (file: File): Promise<{ url: string }> => {
   const formData = new FormData();
   formData.append('file', file);
