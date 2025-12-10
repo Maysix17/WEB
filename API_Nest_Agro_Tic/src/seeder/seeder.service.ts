@@ -572,8 +572,8 @@ export class SeederService {
       const rolAprendiz = await this.crearRolSiNoExiste('APRENDIZ');
 
       // Crear otros roles sin permisos especiales
-      await this.crearRolSiNoExiste('PASANTE');
-      await this.crearRolSiNoExiste('INVITADO');
+      const rolPasante = await this.crearRolSiNoExiste('PASANTE');
+      const rolInvitadoCrear = await this.crearRolSiNoExiste('INVITADO');
 
       // Asignar permisos específicos al INSTRUCTOR
       const allPermisos = await this.permisoRepository.find({
@@ -638,6 +638,9 @@ export class SeederService {
           ),
       );
 
+      // Asignar permisos de 'leer' a todos los roles
+      const permisosLeer = allPermisos.filter((p) => p.accion === 'leer');
+
       const asignarPermisosARol = async (rol: Rol, nombreRol: string) => {
         if (rol && permisosAcceso.length > 0) {
           const rolConPermisos = await this.rolRepository.findOne({
@@ -645,6 +648,7 @@ export class SeederService {
             relations: ['permisos'],
           });
           if (rolConPermisos) {
+            // Asignar permisos de acceso
             for (const permiso of permisosAcceso) {
               const tienePermiso = rolConPermisos.permisos.some(
                 (p) => p.id === permiso.id,
@@ -653,9 +657,18 @@ export class SeederService {
                 rolConPermisos.permisos.push(permiso);
               }
             }
+            // Asignar permisos de 'leer'
+            for (const permiso of permisosLeer) {
+              const tienePermisoLeer = rolConPermisos.permisos.some(
+                (p) => p.id === permiso.id,
+              );
+              if (!tienePermisoLeer) {
+                rolConPermisos.permisos.push(permiso);
+              }
+            }
             await this.rolRepository.save(rolConPermisos);
             this.logger.log(
-              `Permisos de acceso asignados a ${nombreRol}.`,
+              `Permisos de acceso y 'leer' asignados a ${nombreRol}.`,
               'Seeder',
             );
           }
@@ -670,6 +683,32 @@ export class SeederService {
       }
       if (rolInstructor) {
         await asignarPermisosARol(rolInstructor, 'INSTRUCTOR');
+      }
+      if (rolAprendiz) {
+        await asignarPermisosARol(rolAprendiz, 'APRENDIZ');
+      }
+      if (rolPasante) {
+        await asignarPermisosARol(rolPasante, 'PASANTE');
+      }
+
+      // Asignar permisos de 'leer' a todos los roles existentes
+      const allRoles = await this.rolRepository.find({ relations: ['permisos'] });
+      for (const rol of allRoles) {
+        let hasNewPermisos = false;
+        for (const permiso of permisosLeer) {
+          const tienePermiso = rol.permisos.some((p) => p.id === permiso.id);
+          if (!tienePermiso) {
+            rol.permisos.push(permiso);
+            hasNewPermisos = true;
+          }
+        }
+        if (hasNewPermisos) {
+          await this.rolRepository.save(rol);
+          this.logger.log(
+            `Permisos de 'leer' asignados al rol ${rol.nombre}.`,
+            'Seeder',
+          );
+        }
       }
 
       return { rolInstructor, rolAprendiz };
