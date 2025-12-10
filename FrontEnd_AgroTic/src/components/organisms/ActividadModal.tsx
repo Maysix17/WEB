@@ -290,10 +290,6 @@ const ActividadModal: React.FC<ActividadModalProps> = ({ isOpen, onClose, select
     }
   };
 
-  const handleCategoryCreated = () => {
-    // Refresh categories
-    fetchCategorias();
-  };
 
   const handleUseSurplus = async (id: string) => {
     const product = selectedProducts[id].product;

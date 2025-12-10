@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import html2canvas from 'html2canvas';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, AreaChart, Area, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, AreaChart, Area, Tooltip } from 'recharts';
 
 export interface ChartDataPoint {
   time: string | number;

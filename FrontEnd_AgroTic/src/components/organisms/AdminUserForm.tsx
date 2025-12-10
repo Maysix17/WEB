@@ -4,7 +4,6 @@ import CustomButton from '../atoms/Boton';
 import { getRoles } from '../../services/rolesService';
 import { getFichas } from '../../services/fichasService';
 import { registerAdminUser, updateAdminUser } from '../../services/authService';
-import Swal from 'sweetalert2';
 
 interface Role {
   id: string;

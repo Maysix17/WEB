@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardBody, Spinner } from '@heroui/react';
-import { BeakerIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { Card, CardBody, Spinner } from '@heroui/react';
+import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
 import { mqttConfigService, medicionSensorService, type MedicionSensor } from '../../services/zonasService';
 

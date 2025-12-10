@@ -15,7 +15,6 @@ import {
    getActividadesCountByDate,
    getActividadesByDateWithActive,
    createActividad,
-   deleteActividad,
    createUsuarioXActividad,
    createReservationByProduct
  } from '../services/actividadesService';

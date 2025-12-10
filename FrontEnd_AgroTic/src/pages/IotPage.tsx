@@ -1,20 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import SensorDashboard from '../components/organisms/SensorDashboard';
 
 const IotPage: React.FC = () => {
-  const [filters, setFilters] = useState<Record<string, any>>({});
-
-  const handleFilterChange = useCallback((key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleSearch = useCallback(() => {
-    // Search is handled automatically by useEffect in SensorDashboard
-  }, []);
-
-  const handleClear = useCallback(() => {
-    setFilters({});
-  }, []);
+  const [filters] = useState<Record<string, any>>({});
 
   return (
     <div className="flex flex-col w-full bg-gray-50">

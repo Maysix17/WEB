@@ -20,7 +20,7 @@ interface CategoriaActividadModalProps {
 const CategoriaActividadModal: React.FC<CategoriaActividadModalProps> = ({ isOpen, onClose }) => {
   const [categorias, setCategorias] = useState<CategoriaActividadData[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>('');
+  const [message] = useState<string>('');
   const { hasPermission, isInitializing } = usePermission();
 
   useEffect(() => {

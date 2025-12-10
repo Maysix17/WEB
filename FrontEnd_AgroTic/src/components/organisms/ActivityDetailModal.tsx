@@ -60,23 +60,18 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     activity,
    }) => {
    const { user, hasPermission } = usePermission();
-   const [categoria, setCategoria] = useState('');
     const [ubicacion, setUbicacion] = useState('');
-    const [descripcion, setDescripcion] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
     const [reservations, setReservations] = useState<Reservation[]>([]);
       const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
       const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
      if (activity) {
-       setCategoria(activity.categoriaActividad.nombre);
        const tipoCultivoObj = activity.cultivoVariedadZona?.cultivoXVariedad?.variedad?.tipoCultivo;
        const tipoCultivoName = (tipoCultivoObj && tipoCultivoObj.nombre) ? tipoCultivoObj.nombre : 'Tipo Cultivo';
        const variedadName = activity.cultivoVariedadZona?.cultivoXVariedad?.variedad?.nombre || 'Variedad';
        const zoneName = activity.cultivoVariedadZona?.zona?.nombre || 'Zona';
        setUbicacion(`${tipoCultivoName} - ${variedadName} - ${zoneName}`);
-       setDescripcion(activity.descripcion);
        setIsFinalizeModalOpen(false);
 
        // Fetch reservations

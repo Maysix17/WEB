@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
+import { Card, CardBody, CardHeader, Spinner, Button, Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { medicionSensorService, zonasService, umbralesService, type UmbralesConfig } from '../../services/zonasService';
 import { useMqttSocket } from '../../hooks/useMqttSocket';
@@ -46,10 +46,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
   const [umbrales, setUmbrales] = useState<Record<string, UmbralesConfig>>({});
   const [isLoadingThresholds, setIsLoadingThresholds] = useState(false);
   const [thresholdError, setThresholdError] = useState<string | null>(null);
-  const [selectedZonaMqttConfigId, setSelectedZonaMqttConfigId] = useState<string>('');
   const [selectedMqttConfigId, setSelectedMqttConfigId] = useState<string>('');
   const [selectedCultivo, setSelectedCultivo] = useState<string>('');
-  const [selectedZonaNombre, setSelectedZonaNombre] = useState<string>('');
 
   // Use MQTT socket hook for real-time updates
   const { lecturas, isConnected } = useMqttSocket();
@@ -68,16 +66,6 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     setSelectedSensors(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  const getBorderColor = () => {
-    if (selectedSensors.length === 0) return 'transparent';
-    const hues = selectedSensors.map(key => {
-      const index = sensorEntries.findIndex(([k]) => k === key);
-      return index * 137.5 % 360;
-    });
-    if (selectedSensors.length === 1) return `hsl(${hues[0]}, 70%, 50%)`;
-    const avgHue = hues.reduce((a, b) => a + b, 0) / hues.length;
-    return `hsl(${avgHue}, 70%, 50%)`;
-  };
 
   useEffect(() => {
     loadInitialData();
@@ -369,9 +357,6 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     setSensorData(data);
   };
 
-  const getAvailableSensors = (): string[] => {
-    return Object.keys(sensorData);
-  };
 
 
 
@@ -417,9 +402,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
     if (availableConfigs.length === 1) {
       // If only one config, open threshold modal directly
       const config = availableConfigs[0];
-      setSelectedZonaMqttConfigId(config.zonaMqttConfigId);
       setSelectedMqttConfigId(config.mqttConfigId);
-      setSelectedZonaNombre(config.zonaNombre);
       setSelectedCultivo(config.nombre);
       setShowThresholdConfigModal(true);
     } else {
@@ -436,9 +419,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
     if (!selectedConfig) return;
 
-    setSelectedZonaMqttConfigId(selectedConfig.zonaMqttConfigId);
     setSelectedMqttConfigId(selectedConfig.mqttConfigId);
-    setSelectedZonaNombre(selectedConfig.zonaNombre);
     setSelectedCultivo(selectedConfig.nombre);
     setShowCultivoSelection(false);
     setShowThresholdConfigModal(true);
@@ -509,11 +490,6 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
 
   // Sensor Card Component
   const SensorCard = React.memo(({ sensorKey, data, isSelected }: { sensorKey: string; data: SensorData[string]; isSelected: boolean }) => {
-    const chartData = data.history.slice(-20).map((point, index) => ({
-      time: index,
-      value: point.value,
-      timestamp: point.timestamp,
-    }));
 
     const formatSensorKey = (key: string) => {
       return key
@@ -930,10 +906,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ filters }) => {
           isOpen={showThresholdConfigModal}
           onClose={() => {
             setShowThresholdConfigModal(false);
-            setSelectedZonaMqttConfigId('');
             setSelectedMqttConfigId('');
             setSelectedCultivo('');
-            setSelectedZonaNombre('');
           }}
           mqttConfigId={selectedMqttConfigId}
           cultivoNombre={selectedCultivo || undefined}

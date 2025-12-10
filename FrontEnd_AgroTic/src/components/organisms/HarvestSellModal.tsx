@@ -35,7 +35,6 @@ const HarvestSellModal: React.FC<HarvestSellModalProps> = ({
   onCloseHarvest
 }) => {
   const [cosechasDisponibles, setCosechasDisponibles] = useState<CosechaDisponible[]>([]);
-  const [loading, setLoading] = useState(false);
   const { hasPermission, isInitializing } = usePermission();
 
   useEffect(() => {
@@ -47,7 +46,6 @@ const HarvestSellModal: React.FC<HarvestSellModalProps> = ({
   const loadCosechasDisponibles = async () => {
     if (!cultivo) return;
 
-    setLoading(true);
     try {
       console.log('[DEBUG] HarvestSellModal - Cargando cosechas para cultivo:', cultivo.cvzid);
       const cosechas = await getCosechasByCultivo(cultivo.cvzid);
@@ -61,8 +59,6 @@ const HarvestSellModal: React.FC<HarvestSellModalProps> = ({
     } catch (error) {
       console.error('Error loading cosechas:', error);
       setCosechasDisponibles([]);
-    } finally {
-      setLoading(false);
     }
   };
 

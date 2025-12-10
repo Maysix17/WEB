@@ -82,19 +82,6 @@ const InventoryPage: React.FC = () => {
     }
   };
 
-  const fetchInventory = async (page: number) => {
-    console.log('Fetching inventory for page:', page);
-    setLoading(true);
-    try {
-      const response = await inventoryService.getAll(page, limit);
-      console.log('Inventory response:', response);
-      setResults(response.items);
-    } catch (err: unknown) {
-      console.error('Error fetching inventory:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
 

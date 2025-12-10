@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, Input, Select, SelectItem, Chip, Textarea } from '@heroui/react';
+import { Modal, ModalContent, ModalHeader, ModalBody, Select, SelectItem, Chip, Textarea } from '@heroui/react';
 import CustomButton from '../atoms/Boton';
-import userSearchService from '../../services/userSearchService';
 import zoneSearchService from '../../services/zoneSearchService';
 import categoriaService from '../../services/categoriaService';
-import apiClient from '../../lib/axios/axios';
 import InputSearch from '../atoms/buscador';
 import { updateActividad } from '../../services/actividadesService';
 import Swal from 'sweetalert2';
-
-interface Usuario {
-  id: string;
-  dni: number;
-  nombres: string;
-  apellidos: string;
-}
-
-interface Product {
-  id: string;
-  nombre: string;
-  categoria?: { nombre: string };
-  cantidadDisponible: number;
-  cantidadReservada: number;
-  cantidadParcial: number;
-  stock_devuelto?: number;
-  stock_parcial?: number;
-  unidadMedida?: { abreviatura: string };
-  reservas?: Array<{
-    cantidadReservada: number;
-    cantidadDevuelta: number;
-    estado: { nombre: string };
-  }>;
-}
 
 interface Categoria {
   id: string;
@@ -89,16 +63,10 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
 }) => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
-  const [usuarioSearch, setUsuarioSearch] = useState('');
-  const [productSearch, setProductSearch] = useState('');
   const [loteSearch, setLoteSearch] = useState('');
 
-  const [debouncedUsuarioSearch, setDebouncedUsuarioSearch] = useState('');
-  const [debouncedProductSearch, setDebouncedProductSearch] = useState('');
   const [debouncedLoteSearch, setDebouncedLoteSearch] = useState('');
 
-  const [selectedUsuarios, setSelectedUsuarios] = useState<Usuario[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<{ [key: string]: { product: Product; qty: number; custom: boolean; isSurplus?: boolean } }>({});
   const [selectedLote, setSelectedLote] = useState<Zona | null>(null);
 
   const [categoria, setCategoria] = useState('');
@@ -107,8 +75,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
   // Validation errors
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const [filteredUsuarios, setFilteredUsuarios] = useState<Usuario[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filteredZonas, setFilteredZonas] = useState<Zona[]>([]);
 
   // Reset form when modal opens or activity changes
@@ -117,10 +83,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
       // Pre-populate form with existing activity data
       setCategoria(activity.categoriaActividad.id);
       setDescripcion(activity.descripcion);
-
-      // Set selected users
-      const activeUsers = activity.usuariosAsignados?.filter(u => u.activo).map(u => u.usuario) || [];
-      setSelectedUsuarios(activeUsers);
 
       // Set selected lote
       if (activity.cultivoVariedadZona) {
@@ -137,37 +99,11 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
           variedadNombre: variedadName,
         });
       }
-
-      // Set selected products from reservations
-      const productsFromReservations: { [key: string]: { product: Product; qty: number; custom: boolean; isSurplus?: boolean } } = {};
-      activity.reservas?.forEach(reserva => {
-        if (reserva.lote?.producto) {
-          productsFromReservations[reserva.lote.producto.id] = {
-            product: {
-              id: reserva.lote.producto.id,
-              nombre: reserva.lote.producto.nombre,
-              unidadMedida: { abreviatura: reserva.lote.producto.unidadMedida?.abreviatura || '' },
-              cantidadDisponible: 0, // We'll fetch this
-              cantidadReservada: 0,
-              cantidadParcial: 0,
-            },
-            qty: reserva.cantidadReservada,
-            custom: true,
-          };
-        }
-      });
-      setSelectedProducts(productsFromReservations);
     }
 
     // Clear search fields
-    setUsuarioSearch('');
-    setProductSearch('');
     setLoteSearch('');
-    setDebouncedUsuarioSearch('');
-    setDebouncedProductSearch('');
     setDebouncedLoteSearch('');
-    setFilteredUsuarios([]);
-    setFilteredProducts([]);
     setFilteredZonas([]);
     setErrors({});
   };
@@ -179,22 +115,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
       resetForm();
     }
   }, [isOpen, activity]);
-
-  // Debounce usuario search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedUsuarioSearch(usuarioSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [usuarioSearch]);
-
-  // Debounce product search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedProductSearch(productSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [productSearch]);
 
   // Debounce lote search
   useEffect(() => {
@@ -213,59 +133,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
     }
   };
 
-  // Filter usuarios with search
-  useEffect(() => {
-    const fetchFilteredUsuarios = async () => {
-      if (debouncedUsuarioSearch.trim()) {
-        try {
-          const data = await userSearchService.search(debouncedUsuarioSearch);
-          setFilteredUsuarios(data.items);
-        } catch (error) {
-          console.error('Error searching usuarios:', error);
-          setFilteredUsuarios([]);
-        }
-      } else {
-        setFilteredUsuarios([]);
-      }
-    };
-    fetchFilteredUsuarios();
-  }, [debouncedUsuarioSearch]);
-
-  // Filter products with search
-  useEffect(() => {
-    const fetchFilteredProducts = async () => {
-      if (debouncedProductSearch.trim()) {
-        try {
-          const response = await apiClient.get(`/inventario/search/${encodeURIComponent(debouncedProductSearch)}`);
-          const result = response.data;
-          const productsWithAvailability = (result.items || []).map((product: Product) => {
-            let cantidadReservadaActiva = 0;
-            if (product.reservas) {
-              for (const reserva of product.reservas) {
-                if (reserva.estado && reserva.estado.nombre !== 'Confirmada') {
-                  cantidadReservadaActiva += (reserva.cantidadReservada || 0) - (reserva.cantidadDevuelta || 0);
-                }
-              }
-            }
-            const cantidadDisponibleNum = Number(product.cantidadDisponible) || 0;
-            const cantidadParcialNum = Number(product.cantidadParcial) || 0;
-            const cantidadDisponibleReal = cantidadDisponibleNum + cantidadParcialNum - cantidadReservadaActiva;
-            return {
-              ...product,
-              cantidadDisponibleReal: Math.max(0, cantidadDisponibleReal)
-            };
-          });
-          setFilteredProducts(productsWithAvailability);
-        } catch (error) {
-          console.error('Error searching products:', error);
-          setFilteredProducts([]);
-        }
-      } else {
-        setFilteredProducts([]);
-      }
-    };
-    fetchFilteredProducts();
-  }, [debouncedProductSearch]);
 
   // Filter zonas with search
   useEffect(() => {
@@ -285,47 +152,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
     fetchFilteredZonas();
   }, [debouncedLoteSearch]);
 
-  const handleSelectUsuario = (usuario: Usuario) => {
-    if (!selectedUsuarios.some(u => u.id === usuario.id)) {
-      setSelectedUsuarios([...selectedUsuarios, usuario]);
-      setUsuarioSearch('');
-    }
-  };
-
-  const handleRemoveUsuario = (id: string) => {
-    setSelectedUsuarios(selectedUsuarios.filter(u => u.id !== id));
-  };
-
-  const handleSelectProduct = (product: Product) => {
-    if (selectedProducts[product.id]) {
-      const newSelected = { ...selectedProducts };
-      delete newSelected[product.id];
-      setSelectedProducts(newSelected);
-    } else {
-      setSelectedProducts({
-        ...selectedProducts,
-        [product.id]: {
-          product,
-          qty: 0,
-          custom: false,
-          isSurplus: false
-        }
-      });
-      setProductSearch('');
-    }
-  };
-
-  const handleQtyChange = (id: string, qty: number) => {
-    setSelectedProducts({
-      ...selectedProducts,
-      [id]: {
-        ...selectedProducts[id],
-        qty,
-        custom: true
-      }
-    });
-  };
-
   const handleSelectLote = (zona: Zona) => {
     setSelectedLote(zona);
     setLoteSearch('');
@@ -333,34 +159,6 @@ const EditActividadModal: React.FC<EditActividadModalProps> = ({
 
   const handleRemoveLote = () => {
     setSelectedLote(null);
-  };
-
-  const handleUseSurplus = async (id: string) => {
-    const product = selectedProducts[id].product;
-    const surplus = product.stock_parcial || 0;
-    // Show confirmation dialog
-    const result = await Swal.fire({
-      title: '¿Desea usar el parcial?',
-      text: `¿Desea usar el parcial de ${surplus} unidades de ${product.nombre}? (Stock disponible: ${product.cantidadDisponible})`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, usar parcial',
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (result.isConfirmed) {
-      setSelectedProducts({
-        ...selectedProducts,
-        [id]: {
-          ...selectedProducts[id],
-          qty: surplus,
-          custom: false,
-          isSurplus: true
-        }
-      });
-    }
   };
 
   const validateForm = () => {

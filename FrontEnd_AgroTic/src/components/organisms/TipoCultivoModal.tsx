@@ -20,7 +20,6 @@ interface TipoCultivoModalProps {
 const TipoCultivoModal: React.FC<TipoCultivoModalProps> = ({ isOpen, onClose }) => {
   const [cultivos, setCultivos] = useState<TipoCultivoData[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>('');
   const { hasPermission, isInitializing } = usePermission();
 
   useEffect(() => {
@@ -71,7 +70,6 @@ const TipoCultivoModal: React.FC<TipoCultivoModalProps> = ({ isOpen, onClose }) 
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-96">
           <TipoCultivoForm editId={editId} onSuccess={() => { fetchCultivos(); setEditId(null); }} />
-          {message && <p className="text-center text-green-600 mt-4">{message}</p>}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-4">Lista de Tipos de Cultivo</h3>
             <Table headers={headers}>

@@ -20,7 +20,6 @@ interface VariedadModalProps {
 const VariedadModal: React.FC<VariedadModalProps> = ({ isOpen, onClose }) => {
   const [variedades, setVariedades] = useState<VariedadData[]>([]);
   const [editData, setEditData] = useState<VariedadData | null>(null);
-  const [message, setMessage] = useState<string>('');
   const { hasPermission, isInitializing } = usePermission();
 
   useEffect(() => {
@@ -71,7 +70,6 @@ const VariedadModal: React.FC<VariedadModalProps> = ({ isOpen, onClose }) => {
         </ModalHeader>
         <ModalBody className="overflow-y-auto max-h-96">
           <VariedadForm editData={editData} onSuccess={() => { fetchVariedades(); setEditData(null); }} />
-          {message && <p className="text-center text-green-600 mt-4">{message}</p>}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-4">Lista de Variedades</h3>
             <Table headers={headers}>

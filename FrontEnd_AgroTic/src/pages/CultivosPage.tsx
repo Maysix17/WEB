@@ -46,7 +46,6 @@ const CultivosPage: React.FC = () => {
   const [isCategoriaActividadModalOpen, setIsCategoriaActividadModalOpen] = useState(false);
   const [selectedCultivo, setSelectedCultivo] = useState<Cultivo | null>(null);
   const [selectedCultivoForDetails, setSelectedCultivoForDetails] = useState<Cultivo | null>(null);
-  const [selectedCosechaId, setSelectedCosechaId] = useState<string>("");
   const { hasPermission, isInitializing } = usePermission();
 
   // Load filters from localStorage on mount

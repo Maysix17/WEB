@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import type { DateRangeInputProps } from "../../types/dateInput.types";
 
 const DateRangeInput: React.FC<DateRangeInputProps> = ({ label, onChange }) => {

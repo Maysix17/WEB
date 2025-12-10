@@ -12,10 +12,7 @@ import {
   CardHeader,
   Badge,
   Spinner,
-  Chip,
   Checkbox,
-  Select,
-  SelectItem,
   Progress,
 } from '@heroui/react';
 import { MagnifyingGlassIcon, XMarkIcon, DocumentArrowDownIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -23,7 +20,6 @@ import { medicionSensorService } from '../../services/zonasService';
 import { generateSensorSearchPDF } from '../../utils/pdfGenerator';
 import apiClient from '../../lib/axios/axios';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
-import DateRangeInput from '../atoms/DateRangeInput';
 import Swal from 'sweetalert2';
 
 interface SensorSearchModalProps {
@@ -460,7 +456,7 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
                   {searchTerm ? 'No se encontraron resultados para la búsqueda.' : 'No hay datos de sensores disponibles.'}
                 </div>
               ) : (
-                filteredData.map((item, index) => {
+                filteredData.map((item) => {
                   const cardKey = `${item.cultivoId}-${item.zonaId}`;
                   return (
                     <Card key={cardKey} className="w-full shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-200">
@@ -592,7 +588,7 @@ const SensorSearchModal: React.FC<SensorSearchModalProps> = ({ isOpen, onClose }
                                   Datos de Mediciones
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2">
-                                  {item.uniqueSensorData.map((sensor: SensorData, sensorIndex: number) => {
+                                  {item.uniqueSensorData.map((sensor: SensorData) => {
                                     const uniqueKey = `${item.cultivoId}-${item.zonaId}-${sensor.key}`;
                                     return (
                                       <div

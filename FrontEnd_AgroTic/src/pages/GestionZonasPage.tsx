@@ -9,7 +9,7 @@ import GenericFiltersPanel from '../components/organisms/GenericFiltersPanel';
 import { usePermission } from '../contexts/PermissionContext';
 
 const GestionZonasPage: React.FC = () => {
-    const { hasPermission, isInitializing } = usePermission();
+     const { hasPermission } = usePermission();
     const [zonas, setZonas] = useState<Zona[]>([]);
     const [filteredZonas, setFilteredZonas] = useState<Zona[]>([]);
     const [selectedZona, setSelectedZona] = useState<Zona | null>(null);

@@ -16,7 +16,6 @@ import {
   Spinner,
 } from "@heroui/react";
 import apiClient from "../../lib/axios/axios";
-import type { Cultivo } from "../../types/cultivos.types";
 
 interface CultivoZonaCombination {
   cultivoId: string;

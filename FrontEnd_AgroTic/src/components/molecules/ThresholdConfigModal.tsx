@@ -1,7 +1,7 @@
 console.log('ThresholdConfigModal: Component starting');
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
-import { umbralesService, mqttConfigService, type UmbralesConfig, type SensorThreshold } from '../../services/zonasService';
+import { umbralesService, type UmbralesConfig } from '../../services/zonasService';
 import TextInput from '../atoms/TextInput';
 import CustomButton from '../atoms/Boton';
 
@@ -78,7 +78,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
   };
 
   // Validar umbrales localmente
-  const validateThreshold = (sensorKey: string, minimo: number, maximo: number): string | null => {
+  const validateThreshold = (minimo: number, maximo: number): string | null => {
     if (typeof minimo !== 'number' || typeof maximo !== 'number') {
       return 'Los valores deben ser números';
     }
@@ -112,7 +112,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
     
     // Validar el umbral completo
     const threshold = updatedUmbrales[sensorKey];
-    const validationError = validateThreshold(sensorKey, threshold.minimo, threshold.maximo);
+    const validationError = validateThreshold(threshold.minimo, threshold.maximo);
     
     setValidationErrors(prev => ({
       ...prev,
@@ -128,7 +128,7 @@ const ThresholdConfigModal: React.FC<ThresholdConfigModalProps> = ({
     availableSensorsForConfig.forEach(sensorKey => {
       const threshold = umbrales[sensorKey];
       if (threshold) {
-        const error = validateThreshold(sensorKey, threshold.minimo, threshold.maximo);
+        const error = validateThreshold(threshold.minimo, threshold.maximo);
         if (error) {
           errors[sensorKey] = error;
           hasErrors = true;

@@ -108,16 +108,13 @@ const CultivoDetailsModal: React.FC<CultivoDetailsModalProps> = ({
       }
 
       // Fetch financial data for the cultivo
-      let finanzas = null;
       try {
         const cosechasResponse = await apiClient.get(`/cosechas/cultivo/${currentCultivo.cvzid}`);
         const cosechasCultivo = cosechasResponse.data;
         if (cosechasCultivo && cosechasCultivo.length > 0) {
-          const response = await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/dinamico`);
-          finanzas = response.data;
+          await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/dinamico`);
         } else {
-          const response = await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/actividades`);
-          finanzas = response.data;
+          await apiClient.get(`/finanzas/cultivo/${currentCultivo.cvzid}/actividades`);
         }
       } catch (finanzasError) {
         console.warn('Could not fetch financial data:', finanzasError);

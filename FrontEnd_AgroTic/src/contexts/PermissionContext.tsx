@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, loginUser, refreshToken, getAccessTokenExpiration, isTokenExpiringSoon } from '../services/authService';
+import { logoutUser, loginUser, refreshToken, isTokenExpiringSoon } from '../services/authService';
 import type { Permission, LoginPayload } from '../types/Auth';
 import type { User } from '../types/user';
 import { setupAxiosInterceptors } from '../lib/axios/axios';
