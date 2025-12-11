@@ -49,6 +49,7 @@ export class AuthService {
    * Registra un nuevo usuario público con el rol por defecto 'INVITADO'.
    * No devuelve un token.
    */
+  // [AUTH] Registra nuevo usuario con rol INVITADO por defecto
   async register(registerDto: RegisterAuthDto) {
     const { dni, correo, password, nombres, apellidos, telefono } = registerDto;
 
@@ -96,11 +97,22 @@ export class AuthService {
     };
   }
 
+  /**
+   * Procesa el login de usuario con autenticación completa
+   * 1. Busca usuario por DNI con todas las relaciones de permisos
+   * 2. Verifica contraseña con bcrypt
+   * 3. Mapea permisos del rol a formato simplificado
+   * 4. Genera access token (15 min) y refresh token (30 días)
+   * 5. Almacena sesión en BD y Redis para persistencia
+   * 6. Retorna tokens para autenticación stateless
+   */
+  // [AUTH] Autentica usuario y genera tokens JWT
   async login(loginDto: LoginAuthDto) {
     const { dni, password } = loginDto;
+
+    // Buscar usuario con relaciones completas para permisos
     const usuario = await this.usuarioRepository.findOne({
       where: { dni },
-      // ✅ CAMBIO: Cargar todas las relaciones necesarias para los permisos.
       relations: [
         'rol',
         'rol.permisos',
@@ -109,15 +121,15 @@ export class AuthService {
       ],
     });
 
+    // Validar credenciales
     if (!usuario || !(await bcrypt.compare(password, usuario.passwordHash))) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // ✅ CAMBIO: Mapear los permisos al formato deseado.
+    // Mapear permisos a formato simplificado para el token
     const permisos =
       usuario.rol?.permisos
         ?.map((permiso) => {
-          // Asegurarse de que el permiso tiene toda la información necesaria.
           if (!permiso.recurso || !permiso.recurso.modulo) {
             return null;
           }
@@ -127,36 +139,33 @@ export class AuthService {
             accion: permiso.accion,
           };
         })
-        .filter((p) => p !== null) ?? []; // Filtrar nulos y manejar si no hay permisos.
+        .filter((p) => p !== null) ?? [];
 
+    // Payload del JWT (sin permisos para reducir tamaño)
     const payload = {
       sub: usuario.id,
       email: usuario.correo,
       rol: usuario.rol?.nombre,
-      // permisos removed to reduce token size for cookies
     };
 
+    // Generar ambos tokens en paralelo
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
         expiresIn: this.configService.get<string>('JWT_EXPIRATION_TIME'),
       }),
-
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'JWT_REFRESH_EXPIRATION_TIME',
-        ),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME'),
       }),
     ]);
 
-    console.log(this.configService.get<string>('JWT_EXPIRATION_TIME'));
-
+    // Hashear refresh token para almacenamiento seguro
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
 
-    // Store session in database
+    // Crear sesión en BD con expiración de 30 días
     const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + 30 * 24 * 60 * 60); // 30 days
+    expiresAt.setSeconds(expiresAt.getSeconds() + 30 * 24 * 60 * 60);
 
     const session = this.sessionRepository.create({
       tokenHash: refreshTokenHash,
@@ -166,20 +175,16 @@ export class AuthService {
     });
     await this.sessionRepository.save(session);
 
-    // Store session in Redis cache (with error handling)
+    // Almacenar en Redis como cache rápido (con fallback si falla)
     try {
       const ttl = 30 * 24 * 60 * 60;
-      await this.cacheManager.set(
-        `session:${usuario.id}`,
-        refreshTokenHash,
-        ttl,
-      );
+      await this.cacheManager.set(`session:${usuario.id}`, refreshTokenHash, ttl);
     } catch (redisError) {
       this.logger.warn(
-        `Failed to store session in Redis for user ${usuario.id}:`,
+        `Error almacenando sesión en Redis para usuario ${usuario.id}:`,
         redisError.message,
       );
-      // Continue with login even if Redis fails - database session is still valid
+      // Continuar con login aunque Redis falle - la sesión en BD es válida
     }
 
     return {
@@ -230,6 +235,7 @@ export class AuthService {
 }
 */
 
+  // [AUTH] Renueva tokens usando refresh token
   async refreshToken(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
@@ -345,6 +351,7 @@ export class AuthService {
     }
   }
 
+  // [AUTH] Cierra sesión del usuario
   async logout(userId: string) {
     console.log(`AuthService: Starting logout for userId: ${userId}`);
     try {
@@ -390,6 +397,7 @@ export class AuthService {
     }
   }
 
+  // [AUTH] Obtiene permisos del usuario agrupados por recurso
   async getUserPermissions(userId: string): Promise<CreatePermisoDto[]> {
     const user = await this.usuarioRepository.findOne({
       where: { id: userId },
@@ -441,9 +449,10 @@ export class AuthService {
   /**
    * Genera y envía un enlace para restablecer la contraseña.
    */
+  // [AUTH] Inicia recuperación de contraseña por email
   async forgotPassword(
-    email: ForgotPasswordDto['email'],
-  ): Promise<{ message: string }> {
+      email: ForgotPasswordDto['email'],
+    ): Promise<{ message: string }> {
     const usuario = await this.usuarioRepository.findOne({
       where: { correo: email },
     });
@@ -502,11 +511,11 @@ export class AuthService {
    * Valida el token y actualiza la contraseña del usuario.
    */
 
+  // [AUTH] Completa recuperación de contraseña con nuevo password
   async resetPassword(
-    token: string,
-    // ✅ CAMBIO: Recibe el DTO completo para poder comparar las contraseñas.
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<{ message: string }> {
+      token: string,
+      resetPasswordDto: ResetPasswordDto,
+    ): Promise<{ message: string }> {
     // ✅ CAMBIO: Se extraen y se comparan las contraseñas.
     const { newPassword, repetPassword } = resetPasswordDto;
     if (newPassword !== repetPassword) {

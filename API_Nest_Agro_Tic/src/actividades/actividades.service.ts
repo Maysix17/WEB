@@ -22,6 +22,7 @@ export class ActividadesService {
     private readonly movimientosInventarioService: MovimientosInventarioService,
   ) {}
 
+  // [ACTIVIDADES] Crea nueva actividad agrícola asignando responsable
   async create(
     dto: CreateActividadeDto & { imgUrl: string },
     dniResponsable: number,
@@ -79,6 +80,7 @@ export class ActividadesService {
     });
   }
 
+  // [ACTIVIDADES] Busca actividades por fecha con todas las relaciones
   async findByDate(date: string): Promise<Actividad[]> {
     const actividades = await this.actividadesRepo.find({
       where: { fechaAsignacion: new Date(date), estado: true },
@@ -105,6 +107,7 @@ export class ActividadesService {
     return await this.enrichActividadesWithResponsable(actividades);
   }
 
+  // [ACTIVIDADES] Busca actividades por fecha filtrando solo activas
   async findByDateWithActive(date: string): Promise<Actividad[]> {
     const actividades = await this.findByDate(date);
     // Filter relations to only active
@@ -119,6 +122,7 @@ export class ActividadesService {
     return await this.enrichActividadesWithResponsable(filtered);
   }
 
+  // [ACTIVIDADES] Busca actividades en rango de fechas
   async findByDateRange(start: string, end: string): Promise<Actividad[]> {
     const actividades = await this.actividadesRepo.find({
       where: {
@@ -166,6 +170,7 @@ export class ActividadesService {
     await this.actividadesRepo.remove(actividad);
   }
 
+  // [ACTIVIDADES] Elimina actividad con validaciones y devolución de insumos
   async removeWithValidation(id: string, userDni?: number): Promise<{ message: string; actividad: Actividad }> {
     console.log(`🔄 Iniciando eliminación de actividad ${id} con validación`);
     
@@ -281,6 +286,7 @@ export class ActividadesService {
     }
   }
 
+  // [ACTIVIDADES] Finaliza actividad con observaciones y costos
   async finalizar(
     id: string,
     observacion?: string,
@@ -304,6 +310,7 @@ export class ActividadesService {
 
   // New methods for reservation management
 
+  // [ACTIVIDADES] Crea reserva de producto para actividad
   async createReservation(
     actividadId: string,
     loteId: string,
@@ -415,6 +422,7 @@ export class ActividadesService {
     }
   }
 
+  // [ACTIVIDADES] Crea reserva buscando lote disponible por producto
   async createReservationByProduct(
     actividadId: string,
     productId: string,
@@ -461,6 +469,7 @@ export class ActividadesService {
     );
   }
 
+  // [ACTIVIDADES] Confirma uso de insumos en reserva
   async confirmUsage(
     reservaId: string,
     cantidadUsada: number,
@@ -499,6 +508,7 @@ export class ActividadesService {
       ],
     });
   }
+  // [ACTIVIDADES] Busca actividades por zona de cultivo-variedad
   async findByCultivoVariedadZonaId(cvzId: string): Promise<Actividad[]> {
     console.log(
       `[${new Date().toISOString()}] 🔍 BACKEND: Finding activities for CVZ ID: ${cvzId}`,
@@ -561,6 +571,7 @@ export class ActividadesService {
     return enrichedWithCosts;
   }
 
+  // [ACTIVIDADES] Enriquecer actividades con información del responsable
   private async enrichActividadesWithResponsable(
     actividades: Actividad[],
   ): Promise<Actividad[]> {
@@ -606,6 +617,7 @@ export class ActividadesService {
     return enriched;
   }
 
+  // [ACTIVIDADES] Calcula costos totales de actividad (insumos + mano de obra)
   private calculateActivityCosts(actividad: Actividad): any {
     if (!actividad.reservas) return null;
 

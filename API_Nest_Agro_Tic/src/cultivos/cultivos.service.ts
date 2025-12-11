@@ -25,6 +25,7 @@ export class CultivosService {
     private readonly zonaRepo: Repository<Zona>,
   ) {}
 
+  // [CULTIVOS] Crea cultivo con validaciones y relaciones complejas (Cultivo -> CultivosXVariedad -> CultivosVariedadXZona)
   async create(dto: CreateCultivoDto): Promise<Cultivo> {
     // Validate variedad exists and belongs to tipoCultivo
     const variedad = await this.variedadRepo.findOne({
@@ -106,32 +107,48 @@ export class CultivosService {
     await this.cultivoRepo.remove(cultivo);
   }
 
+  // [CULTIVOS] CONSULTA COMPLEJA: Busca cultivos con filtros avanzados y agregaciones
   async search(dto: SearchCultivoDto): Promise<any[]> {
     try {
-      // Query que muestra cultivos con CVZ asignado (para poder registrar cosechas)
+      // CONSTRUCCIÓN DE QUERY COMPLEJA CON MÚLTIPLES JOINS:
+      // cvz (CultivosVariedadXZona) es tabla central - une cultivo + variedad + zona
       const qb = this.cvzRepo
         .createQueryBuilder('cvz')
+        // JOIN 1: cvz -> cultivos_x_variedad (cxv) - relación cultivo-variedad
         .leftJoin('cvz.cultivoXVariedad', 'cxv')
+        // JOIN 2: cxv -> cultivo (c) - datos básicos del cultivo
         .leftJoin('cxv.cultivo', 'c')
+        // JOIN 3: cxv -> variedad (v) - información de la variedad
         .leftJoin('cxv.variedad', 'v')
+        // JOIN 4: v -> tipo_cultivo (tc) - clasificación del cultivo
         .leftJoin('v.tipoCultivo', 'tc')
+        // JOIN 5: cvz -> zona (z) - ubicación geográfica
         .leftJoin('cvz.zona', 'z')
+        // JOIN 6: cvz -> actividades (a) - actividades realizadas
         .leftJoin('cvz.actividades', 'a')
+        // JOIN 7: a -> usuarios_asignados (uxa) - usuarios asignados a actividades
         .leftJoin('a.usuariosAsignados', 'uxa')
+        // JOIN 8: uxa -> usuario (u) - datos del usuario asignado
         .leftJoin('uxa.usuario', 'u')
+        // JOIN 9: u -> ficha (f) - ficha del aprendiz si aplica
         .leftJoin('u.ficha', 'f')
+        // JOIN 10: cvz -> cosechas (cos) - cosechas realizadas
         .leftJoin('cvz.cosechas', 'cos')
+        // JOIN 11: cvz -> estado_fenologico (ef) - estado actual del cultivo
         .leftJoin('cvz.estadoFenologico', 'ef');
 
-      // Aplicar filtros
+      // APLICACIÓN DE FILTROS CONDICIONALES:
+      // Filtro 1: Estado del cultivo (activo/inactivo)
       if (dto.estado_cultivo !== undefined && dto.estado_cultivo !== null) {
         qb.andWhere('c.estado = :estado', { estado: dto.estado_cultivo });
       }
 
+      // Filtro 2: Búsqueda por nombre de zona (ILIKE = case insensitive)
       if (dto.buscar && dto.buscar.trim()) {
         qb.andWhere('z.nombre ILIKE :buscar', { buscar: `%${dto.buscar}%` });
       }
 
+      // Filtro 3: Búsqueda por nombre de variedad O tipo de cultivo
       if (dto.buscar_cultivo && dto.buscar_cultivo.trim()) {
         qb.andWhere(
           '(v.var_nombre ILIKE :cultivo OR tc.tpc_nombre ILIKE :cultivo)',
@@ -139,6 +156,7 @@ export class CultivosService {
         );
       }
 
+      // Filtro 4: Rango de fechas de siembra
       if (dto.fecha_inicio && dto.fecha_fin) {
         qb.andWhere('c.siembra BETWEEN :inicio AND :fin', {
           inicio: dto.fecha_inicio,
@@ -146,42 +164,62 @@ export class CultivosService {
         });
       }
 
-      // Filtro por ficha se aplica después de obtener los resultados
+      // NOTA: Filtro por ficha se aplica después de obtener resultados (post-procesamiento)
 
-      // Seleccionar campos con información completa
+      // SELECCIÓN DE CAMPOS CON FUNCIONES DE AGREGACIÓN AVANZADAS:
       qb.select([
-        'cvz.id as cvzid',
-        'c.id as id',
-        "COALESCE(string_agg(distinct f.ficha_numero::text, ', '), 'Sin ficha') as ficha",
-        "COALESCE(z.nombre, 'Sin zona') as lote",
-        "COALESCE(v.var_nombre, 'Sin variedad') as nombrecultivo",
-        'c.siembra as fechasiembra',
-        'c.estado as estado',
-        'MAX(cos.cos_fecha) as fechacosecha',
-        'COUNT(cos.id) as numCosechas',
-        '(SELECT cos2.pk_id_cosecha FROM cosechas cos2 WHERE cos2.fk_id_cultivos_variedad_x_zona = cvz.pk_id_cv_zona ORDER BY cos2.cos_fecha DESC LIMIT 1) as cosechaid',
-        'cvz.cantidadPlantasInicial as cantidad_plantas_inicial',
-        'cvz.cantidadPlantasActual as cantidad_plantas_actual',
-        'cvz.fkEstadoFenologicoId as fk_estado_fenologico',
-        'cvz.fechaActualizacion as fecha_actualizacion',
-        'ef.nombre as estado_fenologico_nombre',
-        'ef.descripcion as estado_fenologico_descripcion',
-        'tc.tpc_nombre as tipo_cultivo_nombre',
-        'tc.tpc_es_perenne as tipo_cultivo_es_perenne',
-      ])
-        .groupBy(
-          'cvz.id, c.id, z.nombre, c.siembra, c.estado, v.var_nombre, ef.nombre, ef.descripcion, tc.tpc_nombre, tc.tpc_es_perenne',
-        )
-        .orderBy('cvz.id');
+        // IDs principales
+        'cvz.id as cvzid',           // ID de CultivosVariedadXZona (clave primaria)
+        'c.id as id',                // ID del cultivo
 
-      console.log('Generated Query:', qb.getQuery());
-      console.log('Query Parameters:', qb.getParameters());
-      const result = await qb.getRawMany();
+        // FICHAS: CONCATENACIÓN de números de ficha con COALESCE para valores nulos
+        "COALESCE(string_agg(distinct f.ficha_numero::text, ', '), 'Sin ficha') as ficha",
+
+        // INFORMACIÓN BÁSICA con COALESCE para evitar valores nulos
+        "COALESCE(z.nombre, 'Sin zona') as lote",                    // Nombre de la zona
+        "COALESCE(v.var_nombre, 'Sin variedad') as nombrecultivo",   // Nombre de la variedad
+        'c.siembra as fechasiembra',                                  // Fecha de siembra
+        'c.estado as estado',                                        // Estado del cultivo
+
+        // AGREGACIONES DE COSECHAS:
+        'MAX(cos.cos_fecha) as fechacosecha',                        // Última fecha de cosecha
+        'COUNT(cos.id) as numCosechas',                              // Número total de cosechas
+
+        // SUBQUERY: Obtener ID de la última cosecha (más eficiente que MAX)
+        '(SELECT cos2.pk_id_cosecha FROM cosechas cos2 WHERE cos2.fk_id_cultivos_variedad_x_zona = cvz.pk_id_cv_zona ORDER BY cos2.cos_fecha DESC LIMIT 1) as cosechaid',
+
+        // DATOS DE PLANTAS:
+        'cvz.cantidadPlantasInicial as cantidad_plantas_inicial',    // Plantas iniciales
+        'cvz.cantidadPlantasActual as cantidad_plantas_actual',      // Plantas actuales
+        'cvz.fkEstadoFenologicoId as fk_estado_fenologico',          // Estado fenológico ID
+        'cvz.fechaActualizacion as fecha_actualizacion',             // Última actualización
+
+        // INFORMACIÓN COMPLETA DEL ESTADO FENOLÓGICO:
+        'ef.nombre as estado_fenologico_nombre',                     // Nombre del estado
+        'ef.descripcion as estado_fenologico_descripcion',           // Descripción del estado
+
+        // INFORMACIÓN DEL TIPO DE CULTIVO:
+        'tc.tpc_nombre as tipo_cultivo_nombre',                      // Nombre del tipo
+        'tc.tpc_es_perenne as tipo_cultivo_es_perenne',              // Si es perenne
+      ])
+
+      // GROUP BY: Campos no agregados deben estar en GROUP BY
+      .groupBy(
+        'cvz.id, c.id, z.nombre, c.siembra, c.estado, v.var_nombre, ef.nombre, ef.descripcion, tc.tpc_nombre, tc.tpc_es_perenne',
+      )
+      .orderBy('cvz.id'); // Ordenado por ID de CVZ para consistencia
+
+      // EJECUCIÓN Y DEPURACIÓN DE LA QUERY:
+      console.log('Generated Query:', qb.getQuery());           // SQL generado
+      console.log('Query Parameters:', qb.getParameters());     // Parámetros bind
+      const result = await qb.getRawMany();                     // Ejecutar query
       console.log('Search result count before ficha filter:', result.length);
       console.log('Applied filters:', dto);
       console.log('First 3 results:', result.slice(0, 3));
 
-      // Aplicar filtro por ficha después de obtener los resultados
+      // POST-PROCESAMIENTO: FILTRO POR FICHA (después de la query)
+      // NOTA: Este filtro se aplica en memoria porque involucra string_agg()
+      // que no se puede filtrar eficientemente en SQL puro
       let filteredResult = result;
       if (dto.id_titulado && dto.id_titulado.trim()) {
         filteredResult = result.filter(
@@ -203,6 +241,7 @@ export class CultivosService {
     }
   }
 
+  // [CULTIVOS] Finaliza cultivo cambiando estado a 0 (inactivo)
   async finalize(id: string): Promise<Cultivo> {
     const cultivo = await this.findOne(id);
     cultivo.estado = 0; // Cambiar estado a finalizado

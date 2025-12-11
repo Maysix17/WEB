@@ -13,9 +13,10 @@ import { Request } from 'express';
 export class AuthenticationGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
+  // [COMMON/GUARDS] Valida JWT token desde header o cookie
   canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+      context: ExecutionContext,
+    ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 

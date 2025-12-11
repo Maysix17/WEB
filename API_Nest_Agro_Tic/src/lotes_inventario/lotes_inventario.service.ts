@@ -24,6 +24,7 @@ export class LotesInventarioService {
     private readonly movimientosInventarioService: MovimientosInventarioService,
   ) {}
 
+  // [LOTES_INVENTARIO] Crea nuevo lote calculando cantidad disponible
   async create(createDto: CreateLotesInventarioDto): Promise<LotesInventario> {
     // Fetch the product to get capacidadPresentacion
     const producto = await this.lotesInventarioRepo.manager.findOne(Producto, {
@@ -62,6 +63,7 @@ export class LotesInventarioService {
     return entity;
   }
 
+  // [LOTES_INVENTARIO] Actualiza lote con validaciones de reservas activas
   async update(
     id: string,
     updateDto: UpdateLotesInventarioDto,
@@ -263,6 +265,7 @@ export class LotesInventarioService {
     return reloadedEntity;
   }
 
+  // [LOTES_INVENTARIO] Elimina lote con validaciones de integridad
   async remove(id: string): Promise<void> {
     // Load entity with reservations for validation
     const entity = await this.lotesInventarioRepo.findOne({
@@ -369,6 +372,7 @@ export class LotesInventarioService {
     }
   }
 
+  // [LOTES_INVENTARIO] Busca productos disponibles con cálculo de stock real
   async search(query: string, page: number = 1, limit: number = 10) {
     console.log(
       `Starting search for query: "${query}", page: ${page}, limit: ${limit}`,
@@ -542,6 +546,7 @@ export class LotesInventarioService {
     }
   }
 
+  // [LOTES_INVENTARIO] Lista lotes paginados con cantidades calculadas
   async findAllPaginated(page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
 
@@ -599,6 +604,7 @@ export class LotesInventarioService {
     return { items: itemsWithCalculatedQuantities, total };
   }
 
+  // [LOTES_INVENTARIO] Obtiene productos disponibles agrupados por stock real
   async getAvailableProducts() {
     try {
       console.log('Starting getAvailableProducts');

@@ -20,6 +20,7 @@ export class UsuariosXActividadesService {
     private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
+  // [USUARIOS_X_ACTIVIDADES] Crea asignación usuario-actividad y notifica
   async create(
     createDto: CreateUsuariosXActividadeDto,
   ): Promise<UsuarioXActividad> {
@@ -91,6 +92,7 @@ export class UsuariosXActividadesService {
     await this.uxActRepo.remove(entity);
   }
 
+  // [USUARIOS_X_ACTIVIDADES] Busca usuarios asignados a actividad
   async findByActividad(
     actividadId: string,
     activo?: boolean,
@@ -121,6 +123,7 @@ export class UsuariosXActividadesService {
     }));
   }
 
+  // [USUARIOS_X_ACTIVIDADES] Desactiva asignaciones al finalizar actividad
   async finalizarByActividad(actividadId: string): Promise<void> {
     await this.uxActRepo.update(
       { fkActividadId: actividadId },
@@ -128,6 +131,7 @@ export class UsuariosXActividadesService {
     );
   }
 
+  // [USUARIOS_X_ACTIVIDADES] Busca actividades activas asignadas a usuario
   async findByUser(userId: string): Promise<UsuarioXActividad[]> {
     return await this.uxActRepo.find({
       where: { fkUsuarioId: userId, activo: true },

@@ -1,0 +1,366 @@
+{
+  "name": "n8n.v5",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        208
+      ],
+      "id": "03025792-6d80-40fe-b68a-73abad1064b1",
+      "name": "Telegram Trigger",
+      "webhookId": "66288e9e-364e-4f70-a078-64fafaeafe20",
+      "credentials": {
+        "telegramApi": {
+          "id": "WP0am1syKYZ1t0tW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "id-exists-check"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "id-1",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "listar_actividades",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "id-3",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "agendar_actividad",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2b958cb2-58cf-43b2-8d84-e27b93034c68",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "como_finalizar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -336,
+        176
+      ],
+      "id": "d46b1731-8458-4f63-a66e-4fefb03551db",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "¡Hola! ¿Qué deseas hacer?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Cómo agendar una actividad",
+                    "additionalFields": {
+                      "callback_data": "agendar_actividad"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Listar Actividades",
+                    "additionalFields": {
+                      "callback_data": "listar_actividades"
+                    }
+                  },
+                  {
+                    "text": "Como Finalizar actividades",
+                    "additionalFields": {
+                      "callback_data": "como_finalizar"
+                    }
+                  }
+                ]
+              }
+            },
+            {}
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "27b6561f-4528-47b7-a108-53afdf91d05c",
+      "name": "Respuesta Inmediata con Opciones",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        -80
+      ],
+      "webhookId": "c67bf3fc-ae9d-4405-bf8e-82053f1a56eb",
+      "credentials": {
+        "telegramApi": {
+          "id": "WP0am1syKYZ1t0tW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://uncleanly-fairish-lamonica.ngrok-free.dev/actividades/by-date-range?start=2020-01-01&end=2030-12-31",
+        "options": {}
+      },
+      "id": "27822ea9-842d-43fb-82ca-8a9635527d5d",
+      "name": "Obtener Actividades del Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -112,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Obtener Chat ID del Trigger\nconst triggerData = $('Telegram Trigger').first();\nconst chatId = triggerData ? triggerData.json.callback_query.message.chat.id : null;\n\n// 2. Obtener la actividad actual (un solo item)\nconst act = $input.item.json;\n\n// 3. Extraer datos de la actividad\nconst actividadId = act.id || 'N/A';\nconst fecha = act.fechaAsignacion || 'N/A';\nconst cultivo = act.cultivoVariedadZona?.cultivoXVariedad?.variedad?.tipoCultivo?.nombre || 'N/A';\nconst variedad = act.cultivoVariedadZona?.cultivoXVariedad?.variedad?.nombre || 'N/A';\nconst zona = act.cultivoVariedadZona?.zona?.nombre || 'N/A';\nconst descripcion = act.descripcion || 'Sin descripción';\nconst categoria = act.categoriaActividad?.nombre || 'N/A';\n\n// 4. Usuarios Asignados (con DNI)\nlet textoAsignados = \"Sin Asignar\";\nif (act.usuariosAsignados && Array.isArray(act.usuariosAsignados) && act.usuariosAsignados.length > 0) {\n    const listaUsuarios = act.usuariosAsignados.map(ua => {\n        const nombre = ua.usuario?.nombres || 'Desconocido';\n        const dni = ua.usuario?.dni || 'S/D';\n        return `${nombre} (DNI: ${dni})`;\n    });\n    textoAsignados = listaUsuarios.join(', ');\n}\n\n// 5. Responsable (con DNI)\nconst respNombre = act.nombreResponsable || 'N/A';\nconst respDni = act.responsableDni || 'N/A';\n\n// 6. Reservas / Insumos (MODIFICADO)\nlet textoReservas = \"Ninguno\";\nlet idsReservas = []; // <--- Nueva variable para guardar los IDs\n\nif (act.reservas && Array.isArray(act.reservas) && act.reservas.length > 0) {\n    \n    // a) Extraer los IDs de las reservas en un array\n    idsReservas = act.reservas.map(res => res.id); \n\n    // b) Crear el texto legible (tu lógica anterior)\n    const listaProductos = act.reservas.map(res => {\n        const nombreProd = res.lote?.producto?.nombre || 'Producto desconocido';\n        const cantidad = parseFloat(res.cantidadReservada).toFixed(2); \n        const unidad = res.lote?.producto?.unidadMedida?.abreviatura || 'U';\n        return `${nombreProd} (${cantidad} ${unidad})`;\n    });\n    textoReservas = listaProductos.join(', ');\n}\n\n// 7. Construir mensaje formateado para esta actividad\nlet mensajeFinal = `📋 *Actividad ID:* ${actividadId}\\n\\n`;\nmensajeFinal += `📅 *Fecha:* ${fecha}\\n`;\nmensajeFinal += `📝 *Descripción:* ${descripcion}\\n`;\nmensajeFinal += `🏷️ *Categoría:* ${categoria}\\n`;\nmensajeFinal += `🌱 *Cultivo:* ${cultivo} - ${variedad}\\n`;\nmensajeFinal += `📍 *Zona:* ${zona}\\n`;\nmensajeFinal += `👤 *Asignado:* ${textoAsignados}\\n`;\nmensajeFinal += `👨‍💼 *Responsable:* ${respNombre} (DNI: ${respDni})\\n`;\nmensajeFinal += `📦 *Insumos:* ${textoReservas}`;\n\n// 8. Retornar resultado (MODIFICADO)\nreturn {\n    json: {\n        chatId: chatId,\n        actividadId: actividadId,\n        mensajeFinal: mensajeFinal,\n        fecha: fecha,\n        cultivo: cultivo,\n        variedad: variedad,\n        zona: zona,\n        textoAsignados: textoAsignados,\n        respNombre: respNombre,\n        respDni: respDni,\n        textoReservas: textoReservas,\n        reservasIds: idsReservas // <--- Aquí devolvemos el array de IDs\n    }\n};"
+      },
+      "id": "ff9e9c69-a68a-48c0-9e3d-ab91b3d8bc71",
+      "name": "Formatear Actividades para Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.mensajeFinal }}",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {}
+      },
+      "id": "8945dd09-46f3-4c8c-9a67-10792cd688d4",
+      "name": "Enviar Lista de Actividades",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        496
+      ],
+      "webhookId": "000b7ce8-b617-499d-a7b5-58f556ae7e02",
+      "credentials": {
+        "telegramApi": {
+          "id": "WP0am1syKYZ1t0tW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.callback_query.message.chat.id }}",
+        "text": "1. Consulta y Selección\n- 🗓️ Calendario Interactivo: En el modulo de gestión de actividades selecciona en el calendario el día que deseas consultar.\n- 📋 Lista de Actividades: Al desplegarse la lista del día, elige la actividad específica para acceder a la vista de detalles.\n-Botón Finalizar: Dentro de los detalles, ubica y presiona el botón \"Finalizar\" (situado en la esquina inferior derecha).\n\n2. Formulario de Cierre\nAl presionar finalizar, deberás completar la siguiente información en este orden estricto:\n-📦 Devolución de Insumos/Herramientas: Registra cualquier producto no utilizado o herramienta que deba ser devuelta al inventario.\n-⏱️ Tiempo Ejecutado: Ingresa la cantidad total de horas dedicadas a la actividad.\n-💲 Tarifa: Indica el precio por hora de la actividad.\n-📝 Observaciones: Redacta una descripción o bitácora de lo sucedido durante la actividad.\n-📷 Evidencia Fotográfica: Adjunta una imagen de respaldo.\n\nNota: Puedes subir un imagen (Web) o tomar una foto directamente (App Móvil).",
+        "additionalFields": {}
+      },
+      "id": "2cc3ea84-ce59-4efe-bd06-d4efef578973",
+      "name": "Guía Finalizar Actividad",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        304
+      ],
+      "webhookId": "g1h2i3j4-k5l6-7890-mnop-qr1234567890",
+      "credentials": {
+        "telegramApi": {
+          "id": "WP0am1syKYZ1t0tW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.callback_query.message.chat.id }}",
+        "text": "📅 Cómo Agendar una Actividad\nSigue este paso a paso para registrar una nueva actividad en el sistema:\n\n1. Accede al Módulo: Ingresa a la sección de Actividades.\n\n2. Selecciona Participantes: Busca y elige el usuario (o usuarios) que participarán.\n\n3. Gestionar Reservas: Busca y selecciona las reservas asociadas.\n\n4. Definir Cantidad: Indica el número exacto de reservas que deseas utilizar.\n\n5. Categorizar: Elige la categoría correspondiente al tipo de actividad.\n\n6. Describir: Escribe una descripción clara y detallada de la actividad.\n\n7. Asignar Zona: Busca y selecciona el cultivo y zona donde se llevará a cabo.",
+        "additionalFields": {}
+      },
+      "id": "c4c8193f-62e7-4a9f-b7aa-d775ab2e49a6",
+      "name": "Guía Agendar Actividad",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        112
+      ],
+      "webhookId": "g1h2i3j4-k5l6-7890-mnop-qr1234567890",
+      "credentials": {
+        "telegramApi": {
+          "id": "WP0am1syKYZ1t0tW",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Inmediata con Opciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Actividades del Backend",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guía Agendar Actividad",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guía Finalizar Actividad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Actividades del Backend": {
+      "main": [
+        [
+          {
+            "node": "Formatear Actividades para Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Actividades para Telegram": {
+      "main": [
+        [
+          {
+            "node": "Enviar Lista de Actividades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "db5cf848-ec66-479f-a761-eb400c5e982f",
+  "meta": {
+    "instanceId": "34467d56d0bd21d265d7df9dd2ba381c10f92f4f5cd8b7ecc1fa7393f10f95ab"
+  },
+  "id": "prKKJL5F6Q3AhLvQ",
+  "tags": []
+}

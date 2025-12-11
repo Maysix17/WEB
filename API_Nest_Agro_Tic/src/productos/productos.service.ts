@@ -25,6 +25,7 @@ export class ProductosService {
     private readonly movimientosInventarioService: MovimientosInventarioService,
   ) {}
 
+  // [PRODUCTOS] Crea nuevo producto validando SKU único
   async create(createDto: CreateProductosDto): Promise<Producto> {
     // Check if sku already exists
     const existing = await this.productoRepo.findOne({
@@ -53,11 +54,12 @@ export class ProductosService {
     return entity;
   }
 
+  // [PRODUCTOS] Actualiza producto con transacciones para integridad
   async update(
-    id: string,
-    updateDto: UpdateProductosDto,
-    userDni?: number,
-  ): Promise<Producto> {
+      id: string,
+      updateDto: UpdateProductosDto,
+      userDni?: number,
+    ): Promise<Producto> {
     console.log('🔄 Iniciando actualización de producto:', id);
     console.log('📝 Datos de actualización:', updateDto);
 
@@ -180,6 +182,7 @@ export class ProductosService {
     }
   }
 
+  // [PRODUCTOS] Elimina producto con validaciones de integridad referencial
   async remove(id: string): Promise<void> {
     const entity = await this.findOne(id);
 
@@ -264,10 +267,11 @@ export class ProductosService {
     }
   }
 
+  // [PRODUCTOS] Crea producto con lote de inventario en una transacción
   async createWithLote(
-    createDto: CreateProductoWithLoteDto,
-    userDni?: number,
-  ): Promise<Producto> {
+      createDto: CreateProductoWithLoteDto,
+      userDni?: number,
+    ): Promise<Producto> {
     // Check if sku already exists
     const existing = await this.productoRepo.findOne({
       where: { sku: createDto.sku },

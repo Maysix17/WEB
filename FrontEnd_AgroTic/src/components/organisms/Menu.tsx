@@ -49,6 +49,7 @@ const Menu: React.FC = () => {
     { nombre: "zonas" },
     { nombre: "Cultivos" },
     { nombre: "Actividades" },
+    // { nombre: "Ropa" },
     { nombre: "Inventario" },
     { nombre: "Usuarios" },
     { nombre: "IOT" },
@@ -64,6 +65,8 @@ const Menu: React.FC = () => {
         return GlobeAltIcon;
       case "Actividades":
         return ClipboardDocumentListIcon;
+      case "Ropa":
+        return CubeIcon;
       case "Inventario":
         return ArchiveBoxIcon;
       case "Usuarios":
@@ -85,6 +88,8 @@ const Menu: React.FC = () => {
         return "/app/cultivos";
       case "Actividades":
         return "/app/actividades";
+      case "Ropa":
+        return "/app/ropa";
       case "Inventario":
         return "/app/inventario";
       case "IOT":
@@ -114,6 +119,12 @@ const Menu: React.FC = () => {
           (perm) => perm.modulo === "Actividades" && perm.recurso === "acceso_actividades" && perm.accion === "ver"
         );
       }
+      // Special handling for Ropa - check for acceso_ropa permission
+      if (module.nombre === "Ropa") {
+        return permissions.some(
+          (perm) => perm.modulo === "Ropa" && perm.recurso === "acceso_ropa" && perm.accion === "ver"
+        );
+      }
       // For other modules, check for general ver permission
       return permissions.some(
         (perm) => perm.modulo === module.nombre && perm.accion === "ver"
@@ -121,7 +132,7 @@ const Menu: React.FC = () => {
     }
   );
 
-  const priorityOrder = ["Inicio", "zonas", "IOT", "Cultivos", "Actividades", "Inventario", "Usuarios"];
+  const priorityOrder = ["Inicio", "zonas", "IOT", "Cultivos", "Actividades", "Ropa", "Inventario", "Usuarios"];
   const sortedFilteredModules = [...filteredModules].sort((a, b) => {
     const aIndex = priorityOrder.indexOf(a.nombre);
     const bIndex = priorityOrder.indexOf(b.nombre);

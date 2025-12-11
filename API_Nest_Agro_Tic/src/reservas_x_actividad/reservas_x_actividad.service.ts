@@ -39,6 +39,7 @@ export class ReservasXActividadService {
     private readonly movimientosInventarioService: MovimientosInventarioService,
   ) {}
 
+  // [RESERVAS_X_ACTIVIDAD] Crea reserva de producto para actividad
   async create(
     createDto: CreateReservasXActividadDto,
   ): Promise<ReservasXActividad> {
@@ -102,6 +103,7 @@ export class ReservasXActividadService {
     await this.reservasXActividadRepo.remove(entity);
   }
 
+  // [RESERVAS_X_ACTIVIDAD] Finaliza actividad con consumos y devoluciones
   async finalizeActivity(
     finalizeDto: FinalizeActivityDto,
     file?: Express.Multer.File,
@@ -282,6 +284,7 @@ export class ReservasXActividadService {
     );
   }
 
+  // [RESERVAS_X_ACTIVIDAD] Actualiza inventario proporcionalmente al consumo
   private async updateLoteInventoryProportionally(
     loteId: string,
     cantidadUsada: number,

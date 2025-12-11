@@ -36,6 +36,7 @@ export class UsuariosService {
    * Crea un usuario con un rol específico.
    * Este método debería ser llamado solo por un administrador autenticado.
    */
+  // [USUARIOS] Crea usuario desde panel administrativo con validaciones de rol
   async createUserByPanel(
     createUserDto: CreateUsuarioDto,
     requestingUser?: RequestingUser,
@@ -113,6 +114,7 @@ export class UsuariosService {
     });
   }
 
+  // [USUARIOS] Busca usuarios con paginación y filtros
   async search(query: string, page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
     const qb = this.usuarioRepository
@@ -159,6 +161,7 @@ export class UsuariosService {
     return `This action returns a #${id} usuario`;
   }
 
+  // [USUARIOS] Actualiza usuario con validaciones de conflictos
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto, requestingUser?: RequestingUser) {
     const {
       nombres,
@@ -252,6 +255,7 @@ export class UsuariosService {
     return `This action removes a #${id} usuario`;
   }
 
+  // [USUARIOS] Obtiene perfil del usuario actual con permisos
   async findMe(userId: string): Promise<Omit<Usuario, 'passwordHash'>> {
     const user = await this.usuarioRepository.findOne({
       where: { id: userId },
@@ -273,6 +277,7 @@ export class UsuariosService {
     return result;
   }
 
+  // [USUARIOS] Actualiza perfil propio del usuario
   async updateMe(
     userId: string,
     updateProfileDto: UpdateMeDto,
@@ -310,6 +315,7 @@ export class UsuariosService {
     return result;
   }
 
+  // [USUARIOS] Busca usuario por número de documento
   async findByDni(dni: number) {
     const user = await this.usuarioRepository.findOne({
       where: { dni },

@@ -23,6 +23,7 @@ export class FinanzasService {
     private readonly cultivosVariedadXZonaRepo: Repository<CultivosVariedadXZona>,
   ) {}
 
+  // [FINANZAS] Calcula métricas financieras completas de una cosecha
   async calcularFinanzasCosecha(cosechaId: string): Promise<FinanzasDataDto> {
     console.log(
       `[DEBUG] ================= INICIO CÁLCULO FINANZAS COSECHA ${cosechaId} =================`,
@@ -139,6 +140,7 @@ export class FinanzasService {
     return finanzasData;
   }
 
+  // [FINANZAS] Calcula finanzas acumuladas de todas las cosechas de un cultivo
   async calcularFinanzasCultivoDinamico(
     cultivoId: string,
   ): Promise<FinanzasDataDto> {
@@ -214,6 +216,7 @@ export class FinanzasService {
     return finanzas;
   }
 
+  // [FINANZAS] Calcula costo total de inventario usado en actividades de la cosecha
   private async calcularCostoInventario(cosechaId: string): Promise<number> {
     // Obtener todas las actividades relacionadas con la cosecha
     const actividades = await this.actividadRepo.find({
@@ -278,6 +281,7 @@ export class FinanzasService {
     return costoTotal;
   }
 
+  // [FINANZAS] Calcula costo total de mano de obra en actividades de la cosecha
   private async calcularCostoManoObra(cosechaId: string): Promise<number> {
     // Obtener todas las actividades relacionadas con la cosecha
     const actividades = await this.actividadRepo.find({
@@ -303,6 +307,7 @@ export class FinanzasService {
     return costoTotal;
   }
 
+  // [FINANZAS] Calcula ingresos totales por ventas de la cosecha
   private async calcularIngresosTotales(cosechaId: string): Promise<number> {
     // Obtener todas las ventas de la cosecha
     const ventas = await this.ventaRepo.find({
@@ -321,6 +326,7 @@ export class FinanzasService {
     return ingresosTotales;
   }
 
+  // [FINANZAS] Calcula precio promedio por kilo de las ventas
   private async calcularPrecioPromedioKilo(cosechaId: string): Promise<number> {
     const ventas = await this.ventaRepo.find({
       where: { fkCosechaId: cosechaId },
@@ -347,6 +353,7 @@ export class FinanzasService {
     return [];
   }
 
+  // [FINANZAS] Calcula costos estimados de actividades de un cultivo sin cosecha
   async calcularFinanzasCultivoActividades(
     cultivoId: string,
   ): Promise<FinanzasDataDto> {

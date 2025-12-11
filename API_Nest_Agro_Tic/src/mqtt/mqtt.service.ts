@@ -37,10 +37,12 @@ export class MqttService implements OnModuleInit {
     private readonly mqttGateway: MqttGateway,
   ) {}
   //El método onModuleInit() se ejecuta automáticamente cuando NestJS inicia el módulo, llamando a initializeConnections() que obtiene todas las configuraciones activas y crea las conexiones MQTT correspondientes.
+  // [MQTT] Inicializa conexiones MQTT al iniciar el módulo
   async onModuleInit() {
-    await this.initializeConnections();
-  }
+      await this.initializeConnections();
+    }
 
+  // [MQTT] Inicializa todas las conexiones MQTT activas desde BD
   private async initializeConnections() {
     try {
       const activeZonaMqttConfigs =
@@ -57,6 +59,7 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  // [MQTT] Crea nueva conexión MQTT para una zona específica
   private async createConnection(zonaMqttConfig: any) {
     try {
       const config = zonaMqttConfig.mqttConfig;
@@ -240,11 +243,12 @@ export class MqttService implements OnModuleInit {
     await this.initializeConnections();
   }
 
+  // [MQTT] Procesa mensajes MQTT entrantes y los guarda en BD
   private async handleIncomingMessage(
-    topic: string,
-    message: Buffer,
-    zonaMqttConfig: any,
-  ) {
+      topic: string,
+      message: Buffer,
+      zonaMqttConfig: any,
+    ) {
     try {
       const payload = JSON.parse(message.toString());
       this.logger.log(
@@ -276,12 +280,13 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  // [MQTT] Procesa datos del sensor y verifica umbrales
   private async processSensorData(
-    zonaMqttConfigId: string,
-    zonaId: string,
-    payload: any,
-    zonaMqttConfig?: any,
-  ) {
+      zonaMqttConfigId: string,
+      zonaId: string,
+      payload: any,
+      zonaMqttConfig?: any,
+    ) {
     try {
       this.logger.debug(`📡 Procesando datos MQTT para zona ${zonaId}`);
       this.logger.debug(`📡 Payload recibido:`, payload);
@@ -431,11 +436,12 @@ export class MqttService implements OnModuleInit {
     return false;
   }
 
+  // [MQTT] Verifica si un valor excede los umbrales configurados
   private checkThresholdBreach(
-    sensorKey: string,
-    value: number,
-    zonaMqttConfig: any,
-  ): boolean {
+      sensorKey: string,
+      value: number,
+      zonaMqttConfig: any,
+    ): boolean {
     try {
       // Skip threshold check for N/A values
       if (value === -999) return false;
@@ -482,6 +488,7 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  // [MQTT] Guarda lecturas bufferizadas cada 30 segundos
   private async checkAndSaveBufferedReadings(zonaMqttConfigId: string) {
     const buffer = this.readingBuffers.get(zonaMqttConfigId);
     if (!buffer || buffer.length === 0) return;
@@ -517,10 +524,11 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  // [MQTT] Guarda inmediatamente lecturas que exceden umbrales
   private async saveAlertReadingsImmediately(
-    zonaMqttConfigId: string,
-    alertMediciones: BufferedReading[],
-  ) {
+      zonaMqttConfigId: string,
+      alertMediciones: BufferedReading[],
+    ) {
     this.logger.log(
       `💾 Intentando guardar ${alertMediciones.length} mediciones de alerta para zonaMqttConfig ${zonaMqttConfigId}`,
     );
