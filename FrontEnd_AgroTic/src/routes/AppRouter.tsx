@@ -15,7 +15,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import Dashboard from "../pages/Dashboard";
 import CultivosPage from "../pages/CultivosPage";
 import ActividadesPage from "../pages/ActividadesPage";
-// import RopaPage from "../pages/RopaPage";
+import RopaPage from "../pages/RopaPage";
 import ZapatoPage from "../pages/ZapatoPage";
 import InventoryPage from "../pages/InventoryPage";
 import MovementsPage from "../pages/MovementsPage";
@@ -56,7 +56,7 @@ const AppRouter = () => {
           <Route path="panel-control" element={<PanelControl />} />
           <Route path="cultivos" element={<CultivosPage />} />
           <Route path="actividades" element={<ActividadesPage />} />
-          {/* <Route path="ropa" element={<RopaPage />} /> */}
+          <Route path="ropa" element={<RopaPage />} />
           <Route path="zonas" element={<GestionZonasPage />} />
           <Route path="zapato" element={<ZapatoPage />} />
           <Route path="inventario" element={<InventoryPage />} />

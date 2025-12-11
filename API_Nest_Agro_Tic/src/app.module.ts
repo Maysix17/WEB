@@ -24,7 +24,7 @@ import { VariedadModule } from './variedad/variedad.module';
 import { VentaModule } from './venta/venta.module';
 import { ZonasModule } from './zonas/zonas.module';
 import { RolesModule } from './roles/roles.module';
-// import { RopaModule } from './ropa/ropa.module';
+import { RopaModule } from './ropa/ropa.module';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -181,7 +181,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     VentaModule,
     ZonasModule,
     RolesModule,
-    // RopaModule,
+    RopaModule,
     AuthModule,
     PermisosModule,
     RecursosModule,

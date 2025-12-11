@@ -13,7 +13,7 @@ const config: DataSourceOptions = {
   database: process.env.DB_DATABASE,
   entities: [__dirname + '/src/**/*.entity{.ts,.js}'], // Referencia directa a la entidad
   migrations: [__dirname + '/src/migrations/*.ts'], // Ruta corregida
-  synchronize: false,
+  synchronize: true,
   migrationsRun: false,
   logging: true,
 };

@@ -200,7 +200,7 @@ const RopaPage = () => {
               <tr key={r.id} className="hover:bg-gray-50">
                 <td className="p-2 border">{r.nombre}</td>
                 <td className="p-2 border">{r.descripcion || ""}</td>
-                <td className="p-2 border">${r.precio.toFixed(2)}</td>
+                <td className="p-2 border">${Number(r.precio).toFixed(2)}</td>
                 <td className="p-2 border flex justify-center gap-2">
                   <button
                     onClick={() => handleEdit(r.id!, r.nombre, r.descripcion || "", r.precio)}
