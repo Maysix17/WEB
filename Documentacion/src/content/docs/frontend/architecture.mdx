@@ -1,0 +1,295 @@
+---
+title: Arquitectura del Frontend
+description: Estructura completa del frontend de AgroTic
+---
+
+# Arquitectura del Frontend
+
+## Visión General
+
+El frontend de AgroTic está construido con **React** (v19.1.1), un framework JavaScript moderno para construir interfaces de usuario interactivas. Utiliza **TypeScript** (v5.8.3) para un desarrollo más robusto y **Vite** (v7.1.3) como bundler de desarrollo.
+
+## Tecnologías Principales
+
+### Framework y Lenguaje
+- **React** (v19.1.1): Framework para interfaces de usuario
+- **TypeScript** (v5.8.3): Superset tipado de JavaScript
+- **Vite** (v7.1.3): Bundler y servidor de desarrollo
+
+### UI y Estilos
+- **HeroUI** (v2.8.2): Biblioteca de componentes UI
+- **Tailwind CSS** (v3.4.18): Framework de estilos utilitarios
+- **Framer Motion** (v12.23.24): Animaciones y transiciones
+
+### Comunicación y Estado
+- **Axios** (v1.12.2): Cliente HTTP para APIs
+- **Socket.IO Client** (v4.8.1): Comunicación en tiempo real
+- **JWT Decode** (v4.0.0): Decodificación de tokens JWT
+- **JS Cookie** (v3.0.5): Gestión de cookies
+
+### Formularios y Validación
+- **React Hook Form**: Gestión de formularios
+- **React DatePicker** (v8.7.0): Selector de fechas
+- **Date-fns** (v4.1.0): Utilidades de fechas
+
+### Mapas y Visualización
+- **Leaflet** (v1.9.4): Biblioteca de mapas
+- **React Leaflet** (v5.0.0): Componentes React para Leaflet
+- **React Leaflet Draw** (v0.21.0): Herramientas de dibujo en mapas
+- **Recharts** (v3.3.0): Gráficos y visualizaciones
+
+### Calendario y Programación
+- **React Big Calendar** (v1.19.4): Calendario interactivo
+- **Uncontrollable**: Gestión de estado no controlado
+
+### Notificaciones
+- **SweetAlert2** (v11.23.0): Modales y alertas
+
+## Estructura de Componentes
+
+### Arquitectura de Componentes
+
+La aplicación sigue una estructura modular organizada por funcionalidades:
+
+```
+src/
+├── components/          # Componentes reutilizables
+├── pages/              # Páginas principales
+├── services/           # Servicios de API
+├── types/              # Definiciones TypeScript
+├── lib/                # Utilidades y configuraciones
+├── hooks/              # Hooks personalizados
+└── utils/              # Funciones auxiliares
+```
+
+### Componentes Principales
+
+#### 1. Layout Components
+- **Navbar**: Navegación principal
+- **Sidebar**: Menú lateral
+- **Footer**: Pie de página
+
+#### 2. Form Components
+- **Input**: Campos de entrada
+- **Select**: Selectores desplegables
+- **DatePicker**: Selectores de fecha
+- **FileUpload**: Subida de archivos
+
+#### 3. Data Display Components
+- **Table**: Tablas de datos
+- **Card**: Tarjetas de información
+- **Chart**: Gráficos y visualizaciones
+- **Map**: Componentes de mapas
+
+#### 4. Feedback Components
+- **Modal**: Ventanas modales
+- **Alert**: Notificaciones
+- **Loading**: Indicadores de carga
+- **Toast**: Notificaciones temporales
+
+## Gestión de Estado
+
+### Patrón de Estado
+
+La aplicación utiliza una combinación de:
+- **Local State**: useState para estado local de componentes
+- **Server State**: Axios para comunicación con API
+- **URL State**: React Router para estado en URL
+
+### Comunicación con API
+
+#### Axios Configuration
+```typescript
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = Cookies.get('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+#### Servicios
+Cada módulo tiene su propio servicio para interactuar con la API:
+
+```typescript
+export class CultivosService {
+  static async getAll() {
+    const response = await api.get('/cultivos');
+    return response.data;
+  }
+
+  static async create(data: CreateCultivoDto) {
+    const response = await api.post('/cultivos', data);
+    return response.data;
+  }
+}
+```
+
+## Ruteo y Navegación
+
+### React Router
+- **BrowserRouter**: Router principal
+- **Routes**: Definición de rutas
+- **Route**: Rutas individuales
+- **Navigate**: Navegación programática
+
+### Protección de Rutas
+```typescript
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const token = Cookies.get('accessToken');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+```
+
+## Gestión de Formularios
+
+### React Hook Form
+- **useForm**: Hook principal para gestión de formularios
+- **Controller**: Control de componentes no controlados
+- **Validation**: Validación integrada
+
+### Ejemplo de Formulario
+```typescript
+const { control, handleSubmit, formState: { errors } } = useForm<CultivoForm>();
+
+const onSubmit = async (data: CultivoForm) => {
+  try {
+    await CultivosService.create(data);
+    // Success handling
+  } catch (error) {
+    // Error handling
+  }
+};
+```
+
+## Mapas y Georreferenciación
+
+### Leaflet Integration
+- **MapContainer**: Contenedor principal del mapa
+- **TileLayer**: Capa de tiles base
+- **Marker**: Marcadores en el mapa
+- **Popup**: Ventanas emergentes
+
+### Dibujo en Mapas
+```typescript
+<MapContainer center={[lat, lng]} zoom={13}>
+  <TileLayer url="..." />
+  <FeatureGroup>
+    <EditControl
+      position="topright"
+      draw={{
+        rectangle: true,
+        polygon: true,
+        circle: false,
+        marker: false,
+      }}
+    />
+  </FeatureGroup>
+</MapContainer>
+```
+
+## Comunicación en Tiempo Real
+
+### Socket.IO Client
+```typescript
+const socket = io(import.meta.env.VITE_SOCKET_URL);
+
+socket.on('notification', (data) => {
+  // Handle real-time notifications
+});
+
+socket.on('sensor-update', (data) => {
+  // Handle sensor data updates
+});
+```
+
+## Gestión de Archivos
+
+### File Upload
+- **Multer**: Middleware del backend
+- **File Input**: Componentes de selección de archivos
+- **Preview**: Vista previa de imágenes
+- **Progress**: Indicadores de progreso
+
+## Tema y Estilos
+
+### Tailwind CSS
+- **Utility-first**: Clases utilitarias
+- **Responsive**: Diseño responsivo
+- **Dark Mode**: Soporte para modo oscuro
+
+### HeroUI Theme
+- **Design System**: Sistema de diseño consistente
+- **Components**: Componentes preconstruidos
+- **Customization**: Personalización de temas
+
+## Optimización y Rendimiento
+
+### Code Splitting
+- **Lazy Loading**: Carga diferida de componentes
+- **Dynamic Imports**: Importaciones dinámicas
+
+### Bundle Optimization
+- **Vite**: Optimización automática de bundles
+- **Tree Shaking**: Eliminación de código no utilizado
+- **Minification**: Minificación de código
+
+## Testing
+
+### Herramientas de Testing
+- **Vitest**: Framework de testing
+- **React Testing Library**: Testing de componentes
+- **MSW**: Mock de APIs
+
+## Despliegue
+
+### Build Process
+```bash
+npm run build  # Construye la aplicación
+npm run preview  # Vista previa del build
+```
+
+### Variables de Entorno
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_SOCKET_URL=http://localhost:3000
+VITE_MAPS_API_KEY=your-maps-api-key
+```
+
+## Herramientas de Desarrollo
+
+### ESLint y Prettier
+- **ESLint** (v9.33.0): Linting de código
+- **Prettier** (v3.4.2): Formateo automático
+- **TypeScript ESLint** (v8.39.1): Reglas específicas de TypeScript
+
+### Extensiones VSCode
+- **ES7+ React/Redux/React-Native snippets**
+- **Tailwind CSS IntelliSense**
+- **TypeScript Importer**
+- **Auto Rename Tag**
+
+## Seguridad
+
+### Medidas Implementadas
+- **HTTP-only Cookies**: Almacenamiento seguro de tokens
+- **Input Sanitization**: Sanitización de entradas
+- **XSS Protection**: Protección contra ataques XSS
+- **CSRF Protection**: Protección CSRF
+
+### Mejores Prácticas
+- **Type Safety**: Uso de TypeScript
+- **Code Reviews**: Revisiones de código
+- **Dependency Updates**: Actualizaciones regulares
+- **Security Audits**: Auditorías de seguridad

@@ -1,0 +1,517 @@
+---
+title: Servicios
+description: Documentación detallada de la capa de servicios
+---
+
+# Servicios
+
+Los servicios en NestJS contienen la lógica de negocio de la aplicación. Cada módulo tiene su propio servicio que maneja las operaciones CRUD y la lógica específica del dominio.
+
+## Patrón de Diseño
+
+### Inyección de Dependencias
+
+```typescript
+@Injectable()
+export class CultivosService {
+  constructor(
+    @InjectRepository(Cultivo)
+    private readonly cultivoRepository: Repository<Cultivo>,
+  ) {}
+}
+```
+
+### Estructura Típica de un Servicio
+
+```typescript
+@Injectable()
+export class ExampleService {
+  constructor(
+    @InjectRepository(Example)
+    private readonly repository: Repository<Example>,
+  ) {}
+
+  async create(dto: CreateExampleDto): Promise<Example> {
+    const entity = this.repository.create(dto);
+    return await this.repository.save(entity);
+  }
+
+  async findAll(): Promise<Example[]> {
+    return await this.repository.find();
+  }
+
+  async findOne(id: string): Promise<Example> {
+    const entity = await this.repository.findOne({ where: { id } });
+    if (!entity) {
+      throw new NotFoundException(`Entity with id ${id} not found`);
+    }
+    return entity;
+  }
+
+  async update(id: string, dto: UpdateExampleDto): Promise<Example> {
+    const entity = await this.findOne(id);
+    Object.assign(entity, dto);
+    return await this.repository.save(entity);
+  }
+
+  async remove(id: string): Promise<void> {
+    const entity = await this.findOne(id);
+    await this.repository.remove(entity);
+  }
+}
+```
+
+## Servicios Principales
+
+### AuthService
+
+**Responsabilidades:**
+- Gestión de autenticación y autorización
+- Manejo de tokens JWT
+- Gestión de sesiones
+- Recuperación de contraseñas
+
+#### Métodos principales:
+
+```typescript
+async register(registerDto: RegisterAuthDto): Promise<{ message: string; usuario: Usuario }>
+async login(loginDto: LoginAuthDto): Promise<{ message: string; access_token: string; refresh_token: string }>
+async refreshToken(refreshToken: string): Promise<{ message: string; access_token: string }>
+async logout(userId: string): Promise<{ message: string }>
+async forgotPassword(email: string): Promise<{ message: string }>
+async resetPassword(token: string, resetPasswordDto: ResetPasswordDto): Promise<{ message: string }>
+async getUserPermissions(userId: string): Promise<CreatePermisoDto[]>
+```
+
+#### Lógica de autenticación:
+
+```typescript
+async login(loginDto: LoginAuthDto) {
+  // 1. Buscar usuario por DNI
+  const usuario = await this.usuarioRepository.findOne({
+    where: { dni: loginDto.dni },
+    relations: ['rol', 'rol.permisos', 'rol.permisos.recurso', 'rol.permisos.recurso.modulo'],
+  });
+
+  // 2. Verificar credenciales
+  if (!usuario || !(await bcrypt.compare(loginDto.password, usuario.passwordHash))) {
+    throw new UnauthorizedException('Credenciales inválidas');
+  }
+
+  // 3. Mapear permisos
+  const permisos = usuario.rol?.permisos?.map(permiso => ({
+    modulo: permiso.recurso.modulo.nombre,
+    recurso: permiso.recurso.nombre,
+    accion: permiso.accion,
+  })) ?? [];
+
+  // 4. Generar tokens
+  const payload = { sub: usuario.id, email: usuario.correo, rol: usuario.rol?.nombre };
+  const [accessToken, refreshToken] = await Promise.all([
+    this.jwtService.signAsync(payload, { secret: this.configService.get('JWT_SECRET'), expiresIn: '15m' }),
+    this.jwtService.signAsync(payload, { secret: this.configService.get('JWT_REFRESH_SECRET'), expiresIn: '30d' }),
+  ]);
+
+  // 5. Almacenar sesión
+  const session = this.sessionRepository.create({
+    tokenHash: await bcrypt.hash(refreshToken, 10),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    isActive: true,
+    usuario,
+  });
+  await this.sessionRepository.save(session);
+
+  return { message: 'Inicio de sesión exitoso', access_token: accessToken, refresh_token: refreshToken };
+}
+```
+
+### UsuariosService
+
+**Responsabilidades:**
+- Gestión de perfiles de usuario
+- Creación de usuarios por panel administrativo
+- Búsqueda y filtrado de usuarios
+- Actualización de perfiles
+
+#### Métodos principales:
+
+```typescript
+async createUserByPanel(createUserDto: CreateUsuarioDto, requestingUser?: RequestingUser): Promise<Usuario>
+async findAll(): Promise<Usuario[]>
+async search(query: string, page: number, limit: number): Promise<{ items: Usuario[]; total: number; page: number; limit: number; totalPages: number }>
+async findMe(userId: string): Promise<Omit<Usuario, 'passwordHash'>>
+async updateMe(userId: string, updateProfileDto: UpdateMeDto): Promise<Omit<Usuario, 'passwordHash'>>
+async findByDni(dni: number): Promise<{ numero_documento: number; nombres: string; apellidos: string; correo_electronico: string; telefono: number; id_ficha: string; rol: string }>
+```
+
+#### Lógica de creación de usuarios:
+
+```typescript
+async createUserByPanel(createUserDto: CreateUsuarioDto, requestingUser?: RequestingUser) {
+  // 1. Validar rol
+  const rolAAsignar = await this.rolRepository.findOneBy({ id: createUserDto.rolId });
+  if (!rolAAsignar) {
+    throw new NotFoundException(`Rol con ID "${createUserDto.rolId}" no encontrado`);
+  }
+
+  // 2. Validar ficha para aprendices
+  let fichaAsignar: Ficha | undefined;
+  if (rolAAsignar.nombre?.toLowerCase() === 'aprendiz') {
+    if (!createUserDto.fichaId) {
+      throw new BadRequestException('Debe proporcionar una ficha para usuarios con rol APRENDIZ');
+    }
+    fichaAsignar = await this.fichaRepository.findOneBy({ id: createUserDto.fichaId });
+    if (!fichaAsignar) {
+      throw new NotFoundException(`Ficha con ID "${createUserDto.fichaId}" no encontrada`);
+    }
+  }
+
+  // 3. Verificar permisos de creación
+  if (requestingUser && rolAAsignar.nombre === 'ADMIN' && requestingUser.rol !== 'ADMIN') {
+    throw new ForbiddenException('Solo los administradores pueden crear usuarios ADMIN');
+  }
+
+  // 4. Verificar unicidad
+  const usuarioExistente = await this.usuarioRepository.findOne({
+    where: [{ dni: createUserDto.dni }, { correo: createUserDto.correo }],
+  });
+  if (usuarioExistente) {
+    throw new ConflictException('El DNI o el correo ya están registrados');
+  }
+
+  // 5. Crear usuario
+  const passwordToUse = createUserDto.password || createUserDto.dni.toString();
+  const passwordHash = await bcrypt.hash(passwordToUse, 10);
+
+  const nuevoUsuario = this.usuarioRepository.create({
+    ...createUserDto,
+    passwordHash,
+    rol: rolAAsignar,
+    ficha: fichaAsignar,
+  });
+
+  return await this.usuarioRepository.save(nuevoUsuario);
+}
+```
+
+### CultivosService
+
+**Responsabilidades:**
+- Gestión del ciclo de vida de cultivos
+- Asociación de variedades y zonas
+- Búsqueda avanzada de cultivos
+- Seguimiento de estados
+
+#### Métodos principales:
+
+```typescript
+async create(dto: CreateCultivoDto): Promise<Cultivo>
+async findAll(): Promise<any[]>
+async findOne(id: string): Promise<Cultivo>
+async update(id: string, dto: UpdateCultivoDto): Promise<Cultivo>
+async remove(id: string): Promise<void>
+async search(dto: SearchCultivoDto): Promise<any[]>
+```
+
+#### Lógica de creación de cultivos:
+
+```typescript
+async create(dto: CreateCultivoDto): Promise<Cultivo> {
+  // 1. Validar variedad
+  const variedad = await this.variedadRepo.findOne({
+    where: { id: dto.variedadId },
+    relations: ['tipoCultivo'],
+  });
+  if (!variedad) {
+    throw new NotFoundException(`Variedad con id ${dto.variedadId} no encontrada`);
+  }
+  if (variedad.fkTipoCultivoId !== dto.tipoCultivoId) {
+    throw new NotFoundException(`Variedad no pertenece al tipo de cultivo especificado`);
+  }
+
+  // 2. Validar zona
+  const zona = await this.zonaRepo.findOne({ where: { id: dto.zonaId } });
+  if (!zona) {
+    throw new NotFoundException(`Zona con id ${dto.zonaId} no encontrada`);
+  }
+
+  // 3. Crear cultivo
+  const cultivo = this.cultivoRepo.create({
+    estado: dto.estado,
+    siembra: dto.siembra,
+  });
+  const savedCultivo = await this.cultivoRepo.save(cultivo);
+
+  // 4. Crear relación CultivosXVariedad
+  const cxv = this.cxvRepo.create({
+    fkCultivoId: savedCultivo.id,
+    fkVariedadId: dto.variedadId,
+  });
+  const savedCxv = await this.cxvRepo.save(cxv);
+
+  // 5. Crear relación CultivosVariedadXZona
+  const cvz = this.cvzRepo.create({
+    fkCultivosXVariedadId: savedCxv.id,
+    fkZonaId: dto.zonaId,
+  });
+  await this.cvzRepo.save(cvz);
+
+  return savedCultivo;
+}
+```
+
+### ActividadesService
+
+**Responsabilidades:**
+- Planificación y gestión de actividades agrícolas
+- Gestión de reservas de productos
+- Cálculo de costos
+- Finalización de actividades con evidencias
+
+#### Métodos principales:
+
+```typescript
+async create(dto: CreateActividadeDto & { imgUrl?: string }): Promise<Actividade>
+async findAll(): Promise<Actividade[]>
+async findByDate(date: string): Promise<Actividade[]>
+async findByDateRange(start: string, end: string): Promise<Actividade[]>
+async finalizar(id: string, observacion?: string, imgUrl?: string, horas?: number, precioHora?: number): Promise<Actividade>
+async createReservation(actividadId: string, loteId: string, cantidadReservada: number, estadoId?: number): Promise<any>
+async confirmUsage(reservaId: string, cantidadUsada: number): Promise<any>
+async calculateCost(actividadId: string): Promise<{ costoTotal: number; reservas: any[] }>
+```
+
+#### Lógica de finalización de actividades:
+
+```typescript
+async finalizar(
+  id: string,
+  observacion?: string,
+  imgUrl?: string,
+  horas?: number,
+  precioHora?: number,
+): Promise<Actividade> {
+  const actividad = await this.actividadRepo.findOne({
+    where: { id },
+    relations: ['reservas'],
+  });
+
+  if (!actividad) {
+    throw new NotFoundException(`Actividad con id ${id} no encontrada`);
+  }
+
+  // Actualizar actividad
+  actividad.estado = 'finalizada';
+  actividad.observacion = observacion;
+  actividad.imgUrl = imgUrl || actividad.imgUrl;
+  actividad.horas = horas;
+  actividad.precioHora = precioHora;
+
+  return await this.actividadRepo.save(actividad);
+}
+```
+
+### LotesInventarioService
+
+**Responsabilidades:**
+- Gestión de inventario por lotes
+- Control de stock
+- Movimientos de inventario
+- Búsqueda de productos disponibles
+
+#### Métodos principales:
+
+```typescript
+async create(createLotesInventarioDto: CreateLotesInventarioDto): Promise<LotesInventario>
+async findAllPaginated(page: number, limit: number): Promise<{ items: LotesInventario[]; total: number; page: number; limit: number; totalPages: number }>
+async search(query: string, page: number, limit: number): Promise<{ items: LotesInventario[]; total: number; page: number; limit: number; totalPages: number }>
+async getAvailableProducts(): Promise<Array<{ productoId: string; nombre: string; cantidadDisponible: number; lotes: any[] }>>
+```
+
+## Servicios de Soporte
+
+### RolesService
+
+**Responsabilidades:**
+- Gestión de roles y permisos
+- Asignación de permisos a roles
+- Jerarquía de roles
+
+### PermisosService
+
+**Responsabilidades:**
+- Sincronización de permisos
+- Gestión de recursos y módulos
+- Validación de permisos
+
+### FichasService
+
+**Responsabilidades:**
+- Gestión de fichas de aprendices
+- Asociación con usuarios
+
+## Manejo de Errores
+
+### Excepciones Comunes
+
+```typescript
+// En servicios
+if (!entity) {
+  throw new NotFoundException(`Entidad con id ${id} no encontrada`);
+}
+
+if (existingEntity) {
+  throw new ConflictException('La entidad ya existe');
+}
+
+if (!authorized) {
+  throw new ForbiddenException('No tiene permisos para esta acción');
+}
+```
+
+### Validación de Datos
+
+```typescript
+// Validaciones en servicios
+if (dto.cantidad <= 0) {
+  throw new BadRequestException('La cantidad debe ser mayor a 0');
+}
+
+if (dto.fechaInicio > dto.fechaFin) {
+  throw new BadRequestException('La fecha de inicio no puede ser posterior a la fecha fin');
+}
+```
+
+## Optimizaciones de Rendimiento
+
+### Consultas Optimizadas
+
+```typescript
+// Uso de select para campos específicos
+const users = await this.usuarioRepository.find({
+  select: ['id', 'nombres', 'apellidos', 'dni'],
+  relations: ['ficha'],
+});
+
+// Uso de query builder para consultas complejas
+const qb = this.cvzRepo.createQueryBuilder('cvz')
+  .leftJoin('cvz.cultivoXVariedad', 'cxv')
+  .leftJoin('cxv.cultivo', 'c')
+  .select(['cvz.id', 'c.nombre', 'c.estado'])
+  .where('c.estado = :estado', { estado: true });
+```
+
+### Caché
+
+```typescript
+// Uso de Redis para datos frecuentemente accedidos
+@Injectable()
+export class CachedService {
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private originalService: OriginalService,
+  ) {}
+
+  async findFrequentlyAccessedData(): Promise<any> {
+    const cacheKey = 'frequent-data';
+    const cached = await this.cacheManager.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const data = await this.originalService.findFrequentlyAccessedData();
+    await this.cacheManager.set(cacheKey, data, 300); // 5 minutos
+    return data;
+  }
+}
+```
+
+## Logging
+
+### Estrategia de Logging
+
+```typescript
+@Injectable()
+export class ExampleService {
+  private readonly logger = new Logger(ExampleService.name);
+
+  async exampleMethod() {
+    this.logger.log(`Iniciando operación en ${ExampleService.name}`);
+    try {
+      // Lógica del método
+      this.logger.log('Operación completada exitosamente');
+      return result;
+    } catch (error) {
+      this.logger.error(`Error en operación: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+}
+```
+
+## Testing
+
+### Estructura de Tests
+
+```typescript
+describe('ExampleService', () => {
+  let service: ExampleService;
+  let repository: Repository<Example>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ExampleService,
+        {
+          provide: getRepositoryToken(Example),
+          useClass: Repository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ExampleService>(ExampleService);
+    repository = module.get<Repository<Example>>(getRepositoryToken(Example));
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should create an entity', async () => {
+    const dto = { name: 'Test' };
+    const result = await service.create(dto);
+    expect(result).toBeDefined();
+  });
+});
+```
+
+## Consideraciones de Seguridad
+
+### Validación de Entradas
+
+```typescript
+// Sanitización de datos
+const cleanQuery = query.replace(/[<>'"&]/g, '');
+
+// Validación de IDs
+if (!isUUID(id)) {
+  throw new BadRequestException('ID inválido');
+}
+```
+
+### Control de Acceso
+
+```typescript
+// Verificación de permisos en servicios
+async update(id: string, dto: UpdateDto, userId: string): Promise<Entity> {
+  const entity = await this.findOne(id);
+
+  // Verificar propiedad o permisos
+  if (entity.userId !== userId && !await this.hasPermission(userId, 'admin')) {
+    throw new ForbiddenException('No tiene permisos para modificar esta entidad');
+  }
+
+  Object.assign(entity, dto);
+  return await this.repository.save(entity);
+}

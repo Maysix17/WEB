@@ -1,0 +1,35 @@
+---
+title: Permisos
+description: Endpoints para gestión de permisos
+---
+
+# Permisos
+
+## POST /permisos/sincronizar
+
+Sincroniza permisos en el sistema.
+
+**Requiere autenticación y autorización**
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "recurso": "productos",
+  "acciones": ["leer", "crear", "actualizar", "eliminar"]
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "message": "Permisos sincronizados exitosamente", // Mensaje descriptivo del resultado
+  "data": {
+    "id": "uuid", // Identificador único del permiso creado (primary key, UUID)
+    "recurso": "productos", // Nombre del recurso al que aplica el permiso
+    "acciones": ["leer", "crear", "actualizar", "eliminar"] // Array de acciones permitidas para el recurso
+  }
+}
+```
+
+**Nota:** Este endpoint permite crear permisos dinámicamente para recursos específicos del sistema.

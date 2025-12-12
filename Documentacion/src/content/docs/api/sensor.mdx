@@ -1,0 +1,168 @@
+---
+title: Sensores
+description: Endpoints para gestión de sensores
+---
+
+# Sensores
+
+## POST /sensor
+
+Crea un nuevo sensor.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/sensor
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Sensor de temperatura zona norte",
+  "tipoSensorId": "uuid-tipo-sensor",
+  "zonaId": "uuid-zona",
+  "ubicacion": "Coordenadas GPS",
+  "activo": true
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Sensor de temperatura zona norte",
+    "tipoSensorId": "uuid-tipo-sensor",
+    "zonaId": "uuid-zona",
+    "ubicacion": "Coordenadas GPS",
+    "activo": true
+  }
+}
+```
+
+## GET /sensor
+
+Lista todos los sensores.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/sensor
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Sensor de temperatura zona norte",
+      "tipoSensorId": "uuid-tipo-sensor",
+      "zonaId": "uuid-zona",
+      "ubicacion": "Coordenadas GPS",
+      "activo": true
+    }
+  ]
+}
+```
+
+## GET /sensor/:id
+
+Obtiene un sensor específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del sensor
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/sensor/uuid-sensor
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Sensor de temperatura zona norte",
+    "tipoSensorId": "uuid-tipo-sensor",
+    "zonaId": "uuid-zona",
+    "ubicacion": "Coordenadas GPS",
+    "activo": true
+  }
+}
+```
+
+## PATCH /sensor/:id
+
+Actualiza un sensor específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del sensor
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/sensor/uuid-sensor
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Sensor de temperatura zona norte actualizado",
+  "activo": false
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Sensor de temperatura zona norte actualizado",
+    "tipoSensorId": "uuid-tipo-sensor",
+    "zonaId": "uuid-zona",
+    "ubicacion": "Coordenadas GPS",
+    "activo": false
+  }
+}
+```
+
+## DELETE /sensor/:id
+
+Elimina un sensor específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del sensor
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/sensor/uuid-sensor
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Sensor eliminado exitosamente"
+}
+```

@@ -1,0 +1,153 @@
+---
+title: Categorías
+description: Endpoints para gestión de categorías
+---
+
+# Categorías
+
+## POST /categoria
+
+Crea una nueva categoría.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/categoria
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Herramientas",
+  "descripcion": "Categoría para herramientas agrícolas"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Herramientas",
+    "descripcion": "Categoría para herramientas agrícolas"
+  }
+}
+```
+
+## GET /categoria
+
+Lista todas las categorías.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/categoria
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Herramientas",
+      "descripcion": "Categoría para herramientas agrícolas"
+    }
+  ]
+}
+```
+
+## GET /categoria/:id
+
+Obtiene una categoría específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la categoría
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/categoria/uuid-categoria
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Herramientas",
+    "descripcion": "Categoría para herramientas agrícolas"
+  }
+}
+```
+
+## PATCH /categoria/:id
+
+Actualiza una categoría específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la categoría
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/categoria/uuid-categoria
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Herramientas Actualizadas",
+  "descripcion": "Categoría para herramientas agrícolas actualizada"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Herramientas Actualizadas",
+    "descripcion": "Categoría para herramientas agrícolas actualizada"
+  }
+}
+```
+
+## DELETE /categoria/:id
+
+Elimina una categoría específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la categoría
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/categoria/uuid-categoria
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Categoría eliminada exitosamente"
+}
+```

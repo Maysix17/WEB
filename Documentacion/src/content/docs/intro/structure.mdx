@@ -1,0 +1,142 @@
+---
+title: Estructura de la API
+description: Arquitectura y organización de los endpoints de la API
+---
+
+# Estructura de la API
+
+La API de AgroTic está organizada siguiendo principios RESTful con una estructura modular clara.
+
+## Arquitectura general
+
+```
+/api/v1/
+├── auth/           # Autenticación y sesiones
+├── usuarios/       # Gestión de usuarios
+├── cultivos/       # Administración de cultivos
+├── variedad/       # Gestión de variedades
+├── zonas/          # Control de zonas de cultivo
+├── venta/          # Gestión de ventas
+├── permisos/       # Sistema de permisos
+├── roles/          # Administración de roles
+├── actividades/    # Control de actividades
+├── mapas/          # Gestión de mapas
+├── sensor/         # Administración de sensores
+├── medicion_sensor/ # Mediciones de sensores
+├── productos/      # Catálogo de productos
+└── ...             # Otros módulos
+```
+
+## Patrón de URLs
+
+### Recursos estándar
+
+```
+GET    /recurso           # Listar todos
+GET    /recurso/:id       # Obtener uno específico
+POST   /recurso           # Crear nuevo
+PATCH  /recurso/:id       # Actualizar existente
+DELETE /recurso/:id       # Eliminar
+```
+### Recursos anidados
+
+```
+GET    /cultivos/:id/variedades  # Variedades de un cultivo
+POST   /zonas/:id/cultivos       # Asignar cultivo a zona
+```
+
+## Códigos de respuesta
+
+### Éxito (2xx)
+
+- `200 OK`: Operación exitosa
+- `201 Created`: Recurso creado
+- `204 No Content`: Operación exitosa sin contenido
+
+### Errores del cliente (4xx)
+
+- `400 Bad Request`: Datos inválidos
+- `401 Unauthorized`: No autenticado
+- `403 Forbidden`: Sin permisos
+- `404 Not Found`: Recurso no existe
+- `409 Conflict`: Conflicto (ej: DNI duplicado)
+- `422 Unprocessable Entity`: Validación fallida
+
+### Errores del servidor (5xx)
+
+- `500 Internal Server Error`: Error interno
+
+## Formato de respuesta estándar
+
+### Respuesta exitosa
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operación exitosa"
+}
+```
+
+### Respuesta de error
+
+```json
+{
+  "success": false,
+  "error": "Descripción del error",
+  "statusCode": 400
+}
+```
+
+La API utiliza class-validator para validar todas las entradas:
+
+### Validaciones comunes
+
+- `@IsNotEmpty()`: Campo requerido
+- `@IsString()`: Debe ser string
+- `@IsNumber()`: Debe ser número
+- `@IsEmail()`: Formato de email válido
+- `@MinLength(n)`: Longitud mínima
+- `@MaxLength(n)`: Longitud máxima
+- `@IsOptional()`: Campo opcional
+
+### Ejemplo de DTO
+
+```typescript
+export class CreateUsuarioDto {
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(20)
+  dni: string;
+
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(6)
+  password: string;
+}
+```
+
+
+## Caché
+
+Redis se utiliza para:
+
+- Sesiones de usuario
+- Resultados de consultas frecuentes
+- Configuraciones globales
+
+## Logging
+
+Todos los requests se loggean con:
+
+- Timestamp
+- Usuario
+- Endpoint
+- Método HTTP
+- Código de respuesta
+- Tiempo de ejecución

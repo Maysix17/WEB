@@ -1,0 +1,355 @@
+---
+title: Guards y Seguridad
+description: Documentación completa de guards, middlewares y sistema de seguridad
+---
+
+# Guards y Seguridad
+
+## Sistema de Autenticación y Autorización
+
+La API de AgroTic implementa un sistema robusto de seguridad basado en JWT con control granular de permisos. El sistema utiliza Guards de NestJS para proteger los endpoints.
+
+## AuthenticationGuard
+
+### Descripción
+El `AuthenticationGuard` verifica que el usuario esté autenticado mediante token JWT. Extrae y valida el token desde headers o cookies.
+
+### Funcionamiento
+1. **Extracción del token**: Busca el token en `Authorization` header o `access_token` cookie
+2. **Verificación JWT**: Valida la firma y expiración del token
+3. **Inyección de usuario**: Agrega `userId` al objeto `request`
+
+### Código fuente
+```typescript
+@Injectable()
+export class AuthenticationGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    try {
+      const payload = this.jwtService.verify(token);
+      request.userId = payload.sub;
+      return true;
+    } catch (e) {
+      throw new UnauthorizedException('Invalid Token');
+    }
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    // Primero intenta header
+    let token = request.headers.authorization?.split(' ')[1];
+    
+    // Si no hay header, intenta cookie
+    if (!token) {
+      token = request.cookies?.access_token;
+    }
+
+    return token;
+  }
+}
+```
+
+### Errores comunes
+- **401 Unauthorized**: Token no proporcionado o inválido
+- **Token expirado**: Se debe usar refresh token
+
+## AuthorizationGuard
+
+### Descripción
+El `AuthorizationGuard` verifica que el usuario tenga los permisos necesarios para acceder al recurso solicitado.
+
+### Funcionamiento
+1. **Obtención de permisos requeridos**: Lee los decoradores `@Permisos()` del endpoint
+2. **Consulta de permisos del usuario**: Obtiene permisos del usuario desde la base de datos
+3. **Validación de permisos**: Verifica que el usuario tenga todas las acciones requeridas
+4. **Control de acceso**: Permite o deniega el acceso
+
+### Código fuente
+```typescript
+@Injectable()
+export class AuthorizationGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+
+    if (!request.userId) {
+      throw new UnauthorizedException('ID de usuario no encontrado');
+    }
+
+    const requiredPermissions = this.reflector.getAllAndOverride<CreatePermisoDto[]>(
+      PERMISOS_KEY, 
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (!requiredPermissions || requiredPermissions.length === 0) {
+      return true; // Endpoint público
+    }
+
+    const userPermissions = await this.authService.getUserPermissions(request.userId);
+
+    const hasPermission = requiredPermissions.every((routePermission) => {
+      const userPermissionForResource = userPermissions.find(
+        (perm) => perm.recurso === routePermission.recurso,
+      );
+
+      if (!userPermissionForResource) return false;
+
+      return routePermission.acciones.every((requiredAction) =>
+        userPermissionForResource.acciones.includes(requiredAction),
+      );
+    });
+
+    if (!hasPermission) {
+      throw new ForbiddenException('No tienes los permisos necesarios');
+    }
+
+    return true;
+  }
+}
+```
+
+### Errores comunes
+- **403 Forbidden**: Usuario no tiene permisos suficientes
+- **404 Not Found**: Usuario no encontrado en base de datos
+
+## Decorador @Permisos
+
+### Descripción
+Decorador personalizado que define los permisos requeridos para acceder a un endpoint.
+
+### Uso
+```typescript
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
+@Controller('cultivos')
+export class CultivosController {
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['leer'],
+    moduloNombre: 'Cultivos',
+  })
+  @Get()
+  findAll() {
+    // Solo usuarios con permiso 'leer' en 'cultivos'
+  }
+
+  @Permisos({
+    recurso: 'cultivos',
+    acciones: ['crear', 'actualizar'],
+    moduloNombre: 'Cultivos',
+  })
+  @Post()
+  create(@Body() dto: CreateCultivoDto) {
+    // Requiere permisos 'crear' Y 'actualizar'
+  }
+}
+```
+
+### Estructura del decorador
+```typescript
+export const Permisos = (...permisos: CreatePermisoDto[]) =>
+  SetMetadata(PERMISOS_KEY, permisos);
+```
+
+### DTO de permisos
+```typescript
+export class CreatePermisoDto {
+  moduloNombre: string;  // Ej: 'Cultivos', 'Usuarios'
+  recurso: string;       // Ej: 'cultivos', 'productos'
+  acciones: string[];    // Ej: ['leer'], ['crear', 'actualizar']
+}
+```
+
+## Sistema de Permisos Jerárquico
+
+### Estructura de permisos
+```
+Módulo → Recursos → Acciones
+```
+
+### Módulos disponibles
+- **Usuarios**: Gestión de usuarios del sistema
+- **Cultivos**: Administración de cultivos y variedades
+- **Inventario**: Control de productos y stock
+- **Actividades**: Planificación agrícola
+- **IoT**: Sensores y mediciones
+- **Inicio**: Dashboard y reportes
+
+### Recursos por módulo
+| Módulo | Recursos |
+|--------|----------|
+| Usuarios | `acceso_usuarios`, `gestion_usuarios` |
+| Cultivos | `acceso_cultivos`, `gestion_cultivos` |
+| Inventario | `acceso_inventario`, `gestion_inventario` |
+| Actividades | `acceso_actividades`, `gestion_actividades` |
+| IoT | `acceso_iot`, `gestion_sensores` |
+| Inicio | `acceso_inicio` |
+
+### Acciones disponibles
+- `leer`: Ver/listar recursos
+- `crear`: Crear nuevos recursos
+- `actualizar`: Modificar recursos existentes
+- `eliminar`: Eliminar recursos
+
+## Roles y Permisos Predefinidos
+
+### Administrador
+```json
+{
+  "modulo": "Todos",
+  "recurso": "todos_los_recursos",
+  "acciones": ["leer", "crear", "actualizar", "eliminar"]
+}
+```
+
+### Instructor
+```json
+{
+  "modulo": "Cultivos",
+  "recurso": "gestion_cultivos",
+  "acciones": ["leer", "crear", "actualizar"]
+}
+```
+
+### Aprendiz
+```json
+{
+  "modulo": "Actividades",
+  "recurso": "acceso_actividades",
+  "acciones": ["leer"]
+}
+```
+
+## Middlewares Adicionales
+
+### Cookie Parser
+```typescript
+// main.ts
+app.use(cookieParser());
+```
+
+### CORS
+```typescript
+// main.ts
+app.enableCors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+});
+```
+
+### Rate Limiting
+```typescript
+// Implementado en infraestructura externa (nginx/redis)
+```
+
+## Validación de Datos
+
+### Pipes de validación
+```typescript
+@Post()
+create(@Body(new ValidationPipe()) dto: CreateCultivoDto) {
+  return this.service.create(dto);
+}
+```
+
+### DTOs con validación
+```typescript
+export class CreateCultivoDto {
+  @IsNotEmpty()
+  @IsString()
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsNotEmpty()
+  variedadId: string;
+}
+```
+
+## Manejo de Errores de Seguridad
+
+### Respuestas de error estándar
+```json
+// 401 Unauthorized
+{
+  "statusCode": 401,
+  "message": "Invalid token",
+  "error": "Unauthorized"
+}
+
+// 403 Forbidden
+{
+  "statusCode": 403,
+  "message": "No tienes los permisos necesarios para acceder a este recurso",
+  "error": "Forbidden"
+}
+```
+
+## Logging de Seguridad
+
+### Eventos registrados
+- Intentos de login fallidos
+- Acceso a recursos restringidos
+- Cambios en permisos
+- Expiración de tokens
+
+### Configuración de logging
+```typescript
+// En servicios
+this.logger.warn(`Acceso denegado al recurso ${resource} para usuario ${userId}`);
+this.logger.error(`Token inválido desde IP ${ip}`);
+```
+
+## Mejores Prácticas de Seguridad
+
+### 1. Principio de menor privilegio
+- Los usuarios deben tener solo los permisos necesarios
+- Usar roles específicos en lugar de permisos globales
+
+### 2. Validación de entrada
+- Siempre validar y sanitizar datos de entrada
+- Usar DTOs con validación de class-validator
+
+### 3. Manejo de tokens
+- Tokens de acceso de corta duración (15 minutos)
+- Tokens de refresh más largos pero con validación estricta
+- Invalidación inmediata al logout
+
+### 4. Control de acceso
+- Verificar permisos en cada endpoint protegido
+- Usar guards consistentes en todos los controladores
+- Implementar rate limiting para prevenir abuso
+
+### 5. Auditoría
+- Registrar todas las acciones importantes
+- Mantener logs de acceso y cambios
+- Implementar alertas para actividades sospechosas
+
+## Testing de Seguridad
+
+### Pruebas de guards
+```typescript
+describe('AuthorizationGuard', () => {
+  it('should allow access with proper permissions', async () => {
+    // Test implementation
+  });
+
+  it('should deny access without permissions', async () => {
+    // Test implementation
+  });
+});
+```
+
+### Pruebas de endpoints
+```typescript
+it('should return 403 for unauthorized user', () => {
+  return request(app.getHttpServer())
+    .get('/protected-endpoint')
+    .set('Authorization', 'Bearer invalid-token')
+    .expect(403);
+});

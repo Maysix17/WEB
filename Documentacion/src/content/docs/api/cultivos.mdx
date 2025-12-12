@@ -1,0 +1,203 @@
+---
+title: Cultivos
+description: Endpoints para gestión de cultivos
+---
+
+# Cultivos
+
+## POST /cultivos
+
+Crea un nuevo cultivo.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/cultivos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Tomate", // Nombre del cultivo a registrar
+  "descripcion": "Cultivo de tomate cherry", // Descripción detallada del cultivo
+  "tipoCultivoId": "uuid-del-tipo", // ID del tipo de cultivo (perenne/transitorio)
+  "zonaId": "uuid-de-la-zona" // ID de la zona donde se ubicará el cultivo
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Tomate",
+    "descripcion": "Cultivo de tomate cherry",
+    "tipoCultivoId": "uuid-del-tipo",
+    "zonaId": "uuid-de-la-zona"
+  }
+}
+```
+
+## GET /cultivos
+
+Lista todos los cultivos.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/cultivos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de cultivos registrados en el sistema
+    {
+      "id": "uuid", // Identificador único del cultivo (primary key, UUID)
+      "nombre": "Tomate", // Nombre del cultivo (ej: Tomate, Maíz, etc.)
+      "descripcion": "Cultivo de tomate cherry", // Descripción detallada del cultivo
+      "tipoCultivo": { ... }, // Objeto con información del tipo de cultivo (perenne/transitorio)
+      "zona": { ... } // Objeto con información de la zona donde se cultiva
+    }
+  ]
+}
+```
+
+## GET /cultivos/:id
+
+Obtiene un cultivo específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del cultivo
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/cultivos/uuid-cultivo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Tomate",
+    "descripcion": "Cultivo de tomate cherry",
+    "tipoCultivoId": "uuid-del-tipo",
+    "zonaId": "uuid-de-la-zona"
+  }
+}
+```
+
+## PATCH /cultivos/:id
+
+Actualiza un cultivo específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del cultivo
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/cultivos/uuid-cultivo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Tomate Actualizado",
+  "descripcion": "Cultivo de tomate cherry actualizado",
+  "tipoCultivoId": "uuid-del-tipo",
+  "zonaId": "uuid-de-la-zona"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Tomate Actualizado",
+    "descripcion": "Cultivo de tomate cherry actualizado",
+    "tipoCultivoId": "uuid-del-tipo",
+    "zonaId": "uuid-de-la-zona"
+  }
+}
+```
+
+## DELETE /cultivos/:id
+
+Elimina un cultivo específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del cultivo
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/cultivos/uuid-cultivo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Cultivo eliminado exitosamente"
+}
+```
+
+## POST /cultivos/search
+
+Búsqueda avanzada de cultivos.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/cultivos/search
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "tomate",
+  "tipoCultivoId": "uuid",
+  "zonaId": "uuid"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Tomate",
+      "descripcion": "Cultivo de tomate cherry",
+      "tipoCultivoId": "uuid-del-tipo",
+      "zonaId": "uuid-de-la-zona"
+    }
+  ]
+}

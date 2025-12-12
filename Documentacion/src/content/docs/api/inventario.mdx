@@ -1,0 +1,253 @@
+---
+title: Inventario
+description: Endpoints para gestión de inventario y lotes
+---
+
+# Inventario
+
+## POST /inventario
+
+Crea un nuevo lote de inventario.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/inventario
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "productoId": "uuid-del-producto", // ID del producto al que pertenece el lote
+  "cantidad": 100, // Cantidad inicial del lote de inventario
+  "fechaIngreso": "2024-01-15", // Fecha en que el lote ingresa al inventario
+  "fechaVencimiento": "2025-01-15", // Fecha de vencimiento del lote
+  "ubicacion": "Bodega principal", // Ubicación física donde se almacena el lote
+  "costoUnitario": 40000, // Costo de compra por unidad del producto
+  "proveedor": "Proveedor ABC" // Nombre del proveedor del lote
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del lote creado (primary key, UUID)
+    "productoId": "uuid-del-producto", // ID del producto al que pertenece el lote
+    "cantidad": 100, // Cantidad inicial del lote creado
+    "fechaIngreso": "2024-01-15", // Fecha de ingreso del lote al inventario
+    "fechaVencimiento": "2025-01-15" // Fecha de vencimiento del lote
+  }
+}
+```
+
+## GET /inventario
+
+Lista lotes de inventario con paginación.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/inventario?page=1&limit=10
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Parámetros de consulta:**
+- `page`: Página (por defecto: 1)
+- `limit`: Límite por página (por defecto: 10)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de lotes de inventario
+    {
+      "id": "uuid", // Identificador único del lote (primary key, UUID)
+      "productoId": "uuid-del-producto", // ID del producto al que pertenece el lote
+      "cantidad": 100, // Cantidad disponible en el lote
+      "fechaIngreso": "2024-01-15", // Fecha de ingreso del lote al inventario
+      "fechaVencimiento": "2025-01-15" // Fecha de vencimiento del lote
+    }
+  ],
+  "pagination": {
+    "page": 1, // Página actual de resultados
+    "limit": 10, // Número máximo de resultados por página
+    "total": 50, // Total de registros encontrados
+    "totalPages": 5 // Total de páginas disponibles
+  }
+}
+```
+
+## GET /inventario/search/:query
+
+Busca lotes por producto o ubicación.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `query`: Término de búsqueda
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/inventario/search/fertilizante?page=1&limit=10
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Parámetros de consulta:**
+- `page`: Página (por defecto: 1)
+- `limit`: Límite por página (por defecto: 10)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de lotes encontrados por la búsqueda
+    {
+      "id": "uuid", // Identificador único del lote (primary key, UUID)
+      "producto": { // Información del producto relacionado
+        "id": "uuid", // ID del producto
+        "nombre": "Fertilizante orgánico" // Nombre del producto
+      },
+      "cantidad": 100, // Cantidad disponible en el lote
+      "ubicacion": "Bodega principal" // Ubicación física del lote
+    }
+  ],
+  "pagination": {
+    "page": 1, // Página actual de resultados
+    "limit": 10, // Número máximo de resultados por página
+    "total": 25, // Total de registros encontrados
+    "totalPages": 3 // Total de páginas disponibles
+  }
+}
+```
+
+## GET /inventario/:id
+
+Obtiene un lote específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del lote
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/inventario/uuid-lote
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del lote (primary key, UUID)
+    "productoId": "uuid-del-producto", // ID del producto al que pertenece el lote
+    "cantidad": 100, // Cantidad disponible en el lote
+    "fechaIngreso": "2024-01-15", // Fecha de ingreso del lote al inventario
+    "fechaVencimiento": "2025-01-15", // Fecha de vencimiento del lote
+    "ubicacion": "Bodega principal", // Ubicación física del lote
+    "costoUnitario": 40000, // Costo de compra por unidad
+    "proveedor": "Proveedor ABC" // Nombre del proveedor del lote
+  }
+}
+```
+
+## PATCH /inventario/:id
+
+Actualiza un lote específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del lote
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/inventario/uuid-lote
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "cantidad": 150,
+  "ubicacion": "Bodega secundaria",
+  "costoUnitario": 45000
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del lote actualizado (primary key, UUID)
+    "cantidad": 150, // Nueva cantidad del lote después de la actualización
+    "ubicacion": "Bodega secundaria" // Nueva ubicación del lote
+  }
+}
+```
+
+## DELETE /inventario/:id
+
+Elimina un lote específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del lote
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/inventario/uuid-lote
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "message": "Lote eliminado exitosamente" // Mensaje confirmando que el lote fue eliminado
+}
+```
+
+## GET /inventario/available-products
+
+Obtiene productos disponibles en inventario.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/inventario/available-products
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "productoId": "uuid",
+      "nombre": "Fertilizante orgánico",
+      "cantidadDisponible": 75,
+      "lotes": [
+        {
+          "id": "uuid-lote",
+          "cantidad": 50,
+          "fechaVencimiento": "2025-01-15"
+        }
+      ]
+    }
+  ]
+}

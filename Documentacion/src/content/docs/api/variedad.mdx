@@ -1,0 +1,158 @@
+---
+title: Variedades
+description: Endpoints para gestión de variedades de cultivos
+---
+
+# Variedades
+
+## POST /variedades
+
+Crea una nueva variedad.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/variedades
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Cherry",
+  "descripcion": "Tomate cherry pequeño",
+  "cultivoId": "uuid-del-cultivo"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Cherry",
+    "descripcion": "Tomate cherry pequeño",
+    "cultivoId": "uuid-del-cultivo"
+  }
+}
+```
+
+## GET /variedades
+
+Lista todas las variedades.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/variedades
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Cherry",
+      "descripcion": "Tomate cherry pequeño",
+      "cultivoId": "uuid-del-cultivo"
+    }
+  ]
+}
+```
+
+## GET /variedades/:id
+
+Obtiene una variedad específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la variedad
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/variedades/uuid-variedad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Cherry",
+    "descripcion": "Tomate cherry pequeño",
+    "cultivoId": "uuid-del-cultivo"
+  }
+}
+```
+
+## PATCH /variedades/:id
+
+Actualiza una variedad específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la variedad
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/variedades/uuid-variedad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Cherry Premium",
+  "descripcion": "Tomate cherry pequeño premium"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Cherry Premium",
+    "descripcion": "Tomate cherry pequeño premium",
+    "cultivoId": "uuid-del-cultivo"
+  }
+}
+```
+
+## DELETE /variedades/:id
+
+Elimina una variedad específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la variedad
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/variedades/uuid-variedad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Variedad eliminada exitosamente"
+}
+```

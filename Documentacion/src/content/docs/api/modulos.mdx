@@ -1,0 +1,148 @@
+---
+title: Módulos
+description: Endpoints para gestión de módulos del sistema
+---
+
+# Módulos
+
+## POST /modulos
+
+Crea un nuevo módulo.
+
+**Requiere autenticación y autorización**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/modulos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Reportes",
+  "descripcion": "Módulo para generación de reportes del sistema"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del módulo creado (primary key, UUID)
+    "nombre": "Reportes", // Nombre del módulo del sistema
+    "descripcion": "Módulo para generación de reportes del sistema" // Descripción detallada de las funcionalidades del módulo
+  }
+}
+```
+
+## GET /modulos
+
+Lista todos los módulos.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/modulos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de módulos del sistema
+    {
+      "id": "uuid", // Identificador único del módulo (primary key, UUID)
+      "nombre": "Reportes", // Nombre del módulo del sistema
+      "descripcion": "Módulo para generación de reportes del sistema" // Descripción detallada de las funcionalidades del módulo
+    }
+  ]
+}
+```
+
+## GET /modulos/:id
+
+Obtiene un módulo específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del módulo
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/modulos/uuid-modulo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Reportes",
+    "descripcion": "Módulo para generación de reportes del sistema"
+  }
+}
+```
+
+## PATCH /modulos/:id
+
+Actualiza un módulo específico.
+
+**Requiere autenticación y autorización**
+
+**Parámetros de ruta:**
+- `id`: ID del módulo
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/modulos/uuid-modulo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Reportes Actualizados",
+  "descripcion": "Módulo actualizado para generación de reportes del sistema"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Reportes Actualizados",
+    "descripcion": "Módulo actualizado para generación de reportes del sistema"
+  }
+}
+```
+
+## DELETE /modulos/:id
+
+Elimina un módulo específico.
+
+**Requiere autenticación y autorización**
+
+**Parámetros de ruta:**
+- `id`: ID del módulo (UUID)
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/modulos/uuid-modulo
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (204):**
+Sin contenido

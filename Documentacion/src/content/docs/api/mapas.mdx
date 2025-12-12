@@ -1,0 +1,164 @@
+---
+title: Mapas
+description: Endpoints para gestión de mapas y ubicaciones
+---
+
+# Mapas
+
+## POST /mapas
+
+Crea un nuevo mapa.
+
+**Requiere autenticación y archivo de imagen**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/mapas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+- **Body:** (form-data)
+  - Key: mapa, Value: `{"titulo": "Mapa de la zona norte", "descripcion": "Mapa detallado de la zona de cultivo norte", "zonaId": "uuid-de-la-zona"}`
+  - Key: imagen, Type: File, Select file
+
+**Cuerpo de la solicitud (form-data):**
+```
+mapa: {
+  "titulo": "Mapa de la zona norte",
+  "descripcion": "Mapa detallado de la zona de cultivo norte",
+  "zonaId": "uuid-de-la-zona"
+}
+imagen: [archivo de imagen]
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "titulo": "Mapa de la zona norte",
+    "descripcion": "Mapa detallado de la zona de cultivo norte",
+    "zonaId": "uuid-de-la-zona",
+    "imagenUrl": "/uploads/mapas/123456789-image.jpg"
+  }
+}
+```
+
+## GET /mapas
+
+Lista todos los mapas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/mapas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "titulo": "Mapa de la zona norte",
+      "descripcion": "Mapa detallado de la zona de cultivo norte",
+      "zonaId": "uuid-de-la-zona",
+      "imagenUrl": "/uploads/mapas/123456789-image.jpg"
+    }
+  ]
+}
+```
+
+## GET /mapas/:id
+
+Obtiene un mapa específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del mapa
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/mapas/uuid-mapa
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "titulo": "Mapa de la zona norte",
+    "descripcion": "Mapa detallado de la zona de cultivo norte",
+    "zonaId": "uuid-de-la-zona",
+    "imagenUrl": "/uploads/mapas/123456789-image.jpg"
+  }
+}
+```
+
+## PATCH /mapas/:id
+
+Actualiza un mapa específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del mapa
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/mapas/uuid-mapa
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "titulo": "Mapa de la zona norte actualizado",
+  "descripcion": "Mapa detallado actualizado de la zona de cultivo norte"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "titulo": "Mapa de la zona norte actualizado",
+    "descripcion": "Mapa detallado actualizado de la zona de cultivo norte",
+    "zonaId": "uuid-de-la-zona",
+    "imagenUrl": "/uploads/mapas/123456789-image.jpg"
+  }
+}
+```
+
+## DELETE /mapas/:id
+
+Elimina un mapa específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del mapa
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/mapas/uuid-mapa
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Mapa eliminado exitosamente"
+}
+```

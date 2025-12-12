@@ -1,0 +1,176 @@
+---
+title: Cosechas
+description: Endpoints para gestión de cosechas
+---
+
+# Cosechas
+
+## POST /cosechas
+
+Registra una nueva cosecha.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/cosechas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "cantidad": 500,
+  "unidad": "kg",
+  "calidad": "Excelente",
+  "fecha": "2024-01-15",
+  "observaciones": "Cosecha de primera calidad",
+  "cultivosVariedadXZonaId": "uuid-del-cultivo-zona"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "cantidad": 500,
+    "unidad": "kg",
+    "calidad": "Excelente",
+    "fecha": "2024-01-15",
+    "observaciones": "Cosecha de primera calidad",
+    "cultivosVariedadXZonaId": "uuid-del-cultivo-zona"
+  }
+}
+```
+
+## GET /cosechas
+
+Lista todas las cosechas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/cosechas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "cantidad": 500,
+      "unidad": "kg",
+      "calidad": "Excelente",
+      "fecha": "2024-01-15",
+      "observaciones": "Cosecha de primera calidad",
+      "cultivosVariedadXZonaId": "uuid-del-cultivo-zona"
+    }
+  ]
+}
+```
+
+## GET /cosechas/:id
+
+Obtiene una cosecha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la cosecha
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/cosechas/uuid-cosecha
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "cantidad": 500,
+    "unidad": "kg",
+    "calidad": "Excelente",
+    "fecha": "2024-01-15",
+    "observaciones": "Cosecha de primera calidad",
+    "cultivosVariedadXZonaId": "uuid-del-cultivo-zona"
+  }
+}
+```
+
+## PATCH /cosechas/:id
+
+Actualiza una cosecha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la cosecha
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/cosechas/uuid-cosecha
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "cantidad": 600,
+  "unidad": "kg",
+  "calidad": "Muy buena",
+  "fecha": "2024-01-16",
+  "observaciones": "Cosecha actualizada"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "cantidad": 600,
+    "unidad": "kg",
+    "calidad": "Muy buena",
+    "fecha": "2024-01-16",
+    "observaciones": "Cosecha actualizada",
+    "cultivosVariedadXZonaId": "uuid-del-cultivo-zona"
+  }
+}
+```
+
+## DELETE /cosechas/:id
+
+Elimina una cosecha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la cosecha
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/cosechas/uuid-cosecha
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Cosecha eliminada exitosamente"
+}
+```

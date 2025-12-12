@@ -1,0 +1,380 @@
+---
+title: Arquitectura del Backend
+description: Estructura completa del backend de AgroTic
+---
+
+# Arquitectura del Backend
+
+## Visión General
+
+El backend de AgroTic está construido con **NestJS**, un framework Node.js progresivo para construir aplicaciones del lado del servidor eficientes y escalables. Utiliza **TypeScript** para un desarrollo más robusto y **PostgreSQL** como base de datos principal.
+
+## Tecnologías Principales
+
+### Framework y Lenguaje
+- **NestJS** (v11.0.1): Framework Node.js para aplicaciones enterprise
+- **TypeScript** (v5.7.3): Superset tipado de JavaScript
+- **Node.js** (v24.11.0): Runtime de JavaScript del lado del servidor
+
+### Base de Datos
+- **PostgreSQL** (v8.16.3): Base de datos relacional robusta
+- **TypeORM** (v0.3.26): ORM para TypeScript y JavaScript
+
+### Autenticación y Seguridad
+- **JWT (JSON Web Tokens)**: Para autenticación stateless
+- **bcrypt** (v6.0.0): Para hashing de contraseñas
+- **Passport.js** (v0.7.0): Middleware de autenticación
+
+### Caché y Sesiones
+- **Redis** (v5.7.0): Para caché y gestión de sesiones
+- **Cache Manager**: Abstracción para múltiples stores de caché
+
+### Comunicación
+- **WebSockets**: Para comunicación en tiempo real
+- **Socket.IO** (v4.8.1): Framework para WebSockets
+- **MQTT** (v5.14.1): Protocolo para IoT
+
+### Correo Electrónico
+- **Nodemailer** (v7.0.6): Para envío de emails
+- **@nestjs-modules/mailer** (v2.0.2): Integración con NestJS
+
+### Validación
+- **class-validator** (v0.14.2): Validación declarativa
+- **class-transformer** (v0.5.1): Transformación de objetos
+
+### Manejo de Archivos
+- **Multer** (v2.0.2): Middleware para subida de archivos
+- **Cookie-parser** (v1.4.7): Parseo de cookies
+
+## Estructura de Módulos
+
+### Arquitectura Modular
+
+Cada módulo de NestJS sigue el patrón de diseño modular, conteniendo:
+
+```
+src/
+├── modulo/
+│   ├── modulo.controller.ts    # Endpoints HTTP
+│   ├── modulo.service.ts       # Lógica de negocio
+│   ├── modulo.module.ts        # Configuración del módulo
+│   ├── entities/               # Entidades de base de datos
+│   ├── dto/                    # Data Transfer Objects
+│   └── decorators/             # Decoradores personalizados
+```
+
+### Módulos Principales
+
+#### 1. Auth (Autenticación)
+**Responsabilidades:**
+- Registro de usuarios
+- Inicio de sesión
+- Gestión de tokens JWT
+- Recuperación de contraseña
+- Gestión de sesiones
+
+**Entidades principales:**
+- `Usuario`: Información del usuario
+- `Session`: Sesiones activas
+- `Roles`: Roles del sistema
+
+#### 2. Usuarios
+**Responsabilidades:**
+- Gestión de perfiles de usuario
+- Actualización de información personal
+- Búsqueda de usuarios
+- Gestión de roles y permisos
+
+#### 3. Cultivos
+**Responsabilidades:**
+- Administración de cultivos
+- Gestión de variedades
+- Control de estados de cultivo
+- Seguimiento de siembras
+
+#### 4. Zonas
+**Responsabilidades:**
+- Definición de zonas de cultivo
+- Gestión geográfica
+- Asignación de cultivos a zonas
+
+#### 5. Inventario
+**Responsabilidades:**
+- Control de productos
+- Gestión de lotes
+- Seguimiento de movimientos
+- Control de stock
+
+#### 6. Actividades
+**Responsabilidades:**
+- Planificación de actividades agrícolas
+- Asignación de usuarios
+- Seguimiento de progreso
+- Gestión de evidencias
+
+#### 7. Sensores
+**Responsabilidades:**
+- Configuración de sensores IoT
+- Recolección de datos ambientales
+- Monitoreo en tiempo real
+
+## Patrón de Diseño
+
+### Arquitectura Hexagonal
+
+El backend sigue los principios de la **arquitectura hexagonal** (puertos y adaptadores):
+
+- **Dominio**: Lógica de negocio pura
+- **Aplicación**: Casos de uso y servicios
+- **Infraestructura**: Adaptadores externos (base de datos, APIs externas)
+
+### Inyección de Dependencias
+
+NestJS utiliza inyección de dependencias para:
+- Mejor testabilidad
+- Bajo acoplamiento
+- Mayor mantenibilidad
+
+```typescript
+@Injectable()
+export class CultivosService {
+  constructor(
+    @InjectRepository(Cultivo)
+    private readonly cultivoRepository: Repository<Cultivo>,
+  ) {}
+}
+```
+
+## Gestión de Base de Datos
+
+### TypeORM
+
+**Características:**
+- **Decoradores**: Para definir entidades
+- **Migraciones**: Control de versiones de esquema
+- **Query Builder**: Consultas complejas
+- **Relaciones**: Manejo de relaciones entre entidades
+
+### Entidades Principales
+
+#### Usuario
+```typescript
+@Entity('usuarios')
+export class Usuario {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  dni: number;
+
+  @Column()
+  nombres: string;
+
+  @ManyToOne(() => Roles)
+  rol?: Roles;
+}
+```
+
+#### Relaciones
+- **One-to-Many**: Un rol tiene muchos usuarios
+- **Many-to-Many**: Roles y permisos
+- **One-to-One**: Usuario y ficha (opcional)
+
+## Sistema de Autenticación
+
+### JWT Strategy
+
+**Flujo de autenticación:**
+1. Usuario envía credenciales
+2. Validación contra base de datos
+3. Generación de tokens de acceso y refresco
+4. Almacenamiento de sesión en Redis
+5. Envío de tokens en cookies HTTP-only
+
+### Guards y Decorators
+
+**AuthenticationGuard**: Verifica token JWT
+**AuthorizationGuard**: Verifica permisos específicos
+
+```typescript
+@UseGuards(AuthenticationGuard, AuthorizationGuard)
+@Controller('usuarios')
+export class UsuariosController {
+  @Permisos({
+    recurso: 'usuarios',
+    acciones: ['leer'],
+    moduloNombre: 'Usuarios',
+  })
+  @Get()
+  findAll() {
+    // Endpoint protegido
+  }
+}
+```
+
+## Sistema de Permisos
+
+### Estructura Jerárquica
+
+**Niveles:**
+- **Módulo**: Agrupación lógica (Usuarios, Cultivos, etc.)
+- **Recurso**: Entidad específica (productos, cultivos, etc.)
+- **Acción**: Operación permitida (crear, leer, actualizar, eliminar)
+
+### Permisos por Rol
+
+Cada rol tiene asignados permisos específicos que determinan qué acciones puede realizar.
+
+## Caché y Optimización
+
+### Redis
+
+**Usos:**
+- **Sesiones**: Almacenamiento temporal de sesiones activas
+- **Cache**: Resultados de consultas frecuentes
+- **Rate limiting**: Control de frecuencia de requests
+
+### Estrategias de Caché
+
+- **Cache aside**: Patrón común para consultas
+- **Write-through**: Actualización inmediata del caché
+- **TTL**: Expiración automática de datos
+
+## Comunicación en Tiempo Real
+
+### WebSockets
+
+**Implementación:**
+- **Socket.IO**: Para comunicación bidireccional
+- **Rooms**: Agrupación de conexiones por contexto
+- **Events**: Sistema de eventos personalizado
+
+**Casos de uso:**
+- Notificaciones de permisos
+- Actualizaciones en tiempo real
+- Monitoreo de sensores
+
+## Manejo de Errores
+
+### Excepciones Globales
+
+**Filtros de excepciones:**
+- **HttpException**: Errores HTTP estándar
+- **ValidationException**: Errores de validación
+- **DatabaseException**: Errores de base de datos
+
+### Logging
+
+**Niveles de log:**
+- **ERROR**: Errores críticos
+- **WARN**: Advertencias
+- **INFO**: Información general
+- **DEBUG**: Información de depuración
+
+## Configuración y Variables de Entorno
+
+### Variables Principales
+
+```env
+# Base de datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_DATABASE=agrotic
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRATION_TIME=15m
+JWT_REFRESH_SECRET=your-refresh-secret
+JWT_REFRESH_EXPIRATION_TIME=30d
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Correo
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+```
+
+## Pruebas
+
+### Estrategia de Testing
+
+- **Unit tests**: Servicios individuales
+- **Integration tests**: Módulos completos
+- **E2E tests**: Flujos completos de usuario
+
+### Herramientas
+
+- **Jest** (v29.7.0): Framework de testing
+- **Supertest** (v7.0.0): Testing de APIs HTTP
+- **Test containers**: Base de datos para tests
+
+### Herramientas de Desarrollo
+
+- **ESLint** (v9.18.0): Linting de código
+- **Prettier** (v3.4.2): Formateo de código
+- **TypeScript ESLint** (v8.20.0): Linting para TypeScript
+- **SWC** (v1.10.7): Compilador rápido
+- **ts-node** (v10.9.2): Ejecutor de TypeScript
+- **tsconfig-paths** (v4.2.0): Resolución de rutas
+
+## Despliegue
+
+### Docker
+
+**Contenedores:**
+- **API**: Aplicación NestJS
+- **PostgreSQL** (v8.16.3): Base de datos
+- **Redis** (v5.7.0): Caché y sesiones
+- **Nginx**: Proxy reverso (opcional)
+
+### Variables de Entorno
+
+Configuración específica por entorno:
+- **Development**: Configuración local
+- **Staging**: Entorno de pruebas
+- **Production**: Entorno de producción
+
+## Monitoreo y Observabilidad
+
+### Métricas
+
+- **Response time**: Tiempo de respuesta de endpoints
+- **Error rate**: Tasa de errores por endpoint
+- **Database queries**: Consultas lentas
+- **Memory usage**: Uso de memoria
+
+### Logging Centralizado
+
+- **Winston**: Logger configurable
+- **ELK Stack**: Elasticsearch, Logstash, Kibana
+- **APM**: Application Performance Monitoring
+
+### Tecnologías de Documentación
+
+- **Astro** (v5.14.5): Framework para documentación
+- **Starlight** (v0.36.0): Tema de documentación
+- **Sharp** (v0.34.4): Procesamiento de imágenes
+
+## Seguridad
+
+### Medidas Implementadas
+
+- **Helmet**: Headers de seguridad HTTP
+- **Rate limiting**: Limitación de requests
+- **CORS**: Control de origen cruzado
+- **Input validation**: Validación de entradas
+- **SQL injection prevention**: Parámetros preparados
+- **XSS protection**: Sanitización de datos
+
+### Mejores Prácticas
+
+- **Principio de menor privilegio**: Usuarios tienen solo permisos necesarios
+- **Encriptación**: Datos sensibles encriptados
+- **Auditoría**: Registro de todas las acciones importantes
+- **Actualizaciones**: Dependencias actualizadas regularmente

@@ -1,0 +1,74 @@
+---
+title: Bienvenido a la API de AgroTic
+description: Documentación completa de la API REST para el sistema de gestión agrícola AgroTic
+---
+
+# Bienvenido a la API de AgroTic
+
+La API de AgroTic es una interfaz RESTful completa diseñada para gestionar operaciones agrícolas de manera eficiente. Esta documentación proporciona toda la información necesaria para integrar y utilizar los endpoints disponibles.
+
+# credenciales de acceso
+
+1. DNI 123456789
+2. Contraseña: admin123
+
+## Características principales
+
+- **Autenticación JWT**: Sistema seguro de autenticación con tokens JWT
+- **Gestión de permisos**: Control granular de acceso basado en roles y permisos
+- **Módulos especializados**: Gestión de cultivos, variedades, zonas, inventario, etc.
+- **WebSockets**: Comunicación en tiempo real para permisos y notificaciones
+- **Documentación interactiva**: API documentada con ejemplos prácticos
+
+## Tecnologías utilizadas
+
+- **Framework**: NestJS 11 con TypeScript 5.7
+- **Base de datos**: PostgreSQL 16 con TypeORM 0.3
+- **Autenticación**: JWT con Passport
+- **Cache**: Redis 8 para optimización de rendimiento
+- **Correo**: Nodemailer para notificaciones
+- **Archivos estáticos**: Gestión de uploads de imágenes y mapas
+- **Contenedores**: Docker con Node.js 20
+
+## Estructura de la API
+
+La API está organizada en módulos independientes, cada uno responsable de una funcionalidad específica del sistema agrícola.
+
+### Módulos principales
+
+- **Inicio**: Dashboard
+- **zonas**: Gestión de áreas geográficas
+- **IOT**: Monitoreo de condiciones ambientales
+- **Cultivos**: Administración de cultivos y variedades
+- **Actividades**: Gestión de actividades agrícolas
+- **Inventario**: Control de productos y movimientos
+- **Perfil**: Gestión de usuarios del sistema
+
+## Convenciones de la API
+
+### Formato de respuesta
+
+Todas las respuestas siguen un formato consistente:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operación exitosa"
+}
+```
+
+### Códigos de estado HTTP
+
+- `200`: Operación exitosa
+- `201`: Recurso creado
+- `400`: Error en la solicitud
+- `401`: No autorizado
+- `403`: Prohibido (sin permisos)
+- `404`: Recurso no encontrado
+- `500`: Error interno del servidor
+
+### Autenticación
+
+La mayoría de los endpoints requieren autenticación mediante token JWT enviado en cookies HTTP-only.
+

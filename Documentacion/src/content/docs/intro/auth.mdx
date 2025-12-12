@@ -1,0 +1,166 @@
+---
+title: Autenticación
+description: Guía completa para autenticarse en la API de AgroTic
+---
+
+# Autenticación
+
+La API de AgroTic utiliza un sistema de autenticación basado en JWT (JSON Web Tokens) con cookies HTTP-only para mayor seguridad.
+
+## Flujo de autenticación
+
+1. **Registro**: Crear una nueva cuenta de usuario
+2. **Login**: Obtener tokens de acceso y refresco
+3. **Uso de la API**: Enviar tokens en cada solicitud
+4. **Refresco**: Renovar tokens antes de que expiren
+5. **Logout**: Invalidar la sesión
+
+## Endpoints de autenticación
+
+### Registro de usuario
+
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "dni": "12345678",
+  "correo": "usuario@example.com",
+  "password": "password123",
+  "nombres": "Juan",
+  "apellidos": "Pérez",
+  "telefono": "+573001234567"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "message": "Usuario registrado exitosamente",
+  "data": {
+    "id": 1,
+    "dni": "12345678",
+    "correo": "usuario@example.com",
+    "nombres": "Juan",
+    "apellidos": "Pérez"
+  }
+}
+```
+
+### Inicio de sesión
+
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "dni": "12345678",
+  "password": "password123"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "message": "Login exitoso"
+}
+```
+
+Los tokens se envían automáticamente en cookies HTTP-only:
+- `access_token`: Expira en 15 minutos
+- `refresh_token`: Expira en 30 días
+
+### Refresco de token
+
+```http
+POST /auth/refresh
+```
+
+Este endpoint utiliza la cookie `refresh_token` para generar un nuevo `access_token`.
+
+### Cierre de sesión
+
+```http
+POST /auth/logout
+Authorization: Bearer <access_token>
+```
+
+### Recuperación de contraseña
+
+```http
+POST /auth/forgot-password
+Content-Type: application/json
+
+{
+  "correo": "usuario@example.com"
+}
+```
+
+### Restablecimiento de contraseña
+
+```http
+PATCH /auth/reset-password?token=<reset_token>
+Content-Type: application/json
+
+{
+  "newPassword": "nueva_password123",
+  "repetPassword": "nueva_password123"
+}
+```
+
+## Uso de tokens
+
+Una vez autenticado, el cliente debe enviar las cookies automáticamente. El servidor valida el token en cada solicitud protegida.
+
+### Ejemplo con curl
+
+```bash
+# Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"dni":"12345678","password":"password123"}' \
+  -c cookies.txt
+
+# Usar API con cookies guardadas
+curl -X GET http://localhost:3000/usuarios/me \
+  -b cookies.txt
+```
+
+## Manejo de errores de autenticación
+
+### Token expirado (401)
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+### Token inválido (401)
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid token"
+}
+```
+
+### Sin permisos (403)
+```json
+{
+  "statusCode": 403,
+  "message": "Forbidden resource"
+}
+```
+
+## Consideraciones de seguridad
+
+- Las contraseñas deben tener al menos 8 caracteres
+- Los tokens de acceso expiran rápidamente (15 minutos)
+- Los tokens de refresco permiten renovación automática
+- Las cookies son HTTP-only para prevenir ataques XSS
+- En producción, usar HTTPS y cookies seguras
+
+## Gestión de sesiones
+
+El sistema mantiene sesiones activas en Redis para optimizar el rendimiento y permitir logout inmediato.

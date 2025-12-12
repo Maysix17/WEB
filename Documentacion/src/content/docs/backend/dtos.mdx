@@ -1,0 +1,649 @@
+---
+title: DTOs y Validación
+description: Documentación completa de Data Transfer Objects y reglas de validación
+---
+
+# DTOs y Validación
+
+## Sistema de Validación
+
+La API utiliza **class-validator** y **class-transformer** para validar y transformar datos de entrada. Todos los DTOs incluyen validaciones exhaustivas para asegurar la integridad de los datos.
+
+## Decoradores de Validación Comunes
+
+### Validaciones básicas
+- `@IsNotEmpty()`: Campo requerido, no vacío
+- `@IsOptional()`: Campo opcional
+- `@IsString()`: Debe ser string
+- `@IsNumber()`: Debe ser número
+- `@IsBoolean()`: Debe ser booleano
+- `@IsDate()`: Debe ser fecha
+
+### Validaciones de formato
+- `@IsEmail()`: Formato de email válido
+- `@IsUUID()`: Formato UUID válido
+- `@MinLength(n)`: Longitud mínima
+- `@MaxLength(n)`: Longitud máxima
+- `@Length(min, max)`: Longitud entre rango
+
+### Validaciones numéricas
+- `@Min(n)`: Valor mínimo
+- `@Max(n)`: Valor máximo
+- `@IsPositive()`: Número positivo
+
+## DTOs de Autenticación
+
+### RegisterAuthDto
+
+```typescript
+export class RegisterAuthDto {
+  @IsNumber({}, { message: 'El DNI debe ser un valor numérico.' })
+  @IsNotEmpty({ message: 'El DNI no puede estar vacío.' })
+  dni: number;
+
+  @IsNumber({}, { message: 'El teléfono debe ser un valor numérico.' })
+  @IsNotEmpty({ message: 'El teléfono no puede estar vacío.' })
+  telefono: number;
+
+  @IsString({ message: 'Los nombres deben ser una cadena de texto.' })
+  @IsNotEmpty({ message: 'Los nombres no pueden estar vacíos.' })
+  nombres: string;
+
+  @IsString({ message: 'Los apellidos deben ser una cadena de texto.' })
+  @IsNotEmpty({ message: 'Los apellidos no pueden estar vacíos.' })
+  apellidos: string;
+
+  @IsNotEmpty({ message: 'El correo electrónico no puede estar vacío.' })
+  @IsString({ message: 'El correo electrónico debe ser una cadena de texto.' })
+  @IsEmail({}, { message: 'El formato del correo electrónico no es válido.' })
+  correo: string;
+
+  @IsString({ message: 'La contraseña debe ser una cadena de texto.' })
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @IsNotEmpty({ message: 'La contraseña no puede estar vacía.' })
+  password: string;
+}
+```
+
+**Validaciones:**
+- DNI: Número requerido
+- Teléfono: Número requerido
+- Nombres: String requerido
+- Apellidos: String requerido
+- Correo: Email válido requerido
+- Password: String mínimo 8 caracteres requerido
+
+### LoginAuthDto
+
+```typescript
+export class LoginAuthDto {
+  @IsNumber()
+  @IsNotEmpty()
+  dni: number;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}
+```
+
+**Validaciones:**
+- DNI: Número requerido
+- Password: String requerido
+
+## DTOs de Usuarios
+
+### CreateUsuarioDto
+
+```typescript
+export class CreateUsuarioDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 50)
+  nombres: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 50)
+  apellidos: string;
+
+  @IsString()
+  @IsOptional()
+  password?: string;
+
+  @IsNumber()
+  telefono: number;
+
+  @IsEmail()
+  @IsNotEmpty()
+  @Length(1, 255)
+  correo: string;
+
+  @IsString()
+  @IsNotEmpty()
+  rolId: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  dni: number;
+
+  @IsOptional()
+  @IsString()
+  fichaId?: string;
+}
+```
+
+**Validaciones:**
+- Nombres: String 1-50 caracteres requerido
+- Apellidos: String 1-50 caracteres requerido
+- Password: String opcional
+- Teléfono: Número requerido
+- Correo: Email 1-255 caracteres requerido
+- RolId: String requerido
+- DNI: Número requerido
+- FichaId: String opcional
+
+### UpdateUsuarioDto
+
+```typescript
+export class UpdateUsuarioDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  nombres?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  apellidos?: string;
+
+  @IsOptional()
+  @IsNumber()
+  telefono?: number;
+
+  @IsOptional()
+  @IsEmail()
+  @Length(1, 255)
+  correo?: string;
+
+  @IsOptional()
+  @IsString()
+  rolId?: string;
+
+  @IsOptional()
+  @IsString()
+  fichaId?: string;
+}
+```
+
+**Validaciones:** Todos los campos opcionales con mismas reglas que CreateUsuarioDto
+
+### UpdateMeDto
+
+```typescript
+export class UpdateMeDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  lastName?: string;
+
+  @IsOptional()
+  @IsNumber()
+  phone?: number;
+}
+```
+
+## DTOs de Cultivos
+
+### CreateCultivoDto
+
+```typescript
+export class CreateCultivoDto {
+  @IsUUID()
+  tipoCultivoId: string;
+
+  @IsUUID()
+  variedadId: string;
+
+  @IsUUID()
+  zonaId: string;
+
+  @IsNumber()
+  @IsOptional()
+  estado?: number;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  siembra?: Date;
+}
+```
+
+**Validaciones:**
+- TipoCultivoId: UUID válido requerido
+- VariedadId: UUID válido requerido
+- ZonaId: UUID válido requerido
+- Estado: Número opcional
+- Siembra: Fecha opcional
+
+### UpdateCultivoDto
+
+```typescript
+export class UpdateCultivoDto {
+  @IsOptional()
+  @IsNumber()
+  estado?: number;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  siembra?: Date;
+}
+```
+
+### SearchCultivoDto
+
+```typescript
+export class SearchCultivoDto {
+  @IsOptional()
+  @IsNumber()
+  estado_cultivo?: number;
+
+  @IsOptional()
+  @IsString()
+  buscar?: string;
+
+  @IsOptional()
+  @IsString()
+  buscar_cultivo?: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  fecha_inicio?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  fecha_fin?: Date;
+
+  @IsOptional()
+  @IsString()
+  id_titulado?: string;
+}
+```
+
+## DTOs de Actividades
+
+### CreateActividadeDto
+
+```typescript
+export class CreateActividadeDto {
+  @IsString()
+  @IsNotEmpty()
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsDate()
+  @Type(() => Date)
+  fecha: Date;
+
+  @IsOptional()
+  @IsUUID()
+  categoriaActividadId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  usuarioId?: string;
+}
+```
+
+### UpdateActividadeDto
+
+```typescript
+export class UpdateActividadeDto {
+  @IsOptional()
+  @IsString()
+  nombre?: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  fecha?: Date;
+
+  @IsOptional()
+  @IsString()
+  estado?: string;
+
+  @IsOptional()
+  @IsUUID()
+  categoriaActividadId?: string;
+}
+```
+
+## DTOs de Inventario
+
+### CreateLotesInventarioDto
+
+```typescript
+export class CreateLotesInventarioDto {
+  @IsUUID()
+  productoId: string;
+
+  @IsNumber()
+  @Min(0)
+  cantidad: number;
+
+  @IsDate()
+  @Type(() => Date)
+  fechaIngreso: Date;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  fechaVencimiento?: Date;
+
+  @IsOptional()
+  @IsString()
+  ubicacion?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  costoUnitario?: number;
+
+  @IsOptional()
+  @IsString()
+  proveedor?: string;
+}
+```
+
+**Validaciones:**
+- ProductoId: UUID requerido
+- Cantidad: Número positivo requerido
+- FechaIngreso: Fecha requerida
+- FechaVencimiento: Fecha opcional
+- Ubicación: String opcional
+- CostoUnitario: Número positivo opcional
+- Proveedor: String opcional
+
+## DTOs de Productos
+
+### CreateProductosDto
+
+```typescript
+export class CreateProductosDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsOptional()
+  @IsUUID()
+  categoriaId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  unidadMedidaId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  precioUnitario?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stockMinimo?: number;
+}
+```
+
+## DTOs de Permisos
+
+### CreatePermisoDto
+
+```typescript
+export class CreatePermisoDto {
+  @IsString()
+  @IsNotEmpty()
+  moduloNombre: string;
+
+  @IsString()
+  @IsNotEmpty()
+  recurso: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  acciones: string[];
+}
+```
+
+**Validaciones:**
+- ModuloNombre: String requerido
+- Recurso: String requerido
+- Acciones: Array de strings requeridos
+
+## DTOs de Roles
+
+### CreateRoleDto
+
+```typescript
+export class CreateRoleDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 50)
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+}
+```
+
+### AssignPermissionDto
+
+```typescript
+export class AssignPermissionDto {
+  @IsUUID()
+  permisoId: string;
+}
+```
+
+### AssignMultiplePermissionsDto
+
+```typescript
+export class AssignMultiplePermissionsDto {
+  @IsArray()
+  @IsUUID('all', { each: true })
+  permisoIds: string[];
+}
+```
+
+## Transformaciones Personalizadas
+
+### Uso de @Type()
+
+```typescript
+export class DateExampleDto {
+  @IsOptional()
+  @Type(() => Date)  // Transforma string a Date
+  @IsDate()
+  fecha?: Date;
+}
+```
+
+### Validaciones condicionales
+
+```typescript
+export class ConditionalDto {
+  @IsBoolean()
+  isActive: boolean;
+
+  @IsOptional()
+  @ValidateIf(o => o.isActive)  // Solo valida si isActive es true
+  @IsString()
+  reason?: string;
+}
+```
+
+## Manejo de Errores de Validación
+
+### Respuesta de error estándar
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "nombres must be longer than or equal to 1 characters",
+    "correo must be an email",
+    "dni must be a number conforming to the specified constraints"
+  ],
+  "error": "Bad Request"
+}
+```
+
+### Errores específicos por campo
+
+```json
+{
+  "statusCode": 400,
+  "message": {
+    "telefono": "telefono must be a number conforming to the specified constraints",
+    "correo": "correo must be an email"
+  },
+  "error": "Bad Request"
+}
+```
+
+## Pipes de Validación
+
+### Configuración global
+
+```typescript
+// main.ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,        // Remueve propiedades no decoradas
+    forbidNonWhitelisted: true, // Lanza error si hay propiedades extra
+    transform: true,        // Transforma payloads a DTO instances
+    disableErrorMessages: false, // Muestra mensajes de error detallados
+  })
+);
+```
+
+### Uso en controladores
+
+```typescript
+@Post()
+create(@Body(new ValidationPipe()) dto: CreateCultivoDto) {
+  return this.service.create(dto);
+}
+```
+
+## Validaciones Personalizadas
+
+### Crear validador personalizado
+
+```typescript
+import { registerDecorator, ValidationOptions } from 'class-validator';
+
+export function IsValidDNI(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isValidDNI',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          // Lógica de validación personalizada
+          return typeof value === 'number' && value > 0;
+        },
+        defaultMessage() {
+          return 'DNI must be a positive number';
+        },
+      },
+    });
+  };
+}
+```
+
+### Uso del validador personalizado
+
+```typescript
+export class CustomDto {
+  @IsValidDNI()
+  dni: number;
+}
+```
+
+## Mejores Prácticas
+
+### 1. Validación exhaustiva
+- Validar todos los campos requeridos
+- Usar mensajes de error descriptivos
+- Incluir validaciones de formato específicas
+
+### 2. Transformaciones apropiadas
+- Usar `@Type()` para convertir tipos automáticamente
+- Manejar fechas y números correctamente
+
+### 3. Validaciones de negocio
+- Validar reglas de negocio específicas
+- Verificar referencias foráneas cuando sea necesario
+- Implementar validaciones condicionales
+
+### 4. Manejo de errores
+- Proporcionar mensajes de error claros
+- Usar códigos de error consistentes
+- Loggear errores de validación para debugging
+
+### 5. Documentación
+- Documentar todas las validaciones en la documentación
+- Incluir ejemplos de requests válidos e inválidos
+- Explicar reglas de negocio específicas
+
+## Testing de DTOs
+
+### Pruebas de validación
+
+```typescript
+describe('CreateUsuarioDto', () => {
+  it('should validate valid data', async () => {
+    const dto = new CreateUsuarioDto();
+    dto.nombres = 'Juan';
+    dto.correo = 'juan@example.com';
+    dto.dni = 12345678;
+
+    const errors = await validate(dto);
+    expect(errors.length).toBe(0);
+  });
+
+  it('should fail with invalid email', async () => {
+    const dto = new CreateUsuarioDto();
+    dto.nombres = 'Juan';
+    dto.correo = 'invalid-email';
+    dto.dni = 12345678;
+
+    const errors = await validate(dto);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].constraints).toHaveProperty('isEmail');
+  });
+});

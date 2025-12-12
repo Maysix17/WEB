@@ -1,0 +1,644 @@
+---
+title: Manual de Usuario - AgroTic
+description: Guía completa para usar la aplicación AgroTic paso a paso
+---
+
+# Manual de Usuario - AgroTic
+
+Bienvenido al Manual de Usuario de AgroTic, la aplicación integral para la gestión agrícola. Esta guía te llevará paso a paso a través de todas las funcionalidades de la aplicación, desde el inicio de sesión hasta las operaciones más avanzadas.
+
+## Contenido
+
+- [Inicio de Sesión](#inicio-de-sesión)
+- [Navegación Principal](#navegación-principal)
+- [Módulo de Actividades](#módulo-de-actividades)
+- [Módulo de Cultivos](#módulo-de-cultivos)
+- [Módulo de Zonas](#módulo-de-zonas)
+- [Módulo de Inventario](#módulo-de-inventario)
+- [Módulo IoT](#módulo-iot)
+- [Gestión de Usuarios](#gestión-de-usuarios)
+- [Panel de Control](#panel-de-control)
+- [APK Mobil](#apk-mobil)
+
+
+## Inicio de Sesión
+
+### Paso 1: Acceder a la aplicación
+1. Abre tu navegador web
+2. Ve a la URL de AgroTic (proporcionada por tu administrador) (http://localhost:5173/login)
+3. Verás la página de inicio de sesión
+
+### Paso 2: Ingresar credenciales
+1. **Número de DNI**: Ingresa tu número de documento de identidad
+2. **Contraseña**: Escribe tu contraseña
+3. Haz clic en el botón "Iniciar Sesión"
+4. En la parte derecha de donde colocas tu contraseña , hay un logo de un ojo la cual le puedes dar clic para ver tu contraseña
+![Pantalla de inicio de sesión](/src/assets/cap91.png)
+5. En caso que se te halla olvidado la contraseña de las clic en ¿olvidaste tu contraseña?
+![Pantalla de inicio de sesión](/src/assets/cap93.png)
+  Ingresas tu correo para que lo puedas cambiar
+  ![Pantalla de inicio de sesión](/src/assets/cap60.png)
+  Y si no tiene una cuenta , puedes registrarte dandole clic en registrarse
+   ![Pantalla de inicio de sesión](/src/assets/cap62.png)
+  Ingresas todos tus datos
+![Pantalla de inicio de sesión](/src/assets/cap92.png)
+
+
+
+
+### Paso 3: Verificación
+- Si las credenciales son correctas, serás redirigido al dashboard principal
+![Pantalla de inicio de sesión](/src/assets/cap2.png)
+- Si hay un error, revisa que el DNI y contraseña sean correctos
+
+:::note[Nota]
+Las sesiones se mantienen activas mediante cookies HTTP-only por seguridad. Si cierras el navegador, deberás iniciar sesión nuevamente.
+:::
+
+## Navegación Principal
+
+### Menú Lateral
+La aplicación cuenta con un menú lateral intuitivo con los siguientes módulos:
+
+- **🏠 Inicio**: Dashboard principal con información general
+![Pantalla de inicio de sesión](/src/assets/cap2.png)
+
+- **🤖 Zonas**:  Gestión de áreas geográficas y configuración IoT
+![Pantalla de inicio de sesión](/src/assets/cap3.png)
+
+- **🌱 Cultivos**: Administración de cultivos, variedades y zonas
+![Pantalla de inicio de sesión](/src/assets/cap4.png)
+
+- **🗺️ IoT**: Gestión de sensores y monitoreo en tiempo real
+![Pantalla de inicio de sesión](/src/assets/cap4.png)
+
+- **📋 Actividades**: Planificación y seguimiento de actividades agrícolas
+![Pantalla de inicio de sesión](/src/assets/cap5.png)
+
+- **📦 Inventario**: Control de productos, lotes y bodegas
+![Pantalla de inicio de sesión](/src/assets/cap6.png)
+
+- **👤 Perfil**: Gestión de tu cuenta personal
+![Pantalla de inicio de sesión](/src/assets/cap7.png)
+
+## Módulo de Actividades
+
+### Vista General
+![Pantalla de inicio de sesión](/src/assets/cap5.png)
+El módulo de actividades permite planificar, asignar y seguir todas las tareas agrícolas en un calendario interactivo.
+
+### Crear una Nueva Actividad
+
+<video controls width="300">
+  <source src="/videos/v32.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v33.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+1. **Acceder al calendario**: Ve al módulo "Actividades"
+2. **Seleccionar fecha**: Haz clic en cualquier día del calendario
+![Pantalla de inicio de sesión](/src/assets/cap8.png)
+3. **Completar información**:
+   - **Descripción**: Nombre de la actividad (ej: "Siembra de tomate")
+   - **Categoría**: Tipo de actividad (siembra, riego, fertilización, etc.)
+   - **Fecha de asignación**: Fecha programada
+   - **Usuarios**: Selecciona los trabajadores asignados
+   - **Materiales**: Elige productos del inventario y cantidades
+
+4. **Guardar**: Haz clic en "Guardar Actividad"
+![Pantalla de inicio de sesión](/src/assets/cap9.png)
+
+### Gestionar Actividades Existentes
+
+#### Ver actividades de un día
+- Haz clic en cualquier fecha que muestre un número (indica cantidad de actividades)
+![Pantalla de inicio de sesión](/src/assets/cap10.png)
+- Se mostrará una lista de todas las actividades programadas para ese día
+![Pantalla de inicio de sesión](/src/assets/cap11.png)
+
+#### Editar actividad
+1. Selecciona una actividad de la lista
+2. Modifica la información necesaria
+3. Guarda los cambios
+![Pantalla de inicio de sesión](/src/assets/cap12.png)
+
+#### Finalizar actividad
+1. Abre los detalles de la actividad
+2. Haz clic en "Finalizar Actividad"
+3. Agrega observaciones y horas trabajadas
+4. Sube evidencia fotográfica (opcional)
+5. Confirma la finalización
+![Pantalla de inicio de sesión](/src/assets/cap63.png)
+
+### Seguimiento de Reservas
+Cada actividad puede reservar productos del inventario:
+- **Ver reservas**: Consulta qué materiales están reservados para cada actividad
+- **Confirmar uso**: Marca qué cantidad real se utilizó vs. lo reservado
+- **Liberar stock**: Los productos no utilizados vuelven al inventario disponible
+
+## Módulo de Cultivos
+
+### Búsqueda y Filtros
+1. **Filtros disponibles**:
+   - Búsqueda por nombre de cultivo
+   - Filtro por tipo de cultivo
+   - Filtro por zona
+   - Filtro por ficha de aprendiz
+   ![Pantalla de inicio de sesión](/src/assets/cap14.png)
+
+2. **Aplicar filtros**: Los resultados se actualizan automáticamente
+
+### Gestionar Cultivos
+
+#### Ver detalles
+- Haz clic en el ícono de ojo (👁️) para ver información completa del cultivo
+ ![Pantalla de inicio de sesión](/src/assets/cap15.png)
+- Incluye: estado fenológico, actividades realizadas, cosechas, etc.
+![Pantalla de inicio de sesión](/src/assets/cap16.png)
+- Tambien puedes darle clic a Informacion y se te descargara un excel con los datos
+![Pantalla de inicio de sesión](/src/assets/cap17.png)
+![Pantalla de inicio de sesión](/src/assets/cap18.png)
+
+#### Gestionar Tipos de Cultivo
+1. En la parte superior derecha hay tres puntos, haz clic , saldra tres opciones , le das en Gestionar Tipos de Cultivo
+![Pantalla de inicio de sesión](/src/assets/cap19.png)
+2. Ingrese nombre del tipo de cultivo
+3. Clasifique su Cultivo sea Perenne o transitorio
+4. Dale clic a Registrar Tipo de Cultivo
+![Pantalla de inicio de sesión](/src/assets/cap20.png)
+5. Como podemos observar si deslizamos hacia abajo podemos ver los tipos de cultivos que se han creado y se pueden eliminar y editar
+![Pantalla de inicio de sesión](/src/assets/cap21.png)
+
+#### Gestionar Variedad
+1. En la parte superior derecha hay tres puntos, haz clic , saldra tres opciones , le das en Gestionar Variedad
+![Pantalla de inicio de sesión](/src/assets/cap22.png)
+2. Ingrese nombre de la variedad que va a registrar
+3. En tipo de cultivo selecciona tipo de cultivo que ya estan creados 
+4. Dale clic a Registrar 
+![Pantalla de inicio de sesión](/src/assets/cap23.png)
+5. Como podemos observar si deslizamos hacia abajo podemos ver la variedad registrada con el tipo de cultivo que selecciono y se puede editar y eliminar
+![Pantalla de inicio de sesión](/src/assets/cap24.png)
+
+#### Gestion Estados Fenológicos
+1. En la parte superior derecha hay tres puntos, haz clic , saldra tres opciones , le das en Gestion Estados Fenológicos
+![Pantalla de inicio de sesión](/src/assets/cap25.png)
+2. Ingrese nombre del estado que va a crear
+3. Ingrese orden
+4. Ingrese Descripcion 
+5. Dale clic a crear
+![Pantalla de inicio de sesión](/src/assets/cap26.png)
+
+
+#### Registrar cosecha
+1. Selecciona un cultivo
+![Pantalla de inicio de sesión](/src/assets/cap27.png)
+2. Haz clic en "Cosecha/Venta" → "Registrar Cosecha"
+![Pantalla de inicio de sesión](/src/assets/cap28.png)
+3. Ingresa cantidad, calidad y fecha
+4. Guarda el registro
+![Pantalla de inicio de sesión](/src/assets/cap29.png)
+
+#### Registrar venta
+1. Selecciona un cultivo con cosechas disponibles
+![Pantalla de inicio de sesión](/src/assets/cap30.png)
+2. Haz clic en "Cosecha/Venta" → "Registrar Venta"
+![Pantalla de inicio de sesión](/src/assets/cap31.png)
+3. Selecciona productos a vender
+4. Ingresa precios y comprador
+5. Confirma la venta
+![Pantalla de inicio de sesión](/src/assets/cap32.png)
+
+#### Filtros avanzados
+1. en la parte derecha media , hay un tipo flecha hacia abajo que se despliega en la cual si le das clic aparece buscar ficha y en la parte de abajo los estados de los cultivos
+![Pantalla de inicio de sesión](/src/assets/cap33.png)
+![Pantalla de inicio de sesión](/src/assets/cap34.png)
+
+#### Ver historial de actividades
+- Haz clic en el ícono de documento (📄) para ver todas las actividades realizadas en el cultivo
+- Incluye fechas, usuarios asignados, materiales utilizados y observaciones
+
+#### Análisis financiero
+- Disponible para cultivos con cosechas registradas
+- Muestra costos de producción, ingresos por ventas y rentabilidad
+![Pantalla de inicio de sesión](/src/assets/cap35.png)
+![Pantalla de inicio de sesión](/src/assets/cap36.png)
+![Pantalla de inicio de sesión](/src/assets/cap37.png)
+
+### Crear Nuevo Cultivo
+1. Haz clic en "Crear Cultivo" en el panel de filtros
+![Pantalla de inicio de sesión](/src/assets/cap38.png)
+2. Selecciona tipo de cultivo y variedad
+3. Asigna zona de siembra
+4. Define lote
+5. Guarda el cultivo
+![Pantalla de inicio de sesión](/src/assets/cap39.png)
+
+## Módulo de Zonas
+- Vista principal
+![Pantalla de inicio de sesión](/src/assets/cap83.png)
+
+- Le damos clic en nuevo y tenemos que colocar los datos para registrar la nueva zona
+![Pantalla de inicio de sesión](/src/assets/cap84.png)
+
+- Salimos y le damos en gestionar Broker y saldra esto
+![Pantalla de inicio de sesión](/src/assets/cap85.png)
+
+- Luego le damos en nueva configuracion , y hay podemos crear la nueva configuracion de broker llenando los datos 
+![Pantalla de inicio de sesión](/src/assets/cap86.png)
+
+- Al volver vamos a darle clic en donde dice acciones en la tuerquita , poedmos seleccionar y conectar una configuracion de un broker
+![Pantalla de inicio de sesión](/src/assets/cap87.png)
+
+- Luego al salir de nuevo y darle clic al lado que son las barritas verdes saldra las Lecturas en Tiempo Real - Zona Principal Tecnoparque
+![Pantalla de inicio de sesión](/src/assets/cap88.png)
+
+- Volvemos otra vez a lña principal y en el siguiente loguito que es para editar , podremois editar una zona creada
+![Pantalla de inicio de sesión](/src/assets/cap89.png)
+
+
+
+
+## Módulo de Inventario
+
+### Vista General
+Gestiona todos los productos, lotes y bodegas del sistema agrícola.
+![Pantalla de inicio de sesión](/src/assets/cap6.png)
+
+### Agregar Productos
+1. **Crear producto**: Haz clic en "Crear Producto"
+
+2. **Información básica**:
+   - Nombre del producto
+   - Codigo
+   - Descripción
+   - Capacidad de presentacion
+   - Unidad de medida
+   - categoria
+   - Bodega
+   - Stock mínimo
+   - Fecha- Imagen del producto
+   - Vida útil
+   ![Pantalla de inicio de sesión](/src/assets/cap40.png)
+
+3. **Crear lote**: Opcionalmente crea un lote de inventario junto con el producto
+4. **Subir imagen**: Agrega foto del producto (opcional)
+![Pantalla de inicio de sesión](/src/assets/cap41.png)
+
+### Registrar Bodegas
+1. En la parte superior derecha hay tres puntos le das clic y luego le das en Gestionar Bodegas
+![Pantalla de inicio de sesión](/src/assets/cap42.png)
+2. ingresas numero de la bodega
+3. Ingresa nombre de la bodega
+4. Le das clic Registrar Bodega
+5. en la parte de abajo queda registrada la bodega se puede editar y eliminar 
+![Pantalla de inicio de sesión](/src/assets/cap43.png)
+
+### Registrar categorias
+1. En la parte superior derecha hay tres puntos le das clic y luego le das en Gestionar Categorias
+![Pantalla de inicio de sesión](/src/assets/cap44.png)
+2. ingresas nombre de la categoria
+3. Ingresa descripcion
+4. Le das si es consumible o no
+6. le das clic en registrar Categoria
+5. en la parte de abajo queda registrada la categoria se puede editar y eliminar 
+![Pantalla de inicio de sesión](/src/assets/cap45.png)
+
+### Detalles del producto
+1. Le das clic al logo del ojo para ver los detalles como descripcion precio de compra capacidad  etc
+![Pantalla de inicio de sesión](/src/assets/cap48.png)
+![Pantalla de inicio de sesión](/src/assets/cap49.png)
+2. Se puede editar y eliminar
+![Pantalla de inicio de sesión](/src/assets/cap50.png)
+![Pantalla de inicio de sesión](/src/assets/cap51.png)
+
+### Movimientos de Inventario
+- **Historial**: Revisa todos los movimientos (entradas, salidas, reservas)
+- **Seguimiento**: Monitorea el flujo de productos en tiempo real
+![Pantalla de inicio de sesión](/src/assets/cap46.png)
+![Pantalla de inicio de sesión](/src/assets/cap47.png)
+
+## Módulo IoT
+
+### Vista General
+![Pantalla de inicio de sesión](/src/assets/cap77.png)
+
+- Vamos a darle clic en el boton gestionar broker
+![Pantalla de inicio de sesión](/src/assets/cap78.png)
+
+- Luego en nueva configuracion 
+![Pantalla de inicio de sesión](/src/assets/cap79.png)
+
+- Luego retrocedemos y esto se va a ver cuando le demos clic en el logo del lapiz
+![Pantalla de inicio de sesión](/src/assets/cap80.png)
+
+- salimos de la pantalla modal y le damos en configuracion de zonas y saldra esto
+![Pantalla de inicio de sesión](/src/assets/cap81.png)
+
+- le damos en configurar broker y salen los sensores que ya estan como humedad , luz , gas y entre otros
+![Pantalla de inicio de sesión](/src/assets/cap82.png)
+
+- Tambien como podemos ver en el dashboard de IoT en la parte de arriba podemos exportar excel de los datos necesarios 
+![Pantalla de inicio de sesión](/src/assets/cap77.png)
+
+## Gestión de Usuarios
+
+### Perfil Personal
+1. **Ver información**: Revisa tus datos personales
+![Pantalla de inicio de sesión](/src/assets/cap64.png)
+2. **Editar perfil**: Actualiza nombre, teléfono, etc.
+3. **Cambiar contraseña**: Solicita restablecimiento si es necesario
+
+## Panel de Control
+
+### Dashboard Principal
+El dashboard principal ofrece una vista completa y en tiempo real del estado de tu finca agrícola, con información actualizada automáticamente.
+
+#### Información del Usuario
+- **Bienvenida personalizada**: Saludo con nombre completo y rol asignado
+- **Última actualización**: Timestamp de la información mostrada
+
+#### Actividades Programadas
+- **Actividades asignadas**: Lista de tareas pendientes asignadas al usuario
+- **Detalles completos**: Incluye categoría, zona, responsable, fecha de asignación
+- **Navegación**: Botones para avanzar/retroceder entre actividades múltiples
+- **Información en tiempo real**: Se actualiza automáticamente con nuevas asignaciones
+
+#### Movimientos de Inventario Recientes
+- **Movimientos del día**: Lista de entradas, salidas y reservas realizadas hoy
+- **Detalles por movimiento**: Tipo de movimiento, producto, usuario responsable, fecha
+- **Navegación paginada**: Visualiza múltiples movimientos con controles de navegación
+
+#### Ventas del Día
+- **Ventas registradas hoy**: Lista completa de ventas con detalles financieros
+- **Información detallada**:
+  - Cultivo y variedad vendida
+  - Zona de origen
+  - Cantidad vendida (kg)
+  - Ingreso total generado
+  - Precio por unidad
+- **Navegación**: Avanza entre múltiples ventas del día
+
+#### Cosechas del Día
+- **Cosechas registradas hoy**: Lista de todas las cosechas del día actual
+- **Detalles por cosecha**:
+  - Cultivo y variedad cosechada
+  - Zona de cosecha
+  - Cantidad recolectada
+  - Unidad de medida
+- **Navegación**: Controla la visualización de múltiples cosechas
+
+#### Datos Ambientales en Tiempo Real
+- **Sensor dinámico**: Muestra lecturas actuales de sensores IoT
+- **Parámetros monitoreados**: Temperatura, humedad, pH del suelo, etc.
+- **Actualización automática**: Datos se refrescan en tiempo real
+
+#### Actualizaciones en Tiempo Real
+- **WebSocket integrado**: El dashboard se actualiza automáticamente sin recargar la página
+- **Notificaciones push**: Recibe alertas de nuevas actividades, movimientos, ventas y cosechas
+- **Sincronización**: Todos los datos se mantienen actualizados entre usuarios conectados
+
+![Pantalla de inicio de sesión](/src/assets/cap90.png)
+
+:::note[Nota]
+El dashboard utiliza conexiones WebSocket para mantener la información actualizada en tiempo real. Asegúrate de tener una conexión estable a internet para aprovechar todas las funcionalidades.
+:::
+
+### Gestión Administrativa (solo administradores)
+- **Crear usuarios**: Registra nuevos miembros del equipo
+![Pantalla de inicio de sesión](/src/assets/cap65.png)
+![Pantalla de inicio de sesión](/src/assets/cap66.png)
+- Tienes que ingresar los siguientes datos como nombre , apellido , DNI , Telefono , correo electronico y seleccionar rol , si escoges rol de aprendiz saldra una nueva opcion de escoger ficha 
+![Pantalla de inicio de sesión](/src/assets/cap67.png)
+- **Asignar roles**: Define permisos y responsabilidades
+![Pantalla de inicio de sesión](/src/assets/cap68.png)
+- En esta parte podemos asignar roles sea a , admin , instructor , invitado , aprendiz o pasante y para asignarlo le das en el lapiz
+![Pantalla de inicio de sesión](/src/assets/cap69.png)
+- **Gestionar permisos**: Controla acceso a módulos y funciones
+- Aqui podemos mirar los roles que podemos asignar los roles en este caso a aprendiz , cuando le damos clic a cultivos , iot , inicio, inventario , Usuarios todos se despliegan y asignamos roles 
+![Pantalla de inicio de sesión](/src/assets/cap70.png)
+![Pantalla de inicio de sesión](/src/assets/cap71.png)
+- Asignamos roles y le damos actualizar 
+![Pantalla de inicio de sesión](/src/assets/cap72.png)
+- Ingresamos con nuestro dni y contraseña creada en este caso es el mismo dni
+![Pantalla de inicio de sesión](/src/assets/cap73.png)
+- Y aqui ya miramos nuestros roles asignados 
+![Pantalla de inicio de sesión](/src/assets/cap74.png)
+- Y aqui nuestra informacion personal
+![Pantalla de inicio de sesión](/src/assets/cap75.png)
+
+
+## APK Mobil
+
+### Inicio de sesion 
+
+<video controls width="300">
+  <source src="/videos/v1.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Resgistrar Usuario
+
+<video controls width="300">
+  <source src="/videos/v2.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Recuperar Contraseña
+
+<video controls width="300">
+  <source src="/videos/v31.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Menu
+
+<video controls width="300">
+  <source src="/videos/v29.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Zonas
+
+<video controls width="300">
+  <source src="/videos/v30.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Iot
+
+<video controls width="300">
+  <source src="/videos/v4.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Modulo Cultivos
+
+<video controls width="300">
+  <source src="/videos/v5.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v6.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v7.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v8.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v9.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v10.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v11.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v12.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v13.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v14.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v15.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Modulo Actividades
+
+<video controls width="300">
+  <source src="/videos/v18.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v16.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v17.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v20.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v23.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v24.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Modulo Inventario
+
+<video controls width="300">
+  <source src="/videos/v25.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+### Modulo perfil
+
+<video controls width="300">
+  <source src="/videos/v27.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+<video controls width="300">
+  <source src="/videos/v28.mp4" type="video/mp4" />
+  Tu navegador no soporta video HTML5.
+</video>
+
+## Iot Simulacion
+
+URL : https://app.cirkitdesigner.com/project/2f87b348-cf7b-4a7b-b766-e2f4e6045e27
+
+## Figmas
+
+1. URL Web: https://www.figma.com/design/vdNTCTez3cxxxl5aEkCmPx/PrototipoAgroTic?node-id=0-1&t=SV6Yt9iaIlmSLmhG-1
+2. URL Mobil: https://www.figma.com/design/AycoQRVrPjJs90D0UTiCDN/MovilAgroTic?node-id=0-1&t=5myvMJIEM0lWvTbn-1
+## Consejos de Uso
+
+### Productividad
+- **Usa filtros**: Reduce tiempo de búsqueda aplicando filtros específicos
+- **Calendario visual**: Planifica actividades visualmente en el calendario
+- **Reservas inteligentes**: Reserva productos antes de usarlos para evitar faltantes
+
+### Seguridad
+- **Cierra sesión**: Siempre cierra sesión al terminar
+- **Contraseñas seguras**: Usa contraseñas complejas
+- **Permisos apropiados**: Solo accede a módulos autorizados
+
+### Mantenimiento de Datos
+- **Actualizaciones regulares**: Mantén información al día
+- **Respaldos**: El sistema mantiene historial de cambios
+- **Validación**: Revisa datos antes de guardar
+
+## Solución de Problemas
+
+### Problemas Comunes
+
+#### No puedo iniciar sesión
+- Verifica DNI y contraseña
+- Contacta al administrador si olvidaste la contraseña
+
+#### No veo ciertos módulos
+- Verifica tus permisos con el administrador
+- Algunos módulos requieren roles específicos
+
+#### Errores al guardar
+- Revisa que todos los campos requeridos estén completos
+- Verifica formato de fechas y números
+
+#### Lentitud del sistema
+- Cierra otras pestañas del navegador
+- Verifica conexión a internet
+- Contacta soporte técnico si persiste
+
+## Soporte Técnico
+
+Para asistencia adicional:
+- Contacta al administrador del sistema
+- Revisa la documentación de API para desarrolladores
+- Consulta logs del sistema en caso de errores
+
+---
+
+¡Gracias por usar AgroTic! Esta aplicación está diseñada para optimizar tus procesos agrícolas y mejorar la eficiencia de tu finca.
+
+
+

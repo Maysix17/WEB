@@ -1,0 +1,165 @@
+---
+title: Bodega
+description: Endpoints para gestión de bodegas
+---
+
+# Bodega
+
+## POST /bodega
+
+Crea una nueva bodega.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/bodega
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Bodega Principal",
+  "ubicacion": "Zona industrial",
+  "capacidad": 1000,
+  "tipo": "Almacenamiento general"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Bodega Principal",
+    "ubicacion": "Zona industrial",
+    "capacidad": 1000,
+    "tipo": "Almacenamiento general"
+  }
+}
+```
+
+## GET /bodega
+
+Lista todas las bodegas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/bodega
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Bodega Principal",
+      "ubicacion": "Zona industrial",
+      "capacidad": 1000,
+      "tipo": "Almacenamiento general"
+    }
+  ]
+}
+```
+
+## GET /bodega/:id
+
+Obtiene una bodega específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la bodega
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/bodega/uuid-bodega
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Bodega Principal",
+    "ubicacion": "Zona industrial",
+    "capacidad": 1000,
+    "tipo": "Almacenamiento general"
+  }
+}
+```
+
+## PATCH /bodega/:id
+
+Actualiza una bodega específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la bodega
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/bodega/uuid-bodega
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Bodega Principal Actualizada",
+  "ubicacion": "Zona industrial norte",
+  "capacidad": 1200,
+  "tipo": "Almacenamiento general"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Bodega Principal Actualizada",
+    "ubicacion": "Zona industrial norte",
+    "capacidad": 1200,
+    "tipo": "Almacenamiento general"
+  }
+}
+```
+
+## DELETE /bodega/:id
+
+Elimina una bodega específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la bodega
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/bodega/uuid-bodega
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Bodega eliminada exitosamente"
+}
+```

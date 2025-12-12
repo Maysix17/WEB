@@ -1,0 +1,159 @@
+---
+title: Fichas
+description: Endpoints para gestión de fichas de aprendices
+---
+
+# Fichas
+
+## POST /fichas
+
+Crea una nueva ficha.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/fichas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "numero": 12345, // Número único de la ficha de aprendiz
+  "programa": "Tecnólogo en Gestión Agroindustrial", // Nombre del programa de formación
+  "estado": "Activo" // Estado de la ficha (Activo/Inactivo)
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": 1, // Identificador único de la ficha creada (primary key, auto-incremental)
+    "numero": 12345, // Número único de la ficha de aprendiz
+    "programa": "Tecnólogo en Gestión Agroindustrial", // Nombre del programa de formación
+    "estado": "Activo" // Estado de la ficha (Activo/Inactivo)
+  }
+}
+```
+
+## GET /fichas
+
+Lista todas las fichas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/fichas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de fichas registradas en el sistema
+    {
+      "id": 1, // Identificador único de la ficha (primary key, auto-incremental)
+      "numero": 12345, // Número único de la ficha de aprendiz
+      "programa": "Tecnólogo en Gestión Agroindustrial", // Nombre del programa de formación
+      "estado": "Activo" // Estado de la ficha (Activo/Inactivo)
+    }
+  ]
+}
+```
+
+## GET /fichas/:id
+
+Obtiene una ficha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la ficha
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/fichas/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": 1, // Identificador único de la ficha (primary key, auto-incremental)
+    "numero": 12345, // Número único de la ficha de aprendiz
+    "programa": "Tecnólogo en Gestión Agroindustrial", // Nombre del programa de formación
+    "estado": "Activo" // Estado de la ficha (Activo/Inactivo)
+  }
+}
+```
+
+## PATCH /fichas/:id
+
+Actualiza una ficha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la ficha
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/fichas/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "numero": 12345,
+  "programa": "Tecnólogo en Gestión Agroindustrial Actualizado",
+  "estado": "Inactivo"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": 1, // Identificador único de la ficha actualizada (primary key, auto-incremental)
+    "numero": 12345, // Número único de la ficha de aprendiz
+    "programa": "Tecnólogo en Gestión Agroindustrial", // Nombre del programa de formación
+    "estado": "Inactivo" // Nuevo estado de la ficha (Activo/Inactivo)
+  }
+}
+```
+
+## DELETE /fichas/:id
+
+Elimina una ficha específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la ficha
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/fichas/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "message": "Ficha eliminada exitosamente" // Mensaje confirmando que la ficha fue eliminada
+}
+```

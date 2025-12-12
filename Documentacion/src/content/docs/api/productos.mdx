@@ -1,0 +1,215 @@
+---
+title: Productos
+description: Endpoints para gestión de productos
+---
+
+# Productos
+
+## POST /productos
+
+Crea un nuevo producto.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/productos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Fertilizante orgánico", // Nombre del producto a registrar
+  "descripcion": "Fertilizante natural para cultivos", // Descripción detallada del producto
+  "categoriaId": "uuid-categoria", // ID de la categoría a la que pertenece el producto
+  "unidadMedidaId": "uuid-unidad", // ID de la unidad de medida del producto
+  "precioUnitario": 45000, // Precio por unidad del producto
+  "stockMinimo": 10 // Cantidad mínima de stock para alertas
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del producto creado (primary key, UUID)
+    "nombre": "Fertilizante orgánico", // Nombre del producto registrado
+    "descripcion": "Fertilizante natural para cultivos", // Descripción del producto
+    "precioUnitario": 45000 // Precio por unidad del producto
+  }
+}
+```
+
+## GET /productos
+
+Lista todos los productos.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/productos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de productos registrados
+    {
+      "id": "uuid", // Identificador único del producto (primary key, UUID)
+      "nombre": "Fertilizante orgánico", // Nombre del producto
+      "descripcion": "Fertilizante natural para cultivos", // Descripción del producto
+      "precioUnitario": 45000 // Precio por unidad del producto
+    }
+  ]
+}
+```
+
+## GET /productos/:id
+
+Obtiene un producto específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del producto
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/productos/uuid-producto
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del producto (primary key, UUID)
+    "nombre": "Fertilizante orgánico", // Nombre del producto
+    "descripcion": "Fertilizante natural para cultivos", // Descripción del producto
+    "precioUnitario": 45000 // Precio por unidad del producto
+  }
+}
+```
+
+## PATCH /productos/:id
+
+Actualiza un producto específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del producto
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/productos/uuid-producto
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Fertilizante orgánico premium",
+  "descripcion": "Fertilizante natural premium para cultivos",
+  "precioUnitario": 50000
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del producto actualizado (primary key, UUID)
+    "nombre": "Fertilizante orgánico premium", // Nombre actualizado del producto
+    "descripcion": "Fertilizante natural premium para cultivos", // Descripción actualizada del producto
+    "precioUnitario": 50000 // Precio actualizado por unidad del producto
+  }
+}
+```
+
+## DELETE /productos/:id
+
+Elimina un producto específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del producto
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/productos/uuid-producto
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Producto eliminado exitosamente"
+}
+```
+
+## POST /productos/with-lote
+
+Crea un producto con lote de inventario.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/productos/with-lote
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "producto": { // Objeto con la información del producto a crear
+    "nombre": "Fertilizante orgánico", // Nombre del producto
+    "descripcion": "Fertilizante natural para cultivos", // Descripción del producto
+    "categoriaId": "uuid-categoria", // ID de la categoría del producto
+    "unidadMedidaId": "uuid-unidad", // ID de la unidad de medida
+    "precioUnitario": 45000, // Precio de venta por unidad
+    "stockMinimo": 10 // Cantidad mínima de stock para alertas
+  },
+  "lote": { // Objeto con la información del lote de inventario
+    "cantidad": 100, // Cantidad inicial del lote
+    "fechaIngreso": "2024-01-15", // Fecha de ingreso del lote al inventario
+    "fechaVencimiento": "2025-01-15", // Fecha de vencimiento del lote
+    "ubicacion": "Bodega principal", // Ubicación física del lote
+    "costoUnitario": 40000, // Costo de compra por unidad
+    "proveedor": "Proveedor ABC" // Nombre del proveedor del lote
+  }
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "producto": { // Información del producto creado
+      "id": "uuid", // Identificador único del producto (primary key, UUID)
+      "nombre": "Fertilizante orgánico" // Nombre del producto creado
+    },
+    "lote": { // Información del lote de inventario creado
+      "id": "uuid", // Identificador único del lote (primary key, UUID)
+      "cantidad": 100 // Cantidad inicial del lote creado
+    }
+  }
+}
+```

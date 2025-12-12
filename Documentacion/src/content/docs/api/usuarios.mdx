@@ -1,0 +1,293 @@
+---
+title: Usuarios
+description: Endpoints para gestión de usuarios
+---
+
+# Usuarios
+
+## GET /usuarios/me
+
+Obtiene la información del usuario autenticado.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/usuarios/me
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1, // Identificador único del usuario (primary key, auto-incremental)
+    "dni": "12345678", // Número de documento de identidad del usuario
+    "correo": "usuario@example.com", // Correo electrónico del usuario (único)
+    "nombres": "Juan", // Nombre del usuario
+    "apellidos": "Pérez", // Apellido del usuario
+    "telefono": "+573001234567", // Número de teléfono del usuario
+    "rol": "admin" // Rol asignado al usuario en el sistema
+  }
+}
+```
+
+## PATCH /usuarios/me
+
+Actualiza la información del usuario autenticado.
+
+**Requiere autenticación y autorización**
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/usuarios/me
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombres": "Juan Carlos", // Nombre actualizado del usuario
+  "apellidos": "Pérez García", // Apellido actualizado del usuario
+  "telefono": "+573001234568" // Número de teléfono actualizado del usuario
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1, // Identificador único del usuario (primary key, auto-incremental)
+    "dni": "12345678", // Número de documento de identidad del usuario
+    "correo": "usuario@example.com", // Correo electrónico del usuario (único)
+    "nombres": "Juan Carlos", // Nombre actualizado del usuario
+    "apellidos": "Pérez García", // Apellido actualizado del usuario
+    "telefono": "+573001234568" // Número de teléfono actualizado del usuario
+  }
+}
+```
+
+## POST /usuarios/register
+
+Registra un nuevo usuario desde el panel administrativo.
+
+**Requiere autenticación y autorización**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/usuarios/register
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "dni": "87654321", // Número de documento de identidad del nuevo usuario
+  "correo": "nuevo@example.com", // Correo electrónico del nuevo usuario (único)
+  "password": "password123", // Contraseña del nuevo usuario (mínimo 8 caracteres)
+  "nombres": "María", // Nombre del nuevo usuario
+  "apellidos": "González", // Apellido del nuevo usuario
+  "telefono": "+573001234569", // Número de teléfono del nuevo usuario
+  "rolId": "uuid-del-rol" // ID del rol que se asignará al nuevo usuario
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "message": "Usuario registrado exitosamente", // Mensaje descriptivo del resultado
+  "data": {
+    "id": 1, // Identificador único del nuevo usuario creado (primary key, auto-incremental)
+    "dni": "87654321", // Número de documento de identidad del nuevo usuario
+    "correo": "nuevo@example.com", // Correo electrónico del nuevo usuario (único)
+    "nombres": "María", // Nombre del nuevo usuario
+    "apellidos": "González" // Apellido del nuevo usuario
+  }
+}
+```
+
+## GET /usuarios
+
+Lista todos los usuarios.
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/usuarios
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de usuarios
+    {
+      "id": 1, // Identificador único del usuario (primary key, auto-incremental)
+      "dni": "12345678", // Número de documento de identidad del usuario
+      "correo": "usuario@example.com", // Correo electrónico del usuario (único)
+      "nombres": "Juan", // Nombre del usuario
+      "apellidos": "Pérez" // Apellido del usuario
+    }
+  ]
+}
+```
+
+## GET /usuarios/:id
+
+Obtiene un usuario específico por ID.
+
+**Parámetros de ruta:**
+- `id`: ID del usuario
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/usuarios/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "dni": "12345678",
+    "correo": "usuario@example.com",
+    "nombres": "Juan",
+    "apellidos": "Pérez",
+    "telefono": "+573001234567",
+    "rol": "admin"
+  }
+}
+```
+
+## PATCH /usuarios/:id
+
+Actualiza un usuario específico.
+
+**Parámetros de ruta:**
+- `id`: ID del usuario
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/usuarios/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombres": "Juan Carlos",
+  "apellidos": "Pérez García",
+  "telefono": "+573001234568",
+  "rolId": "uuid-del-rol"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "dni": "12345678",
+    "correo": "usuario@example.com",
+    "nombres": "Juan Carlos",
+    "apellidos": "Pérez García",
+    "telefono": "+573001234568",
+    "rol": "admin"
+  }
+}
+```
+
+## DELETE /usuarios/:id
+
+Elimina un usuario específico.
+
+**Parámetros de ruta:**
+- `id`: ID del usuario
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/usuarios/1
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Usuario eliminado exitosamente"
+}
+```
+
+## GET /usuarios/search/:query
+
+Busca usuarios por nombre, email o DNI.
+
+**Parámetros de ruta:**
+- `query`: Término de búsqueda
+
+**Parámetros de consulta:**
+- `page`: Página (por defecto: 1)
+- `limit`: Límite por página (por defecto: 10)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "dni": "12345678",
+      "correo": "usuario@example.com",
+      "nombres": "Juan",
+      "apellidos": "Pérez"
+    },
+    {
+      "id": 2,
+      "dni": "87654321",
+      "correo": "maria@example.com",
+      "nombres": "María",
+      "apellidos": "González"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 2
+  }
+}
+```
+
+## GET /usuarios/search/dni/:dni
+
+Busca usuario por DNI.
+
+**Parámetros de ruta:**
+- `dni`: Número de documento
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "dni": "12345678",
+    "correo": "usuario@example.com",
+    "nombres": "Juan",
+    "apellidos": "Pérez",
+    "telefono": "+573001234567",
+    "rol": "admin"
+  }
+}
+```

@@ -1,0 +1,428 @@
+---
+title: Entidades y Base de Datos
+description: Esquema de base de datos y relaciones entre entidades
+---
+
+# Entidades y Base de Datos
+
+## Esquema General
+
+La base de datos de AgroTic está diseñada siguiendo principios de normalización y utiliza PostgreSQL como motor de base de datos. El esquema está organizado en módulos independientes que se relacionan entre sí.
+
+## Diagrama de Entidades
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│     Usuario     │    │      Roles      │    │    Permisos     │
+│                 │    │                 │    │                 │
+│ - id (UUID)     │    │ - id (UUID)     │    │ - id (UUID)     │
+│ - dni           │    │ - nombre        │    │ - accion        │
+│ - nombres       │    │                 │    │ - recurso_id    │
+│ - apellidos     │    │                 │    │                 │
+│ - passwordHash  │    │                 │    │                 │
+│ - telefono      │    │                 │    │                 │
+│ - correo        │    │                 │    │                 │
+│ - rol_id        │    │                 │    │                 │
+│ - ficha_id      │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Recursos      │
+                    │                 │
+                    │ - id (UUID)     │
+                    │ - nombre        │
+                    │ - modulo_id     │
+                    └─────────────────┘
+                             │
+                             │
+                    ┌─────────────────┐
+                    │    Modulos      │
+                    │                 │
+                    │ - id (UUID)     │
+                    │ - nombre        │
+                    └─────────────────┘
+```
+
+## Entidades Principales
+
+### Usuario
+
+```sql
+CREATE TABLE usuarios (
+    pk_id_usuario UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usu_dni BIGINT NOT NULL,
+    usu_nombres VARCHAR(50) NOT NULL,
+    usu_apellidos VARCHAR(50) NOT NULL,
+    usu_password_h VARCHAR(255) NOT NULL,
+    usu_telefono BIGINT,
+    usu_correo VARCHAR(255) NOT NULL UNIQUE,
+    fk_id_rol UUID REFERENCES roles(pk_id_rol),
+    fk_id_ficha UUID REFERENCES fichas(pk_id_ficha)
+);
+```
+
+**Campos:**
+- `pk_id_usuario`: Identificador único (UUID)
+- `usu_dni`: Documento de identidad (único)
+- `usu_nombres`: Nombres del usuario
+- `usu_apellidos`: Apellidos del usuario
+- `usu_password_h`: Hash de la contraseña (bcrypt)
+- `usu_telefono`: Número de teléfono
+- `usu_correo`: Correo electrónico (único)
+- `fk_id_rol`: Referencia al rol del usuario
+- `fk_id_ficha`: Referencia a la ficha (para aprendices)
+
+### Roles
+
+```sql
+CREATE TABLE roles (
+    pk_id_rol UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    rol_nombre VARCHAR(50) NOT NULL UNIQUE
+);
+```
+
+**Relaciones:**
+- **One-to-Many** con Usuario (un rol tiene muchos usuarios)
+- **Many-to-Many** con Permisos (a través de tabla intermedia)
+
+### Permisos
+
+```sql
+CREATE TABLE permisos (
+    pk_id_permiso UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    permiso_accion VARCHAR(50) NOT NULL,
+    fk_id_recurso UUID NOT NULL REFERENCES recursos(pk_id_recurso),
+    UNIQUE(permiso_accion, fk_id_recurso)
+);
+```
+
+**Campos:**
+- `permiso_accion`: Acción permitida (leer, crear, actualizar, eliminar)
+- `fk_id_recurso`: Referencia al recurso
+
+**Restricción única:** Un permiso específico por recurso
+
+### Recursos
+
+```sql
+CREATE TABLE recursos (
+    pk_id_recurso UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    rec_nombre VARCHAR(100) NOT NULL,
+    fk_id_modulo UUID NOT NULL REFERENCES modulos(pk_id_modulo)
+);
+```
+
+**Campos:**
+- `rec_nombre`: Nombre del recurso (productos, cultivos, etc.)
+- `fk_id_modulo`: Referencia al módulo
+
+### Módulos
+
+```sql
+CREATE TABLE modulos (
+    pk_id_modulo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    mod_nombre VARCHAR(100) NOT NULL UNIQUE
+);
+```
+
+**Ejemplos de módulos:**
+- Usuarios
+- Cultivos
+- Inventario
+- Actividades
+- IoT (Sensores)
+
+## Entidades de Dominio
+
+### Cultivos
+
+```sql
+CREATE TABLE cultivos (
+    pk_id_cultivo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cul_estado BOOLEAN NOT NULL DEFAULT true,
+    cul_siembra DATE NOT NULL
+);
+```
+
+**Relaciones:**
+- **Many-to-Many** con Variedades (a través de cultivos_x_variedad)
+- **Many-to-Many** con Zonas (a través de cultivos_variedad_x_zona)
+
+### Variedades
+
+```sql
+CREATE TABLE variedades (
+    pk_id_variedad UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    var_nombre VARCHAR(100) NOT NULL,
+    var_descripcion TEXT,
+    fk_tipo_cultivo_id UUID NOT NULL REFERENCES tipos_cultivo(pk_id_tipo_cultivo)
+);
+```
+
+### Zonas
+
+```sql
+CREATE TABLE zonas (
+    pk_id_zona UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    zon_nombre VARCHAR(100) NOT NULL,
+    zon_descripcion TEXT,
+    zon_ubicacion TEXT,
+    zon_area DECIMAL(10,2)
+);
+```
+
+### Cultivos Variedad x Zona (CVZ)
+
+```sql
+CREATE TABLE cultivos_variedad_x_zona (
+    pk_id_cv_zona UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_cultivos_x_variedad_id UUID NOT NULL REFERENCES cultivos_x_variedad(pk_id_cxv),
+    fk_zona_id UUID NOT NULL REFERENCES zonas(pk_id_zona)
+);
+```
+
+Esta tabla es crucial porque representa la asignación específica de un cultivo con una variedad en una zona determinada.
+
+## Entidades de Inventario
+
+### Productos
+
+```sql
+CREATE TABLE productos (
+    pk_id_producto UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    prod_nombre VARCHAR(100) NOT NULL,
+    prod_descripcion TEXT,
+    fk_id_categoria UUID REFERENCES categorias(pk_id_categoria),
+    fk_id_unidad_medida UUID REFERENCES unidades_medida(pk_id_unidad),
+    prod_precio_unitario DECIMAL(10,2),
+    prod_stock_minimo INTEGER DEFAULT 0
+);
+```
+
+### Lotes de Inventario
+
+```sql
+CREATE TABLE lotes_inventario (
+    pk_id_lote UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_id_producto UUID NOT NULL REFERENCES productos(pk_id_producto),
+    lot_cantidad INTEGER NOT NULL,
+    lot_fecha_ingreso DATE NOT NULL,
+    lot_fecha_vencimiento DATE,
+    lot_ubicacion VARCHAR(255),
+    lot_costo_unitario DECIMAL(10,2),
+    lot_proveedor VARCHAR(255)
+);
+```
+
+### Movimientos de Inventario
+
+```sql
+CREATE TABLE movimientos_inventario (
+    pk_id_movimiento UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_id_lote UUID NOT NULL REFERENCES lotes_inventario(pk_id_lote),
+    mov_tipo VARCHAR(50) NOT NULL, -- 'entrada', 'salida', 'ajuste'
+    mov_cantidad INTEGER NOT NULL,
+    mov_fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    mov_motivo TEXT,
+    fk_id_usuario UUID REFERENCES usuarios(pk_id_usuario)
+);
+```
+
+## Entidades de Actividades
+
+### Actividades
+
+```sql
+CREATE TABLE actividades (
+    pk_id_actividad UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    act_nombre VARCHAR(255) NOT NULL,
+    act_descripcion TEXT,
+    act_fecha DATE NOT NULL,
+    act_img_url VARCHAR(500),
+    fk_id_categoria_actividad UUID REFERENCES categorias_actividad(pk_id_categoria_act),
+    act_estado VARCHAR(50) DEFAULT 'pendiente'
+);
+```
+
+### Estados de Reserva
+
+```sql
+CREATE TABLE estados_reserva (
+    pk_id_estado_reserva UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    est_res_nombre VARCHAR(100) NOT NULL UNIQUE
+);
+```
+
+### Reservas x Actividad
+
+```sql
+CREATE TABLE reservas_x_actividad (
+    pk_id_reserva UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_id_actividad UUID NOT NULL REFERENCES actividades(pk_id_actividad),
+    fk_id_lote UUID REFERENCES lotes_inventario(pk_id_lote),
+    fk_id_producto UUID REFERENCES productos(pk_id_producto),
+    res_cantidad_reservada INTEGER NOT NULL,
+    res_cantidad_usada INTEGER DEFAULT 0,
+    fk_id_estado_reserva UUID NOT NULL REFERENCES estados_reserva(pk_id_estado_reserva),
+    res_fecha_reserva TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Entidades de IoT
+
+### Sensores
+
+```sql
+CREATE TABLE sensores (
+    pk_id_sensor UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sen_nombre VARCHAR(255) NOT NULL,
+    fk_id_tipo_sensor UUID NOT NULL REFERENCES tipos_sensor(pk_id_tipo_sensor),
+    fk_id_zona UUID REFERENCES zonas(pk_id_zona),
+    sen_ubicacion TEXT,
+    sen_activo BOOLEAN DEFAULT true
+);
+```
+
+### Mediciones de Sensor
+
+```sql
+CREATE TABLE mediciones_sensor (
+    pk_id_medicion UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_id_sensor UUID NOT NULL REFERENCES sensores(pk_id_sensor),
+    med_valor DECIMAL(10,2) NOT NULL,
+    med_unidad VARCHAR(50) NOT NULL,
+    med_fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Entidades de Sesiones
+
+### Sesiones
+
+```sql
+CREATE TABLE sesiones (
+    pk_id_sesion UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ses_token_hash VARCHAR(255) NOT NULL,
+    ses_fecha_expiracion TIMESTAMP NOT NULL,
+    ses_activa BOOLEAN DEFAULT true,
+    fk_id_usuario UUID NOT NULL REFERENCES usuarios(pk_id_usuario),
+    ses_fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Relaciones Clave
+
+### Jerarquía de Permisos
+
+```
+Módulo → Recursos → Permisos → Roles → Usuarios
+```
+
+### Ciclo de Cultivo
+
+```
+Tipo Cultivo → Variedad → Cultivo X Variedad → CVZ → Zona
+```
+
+### Gestión de Inventario
+
+```
+Producto → Lote → Movimiento → Reserva → Actividad
+```
+
+### Monitoreo IoT
+
+```
+Tipo Sensor → Sensor → Medición → Zona
+```
+
+## Índices y Optimizaciones
+
+### Índices Recomendados
+
+```sql
+-- Índices para búsquedas frecuentes
+CREATE INDEX idx_usuarios_dni ON usuarios(usu_dni);
+CREATE INDEX idx_usuarios_correo ON usuarios(usu_correo);
+CREATE INDEX idx_cultivos_estado ON cultivos(cul_estado);
+CREATE INDEX idx_actividades_fecha ON actividades(act_fecha);
+CREATE INDEX idx_mediciones_sensor_fecha ON mediciones_sensor(med_fecha);
+
+-- Índices para claves foráneas
+CREATE INDEX idx_usuarios_rol ON usuarios(fk_id_rol);
+CREATE INDEX idx_permisos_recurso ON permisos(fk_id_recurso);
+CREATE INDEX idx_cvz_zona ON cultivos_variedad_x_zona(fk_zona_id);
+```
+
+## Migraciones
+
+El proyecto utiliza TypeORM para manejar migraciones de base de datos. Cada cambio en el esquema debe tener su correspondiente migración.
+
+### Estructura de Migración
+
+```typescript
+export class InitialSchema1760148098547 implements MigrationInterface {
+    name = 'InitialSchema1760148098547'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        // Crear tablas
+        await queryRunner.query(`
+            CREATE TABLE "usuarios" (
+                "pk_id_usuario" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                -- ... otros campos
+            )
+        `);
+
+        // Crear índices
+        await queryRunner.query(`
+            CREATE INDEX "idx_usuarios_dni" ON "usuarios" ("usu_dni")
+        `);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        // Revertir cambios
+        await queryRunner.query(`DROP INDEX "idx_usuarios_dni"`);
+        await queryRunner.query(`DROP TABLE "usuarios"`);
+    }
+}
+```
+
+## Consideraciones de Rendimiento
+
+### Optimizaciones Implementadas
+
+1. **Índices estratégicos** en campos de búsqueda frecuente
+2. **Relaciones lazy loading** para evitar consultas innecesarias
+3. **Cache en Redis** para sesiones y datos frecuentes
+4. **Paginación** en consultas grandes
+5. **Query builders** para consultas complejas optimizadas
+
+### Monitoreo de Consultas
+
+```typescript
+// Configuración de logging en TypeORM
+{
+  type: 'postgres',
+  // ... otras configuraciones
+  logging: ['query', 'error'],
+  logger: 'advanced-console',
+}
+```
+
+## Backup y Recuperación
+
+### Estrategia de Backup
+
+- **Backups diarios** de la base de datos completa
+- **Backups incrementales** cada hora
+- **Retención**: 30 días para diarios, 7 días para incrementales
+- **Almacenamiento**: En servidor separado y nube
+
+### Recuperación de Desastres
+
+- **RPO (Recovery Point Objective)**: Máximo 1 hora de pérdida de datos
+- **RTO (Recovery Time Objective)**: Recuperación en menos de 4 horas
+- **Pruebas**: Simulacros de recuperación mensuales

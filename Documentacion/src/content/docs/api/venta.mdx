@@ -1,0 +1,168 @@
+---
+title: Ventas
+description: Endpoints para gestión de ventas
+---
+
+# Ventas
+
+## POST /venta
+
+Crea una nueva venta.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/venta
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "productoId": "uuid-del-producto",
+  "cantidad": 50,
+  "precioUnitario": 1500.00,
+  "clienteId": "uuid-del-cliente",
+  "fecha": "2024-01-15"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "productoId": "uuid-del-producto",
+    "cantidad": 50,
+    "precioUnitario": 1500.00,
+    "clienteId": "uuid-del-cliente",
+    "fecha": "2024-01-15"
+  }
+}
+```
+
+## GET /venta
+
+Lista todas las ventas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/venta
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "productoId": "uuid-del-producto",
+      "cantidad": 50,
+      "precioUnitario": 1500.00,
+      "clienteId": "uuid-del-cliente",
+      "fecha": "2024-01-15"
+    }
+  ]
+}
+```
+
+## GET /venta/:id
+
+Obtiene una venta específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la venta
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/venta/uuid-venta
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "productoId": "uuid-del-producto",
+    "cantidad": 50,
+    "precioUnitario": 1500.00,
+    "clienteId": "uuid-del-cliente",
+    "fecha": "2024-01-15"
+  }
+}
+```
+
+## PATCH /venta/:id
+
+Actualiza una venta específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la venta
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/venta/uuid-venta
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "cantidad": 60,
+  "precioUnitario": 1600.00
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "productoId": "uuid-del-producto",
+    "cantidad": 60,
+    "precioUnitario": 1600.00,
+    "clienteId": "uuid-del-cliente",
+    "fecha": "2024-01-15"
+  }
+}
+```
+
+## DELETE /venta/:id
+
+Elimina una venta específica.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la venta
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/venta/uuid-venta
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Venta eliminada exitosamente"
+}
+```

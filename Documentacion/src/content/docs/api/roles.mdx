@@ -1,0 +1,221 @@
+---
+title: Roles
+description: Endpoints para gestión de roles y permisos
+---
+
+# Roles
+
+## POST /roles
+
+Crea un nuevo rol.
+
+**Requiere autenticación y autorización**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/roles
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Administrador"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del rol (primary key, UUID)
+    "nombre": "Administrador" // Nombre del rol
+  }
+}
+```
+
+## GET /roles
+
+Lista todos los roles.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/roles
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de roles
+    {
+      "id": "uuid", // Identificador único del rol (primary key, UUID)
+      "nombre": "Administrador" // Nombre del rol
+    }
+  ]
+}
+```
+
+## GET /roles/:id
+
+Obtiene un rol específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/roles/uuid-rol
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del rol (primary key, UUID)
+    "nombre": "Administrador" // Nombre del rol
+  }
+}
+```
+
+## DELETE /roles/:id
+
+Elimina un rol específico.
+
+**Requiere autenticación y autorización**
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/roles/uuid-rol
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (204):**
+Sin contenido
+
+## POST /roles/:id/permisos
+
+Asigna un permiso a un rol.
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "permisoId": "uuid-del-permiso"
+}
+```
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/roles/uuid-rol/permisos
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "message": "Permiso asignado exitosamente"
+}
+```
+
+## POST /roles/:id/permisos/multiple
+
+Asigna múltiples permisos a un rol.
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "permisoIds": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/roles/uuid-rol/permisos/multiple
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "message": "Permisos asignados exitosamente"
+}
+```
+
+## PATCH /roles/:id
+
+Actualiza un rol con sus permisos.
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Supervisor",
+  "permisos": [
+    {
+      "id": "uuid-permiso",
+      "recurso": "productos",
+      "acciones": ["leer", "crear"]
+    }
+  ]
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único del rol actualizado (primary key, UUID)
+    "nombre": "Supervisor" // Nombre actualizado del rol
+  }
+}
+```
+
+## DELETE /roles/:id/permisos/:permisoId
+
+Remueve un permiso de un rol.
+
+**Parámetros de ruta:**
+- `id`: ID del rol (UUID)
+- `permisoId`: ID del permiso (UUID)
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/roles/uuid-rol/permisos/uuid-permiso
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Permiso removido exitosamente"
+}
+```

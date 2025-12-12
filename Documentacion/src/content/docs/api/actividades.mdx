@@ -1,0 +1,491 @@
+---
+title: Actividades
+description: Endpoints para gestión de actividades agrícolas
+---
+
+# Actividades
+
+## POST /actividades
+
+Crea una nueva actividad.
+
+**Requiere:** Archivo de imagen (opcional)
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/actividades
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+- **Body:** form-data
+
+**Cuerpo de la solicitud (form-data):**
+```
+actividad: {
+  "nombre": "Siembra de tomate",
+  "descripcion": "Siembra de semillas de tomate cherry",
+  "fecha": "2024-01-15",
+  "categoriaActividadId": "uuid-categoria",
+  "usuarioId": "uuid-usuario",
+  "fechaAsignacion": "2024-01-15T00:00:00.000Z"
+}
+imgUrl: [archivo de imagen]
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único de la actividad creada (primary key, UUID)
+    "nombre": "Siembra de tomate", // Nombre descriptivo de la actividad agrícola
+    "descripcion": "Siembra de semillas de tomate cherry", // Descripción detallada de la actividad
+    "fecha": "2024-01-15", // Fecha programada para realizar la actividad
+    "imgUrl": "/uploads/actividades/123456789-image.jpg" // URL de la imagen asociada a la actividad (opcional)
+  }
+}
+```
+
+## GET /actividades
+
+Lista todas las actividades.
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Siembra de tomate",
+      "descripcion": "Siembra de semillas de tomate cherry",
+      "fecha": "2024-01-15",
+      "imgUrl": "/uploads/actividades/123456789-image.jpg"
+    }
+  ]
+}
+```
+
+## GET /actividades/count-by-date/:date
+
+Cuenta actividades por fecha.
+
+**Parámetros de ruta:**
+- `date`: Fecha en formato YYYY-MM-DD
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/count-by-date/2024-01-15
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "count": 5 // Número total de actividades programadas para la fecha especificada
+}
+```
+
+## GET /actividades/by-date/:date
+
+Obtiene actividades por fecha.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `date`: Fecha en formato YYYY-MM-DD
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/by-date/2024-01-15
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de actividades en el rango de fechas especificado
+    {
+      "id": "uuid", // Identificador único de la actividad (primary key, UUID)
+      "nombre": "Siembra de tomate", // Nombre descriptivo de la actividad agrícola
+      "fecha": "2024-01-15" // Fecha programada para realizar la actividad
+    }
+  ]
+}
+```
+
+## GET /actividades/by-date-active/:date
+
+Obtiene actividades activas por fecha.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `date`: Fecha en formato YYYY-MM-DD
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/by-date-active/2024-01-15
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de actividades activas para la fecha especificada
+    {
+      "id": "uuid", // Identificador único de la actividad (primary key, UUID)
+      "nombre": "Siembra de tomate", // Nombre descriptivo de la actividad agrícola
+      "fecha": "2024-01-15", // Fecha programada para realizar la actividad
+      "estado": "activo" // Estado actual de la actividad (activo, finalizado, etc.)
+    }
+  ]
+}
+```
+
+## GET /actividades/by-date-range
+
+Obtiene actividades en un rango de fechas.
+
+**Requiere autenticación**
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/by-date-range?start=2024-01-01&end=2024-01-31
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Parámetros de consulta:**
+- `start`: Fecha inicial
+- `end`: Fecha final
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de actividades para la fecha especificada
+    {
+      "id": "uuid", // Identificador único de la actividad (primary key, UUID)
+      "nombre": "Siembra de tomate", // Nombre descriptivo de la actividad agrícola
+      "fecha": "2024-01-15" // Fecha programada para realizar la actividad
+    }
+  ]
+}
+```
+
+## GET /actividades/:id
+
+Obtiene una actividad específica.
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/uuid-actividad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Siembra de tomate",
+    "descripcion": "Siembra de semillas de tomate cherry",
+    "fecha": "2024-01-15",
+    "imgUrl": "/uploads/actividades/123456789-image.jpg"
+  }
+}
+```
+
+## PATCH /actividades/:id
+
+Actualiza una actividad específica.
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/actividades/uuid-actividad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "nombre": "Siembra de tomate actualizado",
+  "descripcion": "Siembra de semillas de tomate cherry actualizada",
+  "fecha": "2024-01-16"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "nombre": "Siembra de tomate actualizado",
+    "descripcion": "Siembra de semillas de tomate cherry actualizada",
+    "fecha": "2024-01-16",
+    "imgUrl": "/uploads/actividades/123456789-image.jpg"
+  }
+}
+```
+
+## DELETE /actividades/:id
+
+Elimina una actividad específica.
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** DELETE
+- **URL:** http://localhost:3000/actividades/uuid-actividad
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Actividad eliminada exitosamente"
+}
+```
+
+## PATCH /actividades/:id/finalizar
+
+Finaliza una actividad con evidencia.
+
+**Requiere autenticación y archivo de imagen (opcional)**
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/actividades/uuid-actividad/finalizar
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "observacion": "Actividad completada exitosamente",
+  "horas": 4,
+  "precioHora": 25000
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Actividad finalizada exitosamente"
+}
+```
+
+## POST /actividades/upload
+
+Sube evidencia para una actividad.
+
+**Requiere autenticación y archivo de imagen**
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/actividades/upload
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+- **Body:** (form-data)
+  - Key: file, Type: File, Select image file
+
+**Respuesta exitosa (201):**
+```json
+{
+  "url": "/uploads/evidencias/123456789-image.jpg"
+}
+```
+
+## POST /actividades/:id/reservas
+
+Crea una reserva de producto para la actividad.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/actividades/uuid-actividad/reservas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "loteId": "uuid-del-lote",
+  "cantidadReservada": 50,
+  "estadoId": 1
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único de la reserva creada (primary key, UUID)
+    "actividadId": "uuid-actividad", // ID de la actividad que realiza la reserva
+    "loteId": "uuid-del-lote", // ID del lote de producto reservado
+    "cantidadReservada": 50 // Cantidad de producto reservada para la actividad
+  }
+}
+```
+
+## POST /actividades/:id/reservas/producto
+
+Crea una reserva por producto específico.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** POST
+- **URL:** http://localhost:3000/actividades/uuid-actividad/reservas/producto
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "productId": "uuid-del-producto",
+  "cantidadReservada": 25,
+  "estadoId": 1
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "id": "uuid", // Identificador único de la reserva creada (primary key, UUID)
+    "actividadId": "uuid-actividad", // ID de la actividad que realiza la reserva
+    "productId": "uuid-del-producto", // ID del producto específico reservado
+    "cantidadReservada": 25 // Cantidad de producto reservada para la actividad
+  }
+}
+```
+
+## PATCH /actividades/reservas/:reservaId/confirm-usage
+
+Confirma el uso de productos reservados.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `reservaId`: ID de la reserva
+
+**Ejemplo en Postman:**
+- **Método:** PATCH
+- **URL:** http://localhost:3000/actividades/reservas/uuid-reserva/confirm-usage
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  - Content-Type: application/json
+- **Body:** (raw JSON)
+
+**Cuerpo de la solicitud:**
+```json
+{
+  "cantidadUsada": 45
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Uso confirmado exitosamente"
+}
+```
+
+## GET /actividades/:id/cost
+
+Calcula el costo de una actividad.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/uuid-actividad/cost
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": {
+    "totalCost": 100000, // Costo total de la actividad (mano de obra + materiales)
+    "laborCost": 75000, // Costo de mano de obra basado en horas trabajadas
+    "materialCost": 25000 // Costo de materiales utilizados en la actividad
+  }
+}
+```
+
+## GET /actividades/:id/reservas
+
+Obtiene las reservas de una actividad.
+
+**Requiere autenticación**
+
+**Parámetros de ruta:**
+- `id`: ID de la actividad
+
+**Ejemplo en Postman:**
+- **Método:** GET
+- **URL:** http://localhost:3000/actividades/uuid-actividad/reservas
+- **Headers:**
+  - Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+**Respuesta exitosa (200):**
+```json
+{
+  "success": true, // Indica que la operación fue exitosa
+  "data": [ // Array de reservas de productos para la actividad
+    {
+      "id": "uuid", // Identificador único de la reserva (primary key, UUID)
+      "actividadId": "uuid-actividad", // ID de la actividad que realizó la reserva
+      "loteId": "uuid-lote", // ID del lote de producto reservado
+      "cantidadReservada": 50, // Cantidad original reservada para la actividad
+      "cantidadUsada": 45 // Cantidad real utilizada (confirmada después de finalizar)
+    }
+  ]
+}
+```

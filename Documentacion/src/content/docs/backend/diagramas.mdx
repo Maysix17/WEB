@@ -1,0 +1,931 @@
+---
+title: Diagramas
+description: Diagramas del sistema AgroTic
+---
+
+## Diagramas
+
+### Diagrama de Clases - Gestión de Usuarios y Permisos
+
+```mermaid
+classDiagram
+    class Usuario {
+        +string id
+        +number dni
+        +string nombres
+        +string apellidos
+        +string passwordHash
+        +number telefono
+        +string correo
+        +Roles rol?
+        +Ficha ficha?
+        +UsuarioXActividad[] actividadesAsignadas?
+    }
+
+    class Roles {
+        +string id
+        +string nombre
+        +Usuario[] usuarios
+        +Permiso[] permisos
+        +Roles[] rolesQuePuedeCrear
+        +Roles[] rolesQuePuedenCrearme
+    }
+
+    class Permiso {
+        +string id
+        +string accion
+        +Recurso recurso
+        +Roles[] roles
+    }
+
+    class Recurso {
+        +string id
+        +string nombre
+        +Permiso[] permisos
+        +Modulo modulo
+    }
+
+    class Modulo {
+        +string id
+        +string nombre
+        +Recurso[] recursos
+    }
+
+    class Ficha {
+        +string id
+        +number numero
+        +Usuario[] usuarios
+    }
+
+    Usuario --o Roles : has
+    Usuario --o Ficha : belongs_to
+    Roles --> Permiso : many-to-many
+    Permiso --o Recurso : belongs_to
+    Recurso --o Modulo : belongs_to
+    Roles --> Roles : hierarchy
+    Ficha o-- Usuario : has
+```
+
+Diagrama Gestión de Usuarios y Seguridad: Diagrama de clases para gestión de usuarios y permisos, cubriendo autenticación y autorización con entidades Usuario, Roles, Permiso, Recurso, Modulo, incluyendo relaciones de seguridad y jerarquía de roles.
+
+### Diagrama de Clases - Gestión de Cultivos
+
+```mermaid
+classDiagram
+    class Cultivo {
+        +string id
+        +number estado?
+        +Date siembra?
+        +CultivosXVariedad[] variedades?
+    }
+
+    class TipoCultivo {
+        +string id
+        +string nombre
+        +boolean esPerenne
+        +Variedad[] variedades?
+    }
+
+    class Variedad {
+        +string id
+        +string nombre
+        +string fkTipoCultivoId?
+        +TipoCultivo tipoCultivo?
+        +CultivosXVariedad[] cultivosXVariedad?
+    }
+
+    class CultivosXVariedad {
+        +string id
+        +string fkCultivoId
+        +string fkVariedadId
+        +Cultivo cultivo?
+        +Variedad variedad?
+        +CultivosVariedadXZona[] zonas?
+    }
+
+    class Zona {
+        +string id
+        +string nombre
+        +object coordenadas
+        +number areaMetrosCuadrados?
+        +CultivosVariedadXZona[] cultivosVariedad?
+        +ZonaMqttConfig[] zonaMqttConfigs?
+        +Sensor[] sensores?
+    }
+
+    class CultivosVariedadXZona {
+        +string id
+        +string fkCultivosXVariedadId
+        +string fkZonaId
+        +number cantidadPlantasInicial?
+        +number cantidadPlantasActual?
+        +number fkEstadoFenologicoId?
+        +Date fechaActualizacion?
+        +CultivosXVariedad cultivoXVariedad?
+        +Zona zona?
+        +Actividad[] actividades?
+        +Cosecha[] cosechas?
+        +EstadoFenologico estadoFenologico?
+    }
+
+    class EstadoFenologico {
+        +number id
+        +string nombre
+        +string descripcion?
+        +number orden
+        +CultivosVariedadXZona[] cultivosVariedadXZona?
+    }
+
+    Cultivo o-- CultivosXVariedad : tiene
+    TipoCultivo o-- Variedad : tiene
+    Variedad --o TipoCultivo : pertenece_a
+    Variedad o-- CultivosXVariedad : pertenece_a
+    CultivosXVariedad --o Cultivo : pertenece_a
+    CultivosXVariedad o-- CultivosVariedadXZona : tiene
+    Zona o-- CultivosVariedadXZona : contiene
+    CultivosVariedadXZona --o EstadoFenologico : tiene
+    EstadoFenologico o-- CultivosVariedadXZona : aplica_a
+```
+
+Diagrama Específico del Módulo de Cultivos: Diagrama de clases para la gestión de cultivos, incluyendo Cultivo, TipoCultivo, Variedad, CultivosXVariedad, Zona, CultivosVariedadXZona y EstadoFenologico, con relaciones de asociación entre cultivos, variedades y zonas.
+
+### Diagrama de Clases - Gestión de Actividades
+
+```mermaid
+classDiagram
+    class Actividad {
+        +string id
+        +string descripcion
+        +Date fechaAsignacion
+        +number horasDedicadas?
+        +number precioHora?
+        +string observacion?
+        +boolean estado?
+        +Date fechaFinalizacion?
+        +string imgUrl?
+        +string fkCultivoVariedadZonaId
+        +string fkCategoriaActividadId
+        +number dniResponsable
+        +CultivosVariedadXZona cultivoVariedadZona?
+        +CategoriaActividad categoriaActividad?
+        +UsuarioXActividad[] usuariosAsignados?
+        +ReservasXActividad[] reservas?
+    }
+
+    class CategoriaActividad {
+        +string id
+        +string nombre
+        +Actividad[] actividades?
+    }
+
+    class UsuarioXActividad {
+        +string id
+        +string fkUsuarioId
+        +string fkActividadId
+        +Date fechaAsignacion
+        +boolean activo?
+        +Usuario usuario?
+        +Actividad actividad?
+    }
+
+    class ReservasXActividad {
+        +string id
+        +string fkActividadId
+        +string fkLoteId
+        +number fkEstadoId
+        +number cantidadReservada
+        +number cantidadUsada?
+        +number cantidadDevuelta?
+        +number capacidadPresentacionProducto
+        +number precioProducto
+        +Actividad actividad?
+        +LotesInventario lote?
+        +EstadoReserva estado?
+    }
+
+    Actividad --o CategoriaActividad : pertenece_a
+    Actividad o-- UsuarioXActividad : asignada_a
+    Actividad o-- ReservasXActividad : tiene
+    UsuarioXActividad --o Usuario : asignado_a
+    UsuarioXActividad --o Actividad : asignada_a
+    ReservasXActividad --o Actividad : pertenece_a
+```
+
+### Diagrama de Casos de Uso - Gestión de Actividades
+
+```mermaid
+graph TD
+    A[Agricultor] --> C1(Crear Actividad)
+    A --> C2(Asignar Actividad a Usuario)
+    A --> C3(Reservar Productos para Actividad)
+    A --> C4(Completar Actividad)
+    A --> C5(Ver Actividades Asignadas)
+    B[Administrador] --> C6(Gestionar Categorías de Actividad)
+    B --> C7(Supervisar Actividades)
+    B --> C8(Gestionar Reservas de Inventario)
+    S[Sistema] --> C9(Notificar Alertas de Actividad)
+    S --> C10(Actualizar Estado de Actividad)
+```
+
+Diagrama de Casos de Uso para Gestión de Actividades: Diagrama que muestra los actores principales (Agricultor, Administrador, Sistema) y los casos de uso relacionados con la gestión de actividades agrícolas, incluyendo creación, asignación, reservas y supervisión.
+
+### Diagrama de Clases - Gestión de Cosechas y Ventas
+
+```mermaid
+classDiagram
+    class Cosecha {
+        +string id
+        +string unidadMedida
+        +number cantidad
+        +string fecha?
+        +number rendimientoPorPlanta?
+        +number cantidadPlantasCosechadas?
+        +boolean cerrado
+        +string fkCultivosVariedadXZonaId
+        +CultivosVariedadXZona cultivosVariedadXZona?
+        +Venta[] ventas?
+        +CosechasVentas[] cosechasVentas?
+    }
+
+    class Venta {
+        +string id
+        +number cantidad
+        +string fecha
+        +string fkCosechaId
+        +string unidadMedida
+        +number precioUnitario
+        +number precioKilo
+        +Cosecha cosecha?
+        +CosechasVentas[] cosechasVentas?
+    }
+
+    class CosechasVentas {
+        +string id
+        +string fkCosechaId
+        +string fkVentaId
+        +Cosecha cosecha?
+        +Venta venta?
+    }
+
+    Cosecha o-- Venta : tiene
+    Venta --> Cosecha : pertenece_a
+    Cosecha o-- CosechasVentas : relacionada_con
+    Venta o-- CosechasVentas : relacionada_con
+```
+
+Diagrama Ventas, Finanzas: Diagrama de clases para gestión de cosechas y ventas, con entidades Cosecha, Venta y CosechasVentas, mostrando relaciones entre cosechas producidas y ventas realizadas.
+
+### Diagrama de Clases - Sistema de Sensores y Mediciones
+
+```mermaid
+classDiagram
+    class Sensor {
+        +string id
+        +string nombre
+        +number coorX
+        +number coorY
+        +number rangoMinimo?
+        +number rangoMaximo?
+        +string img
+        +number estado
+        +Date fechaInstalacion
+        +Date fechaUltimoMantenimiento?
+        +TipoSensor tipoSensor?
+        +Zona zona?
+        +MedicionSensor[] mediciones?
+    }
+
+    class TipoSensor {
+        +string id
+        +string nombre
+        +string descripcion?
+        +string unidadMedida
+        +Sensor[] sensores?
+    }
+
+    class Zona {
+        +string id
+        +string nombre
+        +object coordenadas
+        +number areaMetrosCuadrados?
+        +CultivosVariedadXZona[] cultivosVariedad?
+        +ZonaMqttConfig[] zonaMqttConfigs?
+        +Sensor[] sensores?
+    }
+
+    class ZonaMqttConfig {
+        +string id
+        +string fkMqttConfigId
+        +string fkZonaId
+        +boolean estado
+        +Date createdAt
+        +Date updatedAt
+        +MqttConfig mqttConfig?
+        +Zona zona?
+        +MedicionSensor[] mediciones?
+    }
+
+    class MqttConfig {
+        +string id
+        +string nombre
+        +string host
+        +number port
+        +string protocol
+        +string topicBase
+        +boolean activa
+        +object umbrales
+        +ZonaMqttConfig[] zonaMqttConfigs?
+    }
+
+    class MedicionSensor {
+        +string id
+        +string key
+        +number valor
+        +Date fechaMedicion
+        +string unidad?
+        +string tipo
+        +string fkZonaMqttConfigId
+        +ZonaMqttConfig zonaMqttConfig?
+    }
+
+    Sensor --> TipoSensor : es_de_tipo
+    Sensor --> Zona : pertenece_a
+    Zona o-- ZonaMqttConfig : tiene
+    ZonaMqttConfig --> MqttConfig : configurado_por
+    ZonaMqttConfig o-- MedicionSensor : tiene
+    Zona o-- Sensor : contiene
+```
+
+Diagrama Sistema IoT y Monitoreo: Diagrama de clases para el sistema de sensores y mediciones IoT, con entidades Sensor, TipoSensor, Zona, ZonaMqttConfig, MqttConfig y MedicionSensor, mostrando conexiones para monitoreo y configuración MQTT.
+
+### Diagrama de Clases - Gestión de Inventario
+
+```mermaid
+classDiagram
+    class Bodega {
+        +string id
+        +string numero
+        +string nombre
+        +LotesInventario[] lotesInventario?
+    }
+
+    class Categoria {
+        +string id
+        +string nombre
+        +string descripcion?
+        +boolean esDivisible
+        +Producto[] productos?
+    }
+
+    class UnidadMedida {
+        +string id
+        +string nombre
+        +string abreviatura
+    }
+
+    class Producto {
+        +string id
+        +string nombre
+        +string descripcion
+        +string sku
+        +number precioCompra
+        +number capacidadPresentacion
+        +string fkCategoriaId
+        +string fkUnidadMedidaId
+        +string imgUrl?
+        +number vidaUtilPromedioPorUsos?
+        +Categoria categoria?
+        +UnidadMedida unidadMedida?
+    }
+
+    class LotesInventario {
+        +string id
+        +string fkProductoId
+        +string fkBodegaId
+        +number cantidadDisponible
+        +number stock
+        +boolean esParcial
+        +number cantidadParcial
+        +Date fechaIngreso
+        +Date fechaVencimiento?
+        +Producto producto?
+        +Bodega bodega?
+        +ReservasXActividad[] reservas?
+    }
+
+    class TipoMovimiento {
+        +number id
+        +string nombre
+    }
+
+    class MovimientosInventario {
+        +string id
+        +string fkLoteId
+        +string fkReservaId?
+        +number fkTipoMovimientoId
+        +number cantidad
+        +Date fechaMovimiento
+        +string observacion?
+        +string responsable?
+        +LotesInventario lote?
+        +ReservasXActividad reserva?
+        +TipoMovimiento tipoMovimiento?
+    }
+
+    class EstadoReserva {
+        +number id
+        +string nombre
+        +ReservasXActividad[] reservas?
+    }
+
+    Bodega o-- LotesInventario : contiene
+    Categoria o-- Producto : clasifica
+    UnidadMedida o-- Producto : mide
+    Producto o-- LotesInventario : tiene
+    LotesInventario o-- MovimientosInventario : registra
+    LotesInventario o-- ReservasXActividad : reserva
+    TipoMovimiento o-- MovimientosInventario : clasifica
+    EstadoReserva o-- ReservasXActividad : define
+```
+
+Diagrama Inventario y Actividades: Diagramas de clases para gestión de inventario y actividades, incluyendo Bodega, Categoria, Producto, LotesInventario, MovimientosInventario, Actividad, UsuarioXActividad y ReservasXActividad, con relaciones de reservas y movimientos.
+
+### Diagrama de Clases - Gestión de Plagas y Enfermedades (EPA)
+
+```mermaid
+classDiagram
+    class TipoEpa {
+        +string id
+        +string nombre
+        +Epa[] epas?
+    }
+
+    class Epa {
+        +string id
+        +string nombre
+        +string descripcion?
+        +string imgUrl?
+        +number tipoEpaId
+        +TipoEpa tipoEpa
+        +CultivosXEpa[] cultivosXepa?
+    }
+
+    class CultivosXEpa {
+        +string id
+        +string fechaDeteccion
+        +number estado
+        +string fkCultivosXVariedadId
+        +string fkEpaId
+        +CultivosXVariedad cultivosXVariedad?
+        +Epa epa?
+    }
+
+    TipoEpa o-- Epa : clasifica
+    Epa o-- CultivosXEpa : detectada_en
+    CultivosXEpa --> CultivosXVariedad : afecta_a
+    CultivosXEpa --> Epa : es_de
+```
+
+### Diagrama de Flujo - Proceso de Autenticación
+
+```mermaid
+flowchart TD
+    A[Usuario] --> B[Enviar credenciales de login]
+    B --> C[AuthController.login]
+    C --> D[AuthService.validateUser]
+    D --> E{¿Credenciales válidas?}
+    E -->|Sí| F[Generar JWT Token]
+    E -->|No| G[Retornar error 401]
+    F --> H[Retornar token y datos de usuario]
+```
+
+### Diagrama de Flujo - Proceso de Datos de Sensores
+
+```mermaid
+flowchart TD
+    A[Sensor IoT] --> B[Enviar datos via MQTT]
+    B --> C[MQTT Gateway]
+    C --> D[Procesar mensaje]
+    D --> E[Extraer datos de sensor]
+    E --> F[Crear MedicionSensor]
+    F --> G[Guardar en base de datos]
+    G --> H[Verificar umbrales]
+    H --> I{¿Fuera de rango?}
+    I -->|Sí| J[Generar alerta]
+    I -->|No| K[Continuar monitoreo]
+    J --> L[Enviar notificación via WebSocket]
+```
+### Diagrama ER Completo - Estructura de la Base de Datos
+
+```mermaid
+erDiagram
+    MqttConfig {
+        string id
+        string nombre
+        string host
+        int port
+        string protocol
+        string topicBase
+        boolean activa
+        jsonb umbrales
+    }
+    ZonaMqttConfig {
+        string id
+        string fkMqttConfigId
+        string fkZonaId
+        boolean estado
+        date createdAt
+        date updatedAt
+    }
+    Permiso {
+        string id
+        string accion
+    }
+    Producto {
+        string id
+        string nombre
+        text descripcion
+        string sku
+        decimal precioCompra
+        decimal capacidadPresentacion
+        string fkCategoriaId
+        string fkUnidadMedidaId
+        string imgUrl
+        int vidaUtilPromedioPorUsos
+    }
+    Recurso {
+        string id
+        string nombre
+    }
+    ReservasXActividad {
+        string id
+        string fkActividadId
+        string fkLoteId
+        int fkEstadoId
+        decimal cantidadReservada
+        decimal cantidadUsada
+        decimal cantidadDevuelta
+        decimal capacidadPresentacionProducto
+        decimal precioProducto
+    }
+    Roles {
+        string id
+        string nombre
+    }
+    Sensor {
+        string id
+        string nombre
+        int coorX
+        int coorY
+        numeric rangoMinimo
+        numeric rangoMaximo
+        string img
+        smallint estado
+        timestamp fechaInstalacion
+        timestamp fechaUltimoMantenimiento
+        int fkTipoSensorId
+        int fkZonaId
+    }
+    TipoCultivo {
+        string id
+        string nombre
+        boolean esPerenne
+    }
+    TipoSensor {
+        string id
+        string nombre
+        text descripcion
+        string unidadMedida
+    }
+    TipoMovimiento {
+        int id
+        string nombre
+    }
+    UnidadMedida {
+        string id
+        string nombre
+        string abreviatura
+    }
+    Usuario {
+        string id
+        bigint dni
+        string nombres
+        string apellidos
+        string passwordHash
+        bigint telefono
+        string correo
+    }
+    UsuarioXActividad {
+        string id
+        string fkUsuarioId
+        string fkActividadId
+        date fechaAsignacion
+        boolean activo
+    }
+    Variedad {
+        string id
+        string nombre
+        string fkTipoCultivoId
+    }
+    Venta {
+        string id
+        numeric cantidad
+        date fecha
+        string fkCosechaId
+        string unidadMedida
+        numeric precioUnitario
+        numeric precioKilo
+    }
+    Zona {
+        string id
+        string nombre
+        jsonb coordenadas
+        numeric areaMetrosCuadrados
+    }
+    Cultivo {
+        string id
+        smallint estado
+        date siembra
+    }
+    CultivosVariedadXZona {
+        string id
+        string fkCultivosXVariedadId
+        string fkZonaId
+        int cantidadPlantasInicial
+        int cantidadPlantasActual
+        int fkEstadoFenologicoId
+        timestamp fechaActualizacion
+    }
+    CultivosXEpa {
+        string id
+        date fechaDeteccion
+        smallint estado
+        string fkCultivosXVariedadId
+        string fkEpaId
+    }
+    CultivosXVariedad {
+        string id
+        string fkCultivoId
+        string fkVariedadId
+    }
+    Epa {
+        string id
+        string nombre
+        text descripcion
+        string imgUrl
+        int tipoEpaId
+    }
+    EstadoReserva {
+        int id
+        string nombre
+    }
+    Ficha {
+        string id
+        bigint numero
+    }
+    LotesInventario {
+        string id
+        string fkProductoId
+        string fkBodegaId
+        decimal cantidadDisponible
+        decimal stock
+        boolean esParcial
+        decimal cantidadParcial
+        timestamp fechaIngreso
+        date fechaVencimiento
+    }
+    MedicionSensor {
+        string id
+        string key
+        numeric valor
+        timestamp fechaMedicion
+        string unidad
+        string tipo
+        string fkZonaMqttConfigId
+    }
+    Modulo {
+        string id
+        string nombre
+    }
+    MovimientosInventario {
+        string id
+        string fkLoteId
+        string fkReservaId
+        int fkTipoMovimientoId
+        decimal cantidad
+        timestamp fechaMovimiento
+        text observacion
+        string responsable
+    }
+    TipoEpa {
+        string id
+        string nombre
+    }
+    MqttConfig ||--o{ ZonaMqttConfig : configura
+    ZonaMqttConfig }o--|| Zona : pertenece_a
+    ZonaMqttConfig ||--o{ MedicionSensor : tiene
+    Permiso }o--|| Recurso : pertenece_a
+    Permiso }o--o{ Roles : asignado_a
+    Producto }o--|| UnidadMedida : mide
+    Recurso }o--|| Modulo : pertenece_a
+    Recurso ||--o{ Permiso : tiene
+    ReservasXActividad }o--|| LotesInventario : reserva
+    ReservasXActividad }o--|| EstadoReserva : tiene_estado
+    Roles ||--o{ Usuario : tiene
+    Roles }o--o{ Roles : jerarquia
+    Sensor }o--|| TipoSensor : es_de_tipo
+    Sensor }o--|| Zona : instalado_en
+    TipoCultivo ||--o{ Variedad : tiene
+    TipoSensor ||--o{ Sensor : clasifica
+    Usuario }o--|| Roles : tiene_rol
+    Usuario }o--|| Ficha : pertenece_a
+    Usuario ||--o{ UsuarioXActividad : asignado_a
+    UsuarioXActividad }o--|| Usuario : asignado_a
+    Variedad }o--|| TipoCultivo : pertenece_a
+    Variedad ||--o{ CultivosXVariedad : usado_en
+    Zona ||--o{ CultivosVariedadXZona : contiene
+    Zona ||--o{ ZonaMqttConfig : configurada_para
+    Zona ||--o{ Sensor : contiene
+    Cultivo ||--o{ CultivosXVariedad : tiene
+    CultivosVariedadXZona }o--|| CultivosXVariedad : pertenece_a
+    CultivosVariedadXZona }o--|| Zona : ubicado_en
+    CultivosXEpa }o--|| CultivosXVariedad : afecta_a
+    CultivosXEpa }o--|| Epa : es_de
+    CultivosXVariedad }o--|| Cultivo : pertenece_a
+    CultivosXVariedad }o--|| Variedad : es_de
+    CultivosXVariedad ||--o{ CultivosVariedadXZona : tiene
+    Epa }o--|| TipoEpa : clasificado_como
+    Epa ||--o{ CultivosXEpa : detectado_en
+    EstadoReserva ||--o{ ReservasXActividad : define
+    Ficha ||--o{ Usuario : tiene
+    LotesInventario }o--|| Producto : contiene
+    LotesInventario ||--o{ ReservasXActividad : reservado_para
+    MedicionSensor }o--|| ZonaMqttConfig : generado_por
+    Modulo ||--o{ Recurso : contiene
+    MovimientosInventario }o--|| LotesInventario : afecta_a
+    MovimientosInventario }o--|| ReservasXActividad : relacionado_con
+    MovimientosInventario }o--|| TipoMovimiento : es_de_tipo
+    TipoEpa ||--o{ Epa : clasifica
+```
+
+Diagrama ER Completo - Estructura de la Base de Datos: Diagrama ER completo de la estructura de la base de datos, incluyendo todas las entidades como Usuario, Roles, Cultivo, Sensor, Producto, etc., con sus atributos y relaciones detalladas.
+
+### Diagrama General de Arquitectura
+
+```mermaid
+graph TB
+    A[Frontend Web/Mobile] --> B[Backend API NestJS]
+    B --> C[Database PostgreSQL]
+    D[IoT Sensors] --> E[MQTT Broker]
+    E --> B
+    B --> F[WebSocket Notifications]
+    F --> A
+    B --> G[File Storage]
+    H[External APIs] --> B
+```
+
+Diagrama General de Arquitectura: Muestra la arquitectura general del sistema AgroTic, incluyendo frontend web/mobile, backend API en NestJS, base de datos PostgreSQL, sensores IoT conectados via MQTT, notificaciones WebSocket, almacenamiento de archivos y APIs externas.
+
+### Diagrama ER Simplificado en Entidades
+
+```mermaid
+erDiagram
+    Usuario }o--|| Roles : tiene
+    Roles }o--o{ Permiso : asignado
+    Usuario }o--o{ Actividad : asignado
+    Actividad }o--|| Zona : en
+    Zona ||--o{ Sensor : contiene
+    Zona ||--o{ Cultivo : tiene
+    Cultivo }o--o{ Variedad : de
+    Cultivo ||--o{ Cosecha : produce
+    Cosecha ||--o{ Venta : vende
+    Producto ||--o{ LotesInventario : en
+    LotesInventario ||--o{ ReservasXActividad : reserva
+    Actividad ||--o{ ReservasXActividad : usa
+```
+
+Diagrama ER Simplificado en Entidades: Representa las entidades principales y sus relaciones simplificadas, incluyendo usuarios con roles y permisos, actividades asignadas a zonas con sensores y cultivos, variedades de cultivos, cosechas y ventas, productos en lotes de inventario con reservas para actividades.
+
+### Diagrama Específico del Módulo de Lotes (Zonas)
+
+```mermaid
+classDiagram
+    class Zona {
+        +string id
+        +string nombre
+        +object coordenadas
+        +number areaMetrosCuadrados
+        +CultivosVariedadXZona[] cultivosVariedad
+        +ZonaMqttConfig[] zonaMqttConfigs
+        +Sensor[] sensores
+    }
+
+    class CultivosVariedadXZona {
+        +string id
+        +string fkCultivosXVariedadId
+        +string fkZonaId
+        +number cantidadPlantasInicial
+        +number cantidadPlantasActual
+        +number fkEstadoFenologicoId
+        +Date fechaActualizacion
+        +CultivosXVariedad cultivoXVariedad
+        +Zona zona
+        +Actividad[] actividades
+        +Cosecha[] cosechas
+        +EstadoFenologico estadoFenologico
+    }
+
+    class Sensor {
+        +string id
+        +string nombre
+        +number coorX
+        +number coorY
+        +number rangoMinimo
+        +number rangoMaximo
+        +string img
+        +number estado
+        +Date fechaInstalacion
+        +Date fechaUltimoMantenimiento
+        +TipoSensor tipoSensor
+        +Zona zona
+        +MedicionSensor[] mediciones
+    }
+
+    class ZonaMqttConfig {
+        +string id
+        +string fkMqttConfigId
+        +string fkZonaId
+        +boolean estado
+        +Date createdAt
+        +Date updatedAt
+        +MqttConfig mqttConfig
+        +Zona zona
+        +MedicionSensor[] mediciones
+    }
+
+    Zona o-- CultivosVariedadXZona : contiene
+    Zona o-- Sensor : tiene
+    Zona o-- ZonaMqttConfig : configurada
+    CultivosVariedadXZona --> Zona : pertenece_a
+    Sensor --> Zona : instalado_en
+    ZonaMqttConfig --> Zona : para
+```
+
+Diagrama Específico del Módulo de Lotes (Zonas): Diagrama de clases específico para el módulo de lotes (zonas), mostrando Zona con sus cultivos, sensores y configuraciones MQTT, incluyendo CultivosVariedadXZona, Sensor y ZonaMqttConfig.
+
+### Diagrama de Secuencia - Flujo Típico de Operación
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant A as AuthService
+    participant C as CultivosService
+    participant S as SensoresService
+    participant I as InventarioService
+    participant V as VentasService
+
+    U->A: Login
+    A-->U: JWT Token
+    U->C: Crear Cultivo
+    C-->U: Cultivo creado
+    U->S: Monitorear Sensores
+    S-->U: Datos en tiempo real
+    U->I: Reservar Inventario para Actividad
+    I-->U: Reserva
+    ```
+    
+    Diagrama de Secuencia - Flujo Típico de Operación: Diagrama de secuencia que ilustra el flujo típico de operación, desde el login del usuario hasta la reserva de inventario para actividades, involucrando AuthService, CultivosService, SensoresService, InventarioService y VentasService.
+    
+    ## Resumen de Entidades y Relaciones Principales
+
+Las entidades incluidas en el diagrama ER son: MqttConfig, ZonaMqttConfig, Permiso, Producto, Recurso, ReservasXActividad, Roles, Sensor, TipoCultivo, TipoSensor, TipoMovimiento, UnidadMedida, Usuario, UsuarioXActividad, Variedad, Venta, Zona, Cultivo, CultivosVariedadXZona, CultivosXEpa, CultivosXVariedad, Epa, EstadoReserva, Ficha, LotesInventario, MedicionSensor, Modulo, MovimientosInventario, TipoEpa.
+
+Relaciones principales:
+- **Usuarios y Roles**: Usuario pertenece a Roles, Roles tienen muchos Usuario. Roles tienen muchos Permiso a través de una relación muchos a muchos.
+- **Permisos y Recursos**: Permiso pertenece a Recurso, Recurso pertenece a Modulo.
+- **Cultivos**: Cultivo tiene muchos CultivosXVariedad, que conecta con Variedad y Zona a través de CultivosVariedadXZona.
+- **Sensores**: Sensor pertenece a TipoSensor y Zona, Zona tiene ZonaMqttConfig que conecta con MqttConfig y tiene MedicionSensor.
+- **Inventario**: Producto mide con UnidadMedida, LotesInventario contiene Producto, tiene ReservasXActividad y MovimientosInventario.
+- **Actividades**: Usuario asignado a UsuarioXActividad, ReservasXActividad reserva LotesInventario.
+- **EPA**: Epa clasificado por TipoEpa, detectado en CultivosXEpa que afecta CultivosXVariedad.
+### Diagrama Sistema Agrícola y Producción
+
+```mermaid
+flowchart TD
+    A[Planificación de Cultivo] --> B[Selección de Variedad]
+    B --> C[Asignación a Zona]
+    C --> D[Siembra]
+    D --> E[Monitoreo IoT]
+    E --> F[Actividades Agrícolas]
+    F --> G[Detección de Plagas/Enfermedades]
+    G --> H[Tratamientos]
+    H --> I[Cosecha]
+    I --> J[Almacenamiento/Inventario]
+    J --> K[Ventas]
+    K --> L[Análisis de Rendimiento]
+    L --> A
+    E --> M[Alertas en Tiempo Real]
+    M --> F
+```
+
+Diagrama Sistema Agrícola y Producción: Flujograma del sistema agrícola y producción, desde planificación de cultivo hasta análisis de rendimiento, incluyendo siembra, monitoreo IoT, actividades agrícolas, detección de plagas, tratamientos, cosecha, inventario, ventas y alertas en tiempo real.
