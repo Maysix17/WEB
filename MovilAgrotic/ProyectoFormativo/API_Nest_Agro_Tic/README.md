@@ -9,7 +9,7 @@ API para gestión agrícola desarrollada con NestJS, PostgreSQL y Redis.
    cd web
    cd MovilAgrotic
    cd ProyectoFormativo
-   API_Nest_Agro_Tic
+   cd API_Nest_Agro_Tic
    ```
 
 2. **Instalar dependencias**
