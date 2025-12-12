@@ -33,14 +33,14 @@ Ve a tu navegador y busca Expo, y creraras tu cuenta de Expo.
 Agregas un nuevo proyecto:
 Ingresas el nombre del proyecto: ej:AgroTic
 
-- luego, te saldra una venta con unos pasos, y dos opciones para seleccionar tu escoges la que dice: Para una base de codigo existente.
+- luego, te saldra una ventana con unos pasos, y dos opciones para seleccionar tu escoges la que dice: Para una base de codigo existente.
 
 ### Instalar EAS CLI
 Luego te dirijes a una terminal ya dentro de agrotic
 y ejecutas el siguiente comando para instalar la CLI de EAS:
 
 ```bash
-npm install -g @expo/eas-cli
+npm install --global eas-cli
 ```
 Despues sigue el paso N.2, tú copias ese id que te aparece como linea te texto; ejemplo (e35c4fe0-b8a2-4aeb-b0a8-7540b5faf179) que completo seria: eas init --id e35c4fe0-b8a2-4aeb-b0a8-7540b5faf179
 pero solo tomas el id.
