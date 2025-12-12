@@ -83,7 +83,7 @@ ingresas tus credenciales:
 Ejecuta el comando para construir el APK en modo producción:
 
 ```bash
-eas build --platform android --profile production
+eas build --platform android --profile preview
 ```
 Te aparecera una pregunta tipo: Generate a new Android Keystore? : Y/n y le daras en Y
 
