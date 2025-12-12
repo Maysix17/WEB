@@ -1,15 +1,15 @@
-PROYECTO, DOCUMENTACIÓN Y CODIGO ARDUINO ID
+PROYECTO WEB Y CODIGO ARDUINO ID
 ////////////////////////////////////////////////////////////
-PROYECTOO
+PROYECTOO WEB
 ### 1. Instalar Dependencias
 
 #### Backend (API_Nest_Agro_Tic)
-
+cd WebAgrotic
 cd API_Nest_Agro_Tic
 npm install
 
 #### Frontend (FrontEnd_AgroTic)
-
+cd WebAgrotic
 cd FrontEnd_AgroTic
 npm install
 
@@ -17,7 +17,7 @@ npm install
 ### 2. Configurar el Backend
 
 #### Levantar los Servicios con Docker
-
+cd WebAgrotic
 cd API_Nest_Agro_Tic
 npm run docker:dev
 
@@ -44,7 +44,7 @@ npm run docker:seed
 ### 3. Configurar el Frontend
 
 #### Ejecutar el Servidor de Desarrollo
-
+cd WebAgrotic
 cd FrontEnd_AgroTic
 npm run dev
 
@@ -56,13 +56,6 @@ Después de ejecutar los seeders, podrás acceder al sistema con las siguientes 
 - **Administrador:**
   - Usuario: 123456789
   - Contraseña: admin123
-//////////////////////////////////////////////////////////
-### DOCUMENTACIÓN
-
-
-1. cd astrosebas
-2. npm install
-3. npm run dev
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 ### CODIGO ARDUINO ID
