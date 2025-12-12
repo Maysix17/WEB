@@ -1,18 +1,47 @@
-# 🌱 API NestJS Agro TIC
+#  API NestJS Agro TIC
 
 API para gestión agrícola desarrollada con NestJS, PostgreSQL y Redis.
 
-## 🚀 Configuración rápida para colaboradores
+### Instalación y Configuración
 
-### Prerrequisitos
-- **Docker & Docker Compose** instalados
-- **Git**
-- **Node.js v20+** (opcional, para desarrollo local)
-
-### ⚡ Configuración en 3 pasos
-
-1. **Clonar y configurar**
+1. **Navegar al directorio del proyecto**
    ```bash
-   git clone https://github.com/tu-usuario/api_nest_agro_tic.git
-   cd api_nest_agro_tic
-   cp .env.example .env
+   cd web
+   cd MovilAgrotic
+   cd ProyectoFormativo
+   API_Nest_Agro_Tic
+   ```
+
+2. **Instalar dependencias**
+   ```bash
+   npm install
+   ```
+   3. **variables de entorno**
+en el .env se encuentras las variables para igresar a la base de datos.
+4. **Ejecutar el backend(API_Nest_Agro_Tic)**
+Primero: 
+npm run docker:clean
+Luego:
+npm run docker:dev
+5. **variables de entorno**
+en el .env se encuentras las variables para igresar a la base de datos.
+
+6. **Ejecutar migraciones**
+   ```bash
+   generamos las migraciones:
+   npm run docker:g
+   corremos las migraciones:
+   npm run migration:r
+   ```
+
+7. **Ejecutar seeders**
+   ```bash
+   npm run docker:seed
+   ```
+
+7. **Credenciales**
+  ```bash
+   N.Documento: 123456789
+   Contraseña:admin123
+   ```
+
