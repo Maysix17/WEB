@@ -5,7 +5,7 @@ Abre tu terminal y ejecuta:
 
 ```bash
 cd web
-cd AgroMovil
+cd MovilAgrotic
 ```
 
 ## Instalar las dependencias
