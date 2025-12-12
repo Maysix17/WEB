@@ -17,13 +17,12 @@ npm install
 ```
 
 ## Crear una cuenta en ngrok
-Dirígete a ngrok y regístrate para obtener una cuenta gratuita. Una vez creada, recibirás un token de acceso.Tambien te recomendara instalar ngrok, lo instalas de igual manera, pero no hacemos uso de esa terminal.
+Dirígete a ngrok y regístrate para obtener una cuenta gratuita. Una vez creada, recibirás un comando con un  token de acceso.
 
 ## Configurar el token de ngrok
-Copia el token de acceso y, en una terminal, ejecuta:
-
+Copia el comando de acceso y, en una terminal, ejecuta:
 ```bash
-ngrok authtoken TU_TOKEN
+ngrok config add-authtoken TU_TOKEN
 
 en TU_TOKEN vas a poner el token que te proporciono ngrok
 ```
