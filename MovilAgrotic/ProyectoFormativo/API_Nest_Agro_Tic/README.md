@@ -33,12 +33,12 @@ cd web
    cd MovilAgrotic
    cd ProyectoFormativo
    cd API_Nest_Agro_Tic
-   
+
    ```bash
    generamos las migraciones:
    npm run docker:g
    corremos las migraciones:
-   npm run migration:r
+   npm run docker:r
    ```
 
 7. **Ejecutar seeders**
