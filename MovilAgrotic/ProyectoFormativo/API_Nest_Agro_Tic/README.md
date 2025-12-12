@@ -16,8 +16,6 @@ API para gestión agrícola desarrollada con NestJS, PostgreSQL y Redis.
    ```bash
    npm install
    ```
-   3. **variables de entorno**
-en el .env se encuentras las variables para igresar a la base de datos.
 4. **Ejecutar el backend(API_Nest_Agro_Tic)**
 Primero: 
 npm run docker:clean
