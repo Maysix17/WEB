@@ -1,5 +1,8 @@
 # Guía de Instalación y Configuración de AgroMovil
 Antes de comenzar con AgroMovil, asegúrate de completar los pasos de configuración de la carpeta Proyecto_Formativo en la sub carpeta de API_Nest_Agro_Tic que es donde se almacena el backend.
+
+la apk se encuentra en la carpeta entregaFinal, junto a un archivo que contiene el link del repositorio.
+
 ## Navegar al directorio de AgroMovil
 Abre tu terminal y ejecuta:
 
@@ -36,6 +39,6 @@ ngrok http 3000
 
 ## Actualizar la URL de la API
 Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclusivamente la que comience con https. 
-Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic y actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
+Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
 
 Luego vuelve a correr el backend y ya funcionara
