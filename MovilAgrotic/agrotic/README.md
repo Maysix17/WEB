@@ -1,7 +1,7 @@
 # Guía de Instalación y Configuración de AgroMovil
 Antes de comenzar con AgroMovil, asegúrate de completar los pasos de configuración de la carpeta Proyecto_Formativo en la sub carpeta de API_Nest_Agro_Tic que es donde se almacena el backend.
 
-la apk se encuentra en la carpeta entregaFinal, junto a un archivo que contiene el link del repositorio.
+La apk se debe generar, debido a que el la rul https cambia para cada usuario.
 
 ## Navegar al directorio de AgroMovil
 Abre tu terminal y ejecuta:
@@ -87,4 +87,6 @@ eas build --platform android --profile preview
 ```
 Te aparecera una pregunta tipo: Generate a new Android Keystore? : Y/n y le daras en Y
 
-Esto generará el archivo APK que podrás descargar desde el panel de Expo o el enlace proporcionado en la terminal..
+Esto generará el archivo APK que podrás descargar desde el panel de Expo o el enlace proporcionado en la terminal, tambien puedes escanear el codigo QR.
+
+
