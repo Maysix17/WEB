@@ -5,6 +5,8 @@ API para gestión agrícola desarrollada con NestJS, PostgreSQL y Redis.
 ### Instalación y Configuración
 
 1. **Navegar al directorio del proyecto**
+
+Abrimos una terminal y ejecutamos :
    ```bash
    cd web
    cd MovilAgrotic
@@ -17,6 +19,7 @@ API para gestión agrícola desarrollada con NestJS, PostgreSQL y Redis.
    npm install
    ```
 4. **Ejecutar el backend(API_Nest_Agro_Tic)**
+
 Primero: 
 npm run docker:clean
 Luego:
@@ -25,6 +28,12 @@ npm run docker:dev
 en el .env se encuentras las variables para igresar a la base de datos.
 
 6. **Ejecutar migraciones**
+en otra terminal, hacemos estos mismos pasos:
+cd web
+   cd MovilAgrotic
+   cd ProyectoFormativo
+   cd API_Nest_Agro_Tic
+   
    ```bash
    generamos las migraciones:
    npm run docker:g
