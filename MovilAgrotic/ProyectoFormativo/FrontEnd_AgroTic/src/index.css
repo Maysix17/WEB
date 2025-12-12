@@ -1,0 +1,99 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset body styles to prevent modal interference */
+body {
+  display: block !important;
+  background: white !important;
+  justify-content: normal !important;
+  align-items: normal !important;
+  min-height: auto !important;
+  font-family: inherit !important;
+  padding: 0 !important;
+}
+
+/* Force consistent Input styles across all modals - maintain base appearance */
+/* Only apply to inputs that don't have custom styling */
+[data-slot="input-wrapper"]:not(.custom-input) {
+  background-color: hsl(var(--heroui-default-100)) !important;
+  border: 2px solid transparent !important;
+  outline: none !important;
+  transition: background-color 150ms ease-in-out !important;
+  transition: border-color 150ms ease-in-out !important;
+}
+
+[data-slot="input-wrapper"]:not(.custom-input):hover {
+  background-color: hsl(var(--heroui-default-200)) !important;
+}
+
+[data-slot="input-wrapper"]:not(.custom-input):focus-within {
+  background-color: hsl(var(--heroui-default-100)) !important;
+}
+
+[data-slot="input-wrapper"]:not(.custom-input):has(input:focus-visible) {
+  z-index: 10 !important;
+  box-shadow: 0 0 0 2px hsl(var(--heroui-focus)), 0 0 0 4px hsl(var(--heroui-background)) !important;
+}
+
+[data-slot="input-wrapper"]:not(.custom-input) [data-slot="inner-wrapper"] {
+  background-color: transparent !important;
+}
+
+[data-slot="input-wrapper"]:not(.custom-input) input {
+  background-color: transparent !important;
+  background-clip: text !important;
+  outline: none !important;
+}
+
+/* Animación suave */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive calendar styles */
+@media (max-width: 768px) {
+  .calendar-responsive {
+    width: 100% !important;
+    max-width: 320px;
+  }
+  .calendar-responsive .react-datepicker__month-container {
+    width: 100%;
+  }
+  .calendar-responsive .react-datepicker {
+    font-size: 14px;
+  }
+}
