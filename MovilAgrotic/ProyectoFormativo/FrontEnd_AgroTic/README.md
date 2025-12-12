@@ -5,6 +5,7 @@ Gestion de Agrotic
 ### Instalación y Configuración
 
 1. **Navegar al directorio del proyecto**
+Abre una terminal y ejecuta:
    ```bash
    cd web
    cd MovilAgrotic

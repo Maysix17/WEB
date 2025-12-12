@@ -42,3 +42,48 @@ Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclus
 Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
 
 Luego vuelve a correr el backend y ya funcionara
+
+## Generar APK
+
+Para generar el archivo APK de la aplicación móvil, sigue estos pasos:
+
+
+### Crear cuenta de Expo
+Ve a tu navegador y busca Expo, y creraras tu cuenta de Expo.
+
+
+### Crear Nuevo proyecto en Expo
+
+Agregas un nuevo proyecto:
+Ingresas el nombre del proyecto: ej:AgroTic
+
+- luego, te saldra una venta con unos pasos, y dos opciones para seleccionar tu escoges la que dice: Para una base de codigo existente.
+
+### Instalar EAS CLI
+Luego te dirijes a una terminal ya dentro de agrotic
+y ejecutas el siguiente comando para instalar la CLI de EAS:
+
+```bash
+npm install -g @expo/eas-cli
+```
+Despues sigue el paso N.2, tú copias ese id que te aparece como linea te texto; ejemplo (e35c4fe0-b8a2-4aeb-b0a8-7540b5faf179) que completo seria: eas init --id e35c4fe0-b8a2-4aeb-b0a8-7540b5faf179
+pero solo tomas el id.
+Luego te dirijes al app.json que esta dentro de agrotic, te ubica en "Extras" y en 'projectId' remplaza el id que esta ahi y pones el nuevo que copiaste del paso N.2.
+
+### Iniciar sesión en Expo
+Inicia sesión en tu cuenta de Expo:
+
+```bash
+eas login
+```
+ingresas tus credenciales:
+
+
+### Construir el APK
+Ejecuta el comando para construir el APK en modo producción:
+
+```bash
+eas build --platform android --profile production
+```
+
+Esto generará el archivo APK que podrás descargar desde el panel de Expo o el enlace proporcionado en la terminal.
