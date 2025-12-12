@@ -35,6 +35,7 @@ ngrok http 3000
 ```
 
 ## Actualizar la URL de la API
-Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclusivamente la que comience con https. Con esa URL, primero ingresa a la carpeta AgroMovil y actualiza el archivo app.json, reemplazando la URL de la API por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
+Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclusivamente la que comience con https. 
+Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic y actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
 
 Luego vuelve a correr el backend y ya funcionara
