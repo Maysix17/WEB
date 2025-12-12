@@ -19,30 +19,6 @@ Una vez dentro del directorio, ejecuta:
 npm install
 ```
 
-## Crear una cuenta en ngrok
-Dirígete a ngrok y regístrate para obtener una cuenta gratuita. Una vez creada, recibirás un comando con un  token de acceso.
-
-## Configurar el token de ngrok
-Copia el comando de acceso y, en una terminal, ejecuta:
-```bash
-ngrok config add-authtoken TU_TOKEN
-
-en TU_TOKEN vas a poner el token que te proporciono ngrok
-```
-
-## Crear el túnel de ngrok
-En la misma terminal, ejecuta:
-
-```bash
-ngrok http 3000
-```
-
-## Actualizar la URL de la API
-Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclusivamente la que comience con https. 
-Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
-
-Luego vuelve a correr el backend y ya funcionara
-
 ## Generar APK
 
 Para generar el archivo APK de la aplicación móvil, sigue estos pasos:
@@ -87,3 +63,27 @@ eas build --platform android --profile production
 ```
 
 Esto generará el archivo APK que podrás descargar desde el panel de Expo o el enlace proporcionado en la terminal.
+
+## Crear una cuenta en ngrok
+Dirígete a ngrok y regístrate para obtener una cuenta gratuita. Una vez creada, recibirás un comando con un  token de acceso.
+
+## Configurar el token de ngrok
+Copia el comando de acceso y, en una terminal, ejecuta:
+```bash
+ngrok config add-authtoken TU_TOKEN
+
+en TU_TOKEN vas a poner el token que te proporciono ngrok
+```
+
+## Crear el túnel de ngrok
+En la misma terminal, ejecuta:
+
+```bash
+ngrok http 3000
+```
+
+## Actualizar la URL de la API
+Cuando ejecutes el comando de ngrok, aparecerán varias URLs. Debes tomar exclusivamente la que comience con https. 
+Con esa URL, primero ingresa a la carpeta AgroMovil, luego en la sub carpeta de agrotic actualiza el archivo app.json, reemplazando la URl de apiUrl que se encuentra en "Extra" por la nueva generada por ngrok. Luego, dirígete a la carpeta Proyecto_Formativo, entra a API_Nest_Agro_Tic y actualiza el archivo .env, colocando esa misma URL https en el valor de API_URL. Con esto quedarán ambas partes del proyecto apuntando correctamente al túnel generado por ngrok.
+
+Luego vuelve a correr el backend y ya funcionara correctamente.
